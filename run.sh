@@ -1,2 +1,2 @@
 #!/bin/bash
-./skynet config/config
+./skynet/skynet config/config
