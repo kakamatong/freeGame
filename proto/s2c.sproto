@@ -1,0 +1,26 @@
+.package {
+    type 0 : integer
+    session 1 : integer
+}
+
+reportMsg 1 {
+    request {
+        msg 0 : string
+        time 1 : integer
+
+    }
+}
+
+reportContent 2 {
+    request {
+        code 0 : integer
+    }
+}
+
+# 下发玩家状态
+reportUserStatus 3 {
+    request {
+        status 0 : integer
+        gameid 1 : integer
+    }
+}

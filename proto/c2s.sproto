@@ -1,0 +1,94 @@
+# 登录服务协议(0-9999)
+.package {
+    type 0 : integer
+    session 1 : integer
+}
+
+# 客户端请求结构
+auth 1 {
+    request {
+        username 0 : string
+        userid 1 : integer
+        password 2 : string
+        device 3 : string
+        version 4 : string
+        channel 5 : integer
+        subid 6 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 心跳
+heartbeat 2 {
+    request {
+        timestamp 0 : integer
+    }
+    response {
+        timestamp 0 : integer
+    }
+}
+
+logout 3 {
+    request {
+        uid 0 : integer
+        token 1 : string
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+} 
+
+# 用户数据
+userData 4 {
+    request {
+        uid 0 : integer
+    }
+    response {
+        nickname 0 : string
+        headurl 1 : string
+        sex 2 : integer
+        province 3 : string
+        city 4 : string
+        ip 5 : string
+        ext 6 : string
+    }
+}
+
+# 用户财富
+userRiches 5 {
+    request {
+        
+    }
+    response {
+        richType 0 : *integer
+        richNums 1 : *integer
+    }
+}
+
+# 用户状态
+userStatus 6 {
+    request {
+        uid 0 : integer
+    }
+    response {
+        status 0 : integer
+        gameid 1 : integer
+    }
+}
+
+# 匹配 type 0 进入匹配， 1 离开匹配
+match 7 {
+    request {
+        type 0 : integer
+        gameid 1 : integer
+        gameSubid 2 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

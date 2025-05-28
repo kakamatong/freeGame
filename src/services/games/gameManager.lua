@@ -1,0 +1,44 @@
+local skynet = require "skynet"
+require "skynet.manager"
+
+local CMD = {}
+local name = "gameManager"
+local allGames = {}
+local roomid = 0
+
+-- 创建游戏
+function CMD.createGame(gameid, players, gameData)
+    roomid = roomid + 1
+    local name = "game" .. gameid
+    local game = skynet.newservice(name)
+    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid})
+    if not allGames[gameid] then
+        allGames[gameid] = {}
+    end
+    allGames[gameid][roomid] = game
+    
+    return roomid
+end
+
+-- 销毁游戏
+function CMD.destroyGame(gameid, roomid)
+    local game = allGames[gameid][roomid]
+    skynet.call(game, "lua", "stop")
+    allGames[gameid][roomid] = nil
+    return true
+end
+
+-- 获取游戏
+function CMD.getGame(gameid, roomid)
+    return allGames[gameid][roomid]
+end
+
+skynet.start(function()
+    skynet.dispatch("lua", function(session, source, cmd, ...)
+        local f = CMD[cmd]
+        if f then
+            skynet.ret(skynet.pack(f(...)))
+        end
+    end)
+    skynet.register("." .. name)
+end)
