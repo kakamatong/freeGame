@@ -30,12 +30,12 @@ function handler.open(source, conf)
 end
 
 function handler.message(fd, msg, msgType)
-	LOG.info("wsgate message")
+	--LOG.info("wsgate message")
 	-- recv a package, forward it
 	local c = connection[fd]
 	local agent = c.agent
 	if agent then
-		LOG.info("wsgate message forward")
+		--LOG.info("wsgate message forward")
 		-- It's safe to redirect msg directly , gateserver framework will not free msg.
 		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
 	else

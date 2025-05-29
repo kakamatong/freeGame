@@ -223,12 +223,12 @@ skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
 	unpack = function (msg, sz)
-		LOG.info("agent unpack msg %s, sz %d", type(msg), sz)
+		--LOG.info("agent unpack msg %s, sz %d", type(msg), sz)
 		local str = skynet.tostring(msg, sz)
 		return host:dispatch(str, sz)
 	end,
 	dispatch = function (fd, _, type, ...)
-		LOG.info("agent dispatch fd %d, type %s", fd, type)
+		--LOG.info("agent dispatch fd %d, type %s", fd, type)
 		assert(fd == client_fd) -- 只能处理自己的fd
 		skynet.ignoreret() -- session是fd，不需要返回
 		if type == "REQUEST" then
