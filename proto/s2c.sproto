@@ -22,5 +22,6 @@ reportUserStatus 3 {
     request {
         status 0 : integer
         gameid 1 : integer
+        roomid 2 : integer
     }
 }

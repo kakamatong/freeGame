@@ -50,11 +50,11 @@ local function getDB()
 end
 
 -- 设置用户状态到数据库
-local function setUserStatus(status, gameid)
+local function setUserStatus(status, gameid, roomid)
 	if not status then return end
 	userStatus = status
 	local db = getDB()
-	skynet.call(db, "lua", "func", "setUserStatus", userid, status, gameid)
+	skynet.call(db, "lua", "func", "setUserStatus", userid, status, gameid, roomid)
 end
 
 -- 检查并同步用户状态
@@ -62,16 +62,24 @@ local function checkStatus()
 	local db = getDB()
 	local status = skynet.call(db, "lua", "func", "getUserStatus", userid)
 	if not status or status.gameid == 0 then
-		setUserStatus(CONFIG.USER_STATUS.ONLINE, 0)
+		setUserStatus(CONFIG.USER_STATUS.ONLINE)
 		return
 	elseif status.gameid > 0 then
-		setUserStatus(CONFIG.USER_STATUS.GAMEING, status.gameid)
+		setUserStatus(CONFIG.USER_STATUS.GAMEING)
 		return
 	end
 end
 
 -- 进入匹配队列
 local function enterMatch(args)
+	if userStatus == CONFIG.USER_STATUS.MATCHING then
+		return {code = 2, msg ="已经在匹配队列中"}
+	end
+
+	if userStatus == CONFIG.USER_STATUS.GAMEING then
+		return {code = 2, msg ="已经在游戏中"}
+	end
+
 	local matchServer = skynet.localname(".match")
 	if not matchServer then
 		return {code = 1, msg ="匹配服务异常"}
@@ -79,7 +87,7 @@ local function enterMatch(args)
 		local b = skynet.call(matchServer, "lua", "enterQueue", skynet.self(), userid, args.gameid, args.gameSubid, 0)
 		if b then
 			setUserStatus(CONFIG.USER_STATUS.MATCHING)
-			report("reportUserStatus", {status = CONFIG.USER_STATUS.MATCHING, gameid = 0})
+			report("reportUserStatus", {status = CONFIG.USER_STATUS.MATCHING})
 			return {code = 0, msg ="进入匹配列队成功"}
 		else
 			return {code = 2, msg ="进入匹配列队失败"}
@@ -96,7 +104,7 @@ local function leaveMatch()
 		local b = skynet.call(matchServer, "lua", "leaveQueue", userid)
 		if b then
 			setUserStatus(CONFIG.USER_STATUS.ONLINE)
-			report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE, gameid = 0})
+			report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE})
 			return {code = 0, msg ="离开匹配列队成功"}
 		else
 			return {code = 2, msg ="离开匹配列队失败"}
@@ -158,7 +166,7 @@ function REQUEST:userStatus(args)
 	if not status then
 		return {gameid = 0 , status = -1}
 	else
-		return {gameid = status.gameid , status=status.status}
+		return {gameid = status.gameid , status=status.status, roomid = status.roomid}
 	end
 end
 
@@ -238,8 +246,8 @@ skynet.register_protocol {
 -- CMD表：服务内部命令处理
 -- 进入游戏
 function CMD.enterGame(gamedata)
-	setUserStatus(CONFIG.USER_STATUS.ENTERGAME)
-	report("reportUserStatus", {status = CONFIG.USER_STATUS.ENTERGAME, gameid = 0})
+	setUserStatus(CONFIG.USER_STATUS.ENTERGAME, gamedata.gameid, gamedata.roomid)
+	report("reportUserStatus", {status = CONFIG.USER_STATUS.ENTERGAME, gameid = gamedata.gameid, roomid = gamedata.roomid})
 end
 
 -- 内容推送

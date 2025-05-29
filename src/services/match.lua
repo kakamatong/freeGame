@@ -58,12 +58,12 @@ local function matchSuccess(userid1, userid2)
     -- 2.通知agent
     -- 3.删除queue里的用户
     local playerids = {userid1, userid2}
-    local gameid = 10001
-    local gameData = {}
+    local gameid = users[userid1].gameid
+    local gameData = {gameid = gameid, roomid = roomid}
     local gameManager = skynet.localname(".gameManager")
     local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
-    reportToAgent(userid1, {gameid = gameid, roomid = roomid})
-    reportToAgent(userid2, {gameid = gameid, roomid = roomid})
+    reportToAgent(userid1, gameData)
+    reportToAgent(userid2, gameData)
     
     leaveQueue(userid1)
     leaveQueue(userid2)
