@@ -35,7 +35,9 @@ end
 
 function CMD.plyaerEnter(gameid, roomid, userData)
     local game = allGames[gameid][roomid]
-    skynet.call(game, "lua", "playerEnter", userData)
+    local ret = skynet.call(game, "lua", "playerEnter", userData)
+    
+    return ret
 end
 
 skynet.start(function()
@@ -43,6 +45,9 @@ skynet.start(function()
         local f = CMD[cmd]
         if f then
             skynet.ret(skynet.pack(f(...)))
+        else
+            skynet.ignoreret()
+            LOG.error("gameManager cmd not found %s", cmd)
         end
     end)
     skynet.register("." .. name)

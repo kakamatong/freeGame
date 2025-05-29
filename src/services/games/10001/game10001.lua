@@ -64,9 +64,10 @@ end
 function CMD.playerEnter(userData)
     if players[userData.userid] then
         LOG.info("玩家已经在游戏中 %s", userData.userid)
-        return
+        return false
     end
     players[userData.userid] = userData
+    return true
 end
 
 function CMD.start(data)
