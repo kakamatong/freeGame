@@ -137,7 +137,7 @@ end
 
 -- 获取用户详细数据
 function REQUEST:userData(args)
-	local db =getDB()
+	local db = getDB()
 	local userData = skynet.call(db, "lua", "func", "getUserData", userid)
 	assert(userData)
 	return userData
@@ -145,7 +145,7 @@ end
 
 -- 获取用户财富信息
 function REQUEST:userRiches(args)
-	local db =getDB()
+	local db = getDB()
 	local userRiches = skynet.call(db, "lua", "func", "getUserRiches", userid)
 	assert(userRiches)
 	local richType = {}
