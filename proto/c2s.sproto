@@ -93,3 +93,14 @@ match 7 {
         msg 1 : string
     }
 }
+
+# 链接游戏
+connectGame 8 {
+    request {
+        roomid 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : integer
+    }
+}

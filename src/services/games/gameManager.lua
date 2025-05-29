@@ -33,6 +33,11 @@ function CMD.getGame(gameid, roomid)
     return allGames[gameid][roomid]
 end
 
+function CMD.plyaerEnter(gameid, roomid, userData)
+    local game = allGames[gameid][roomid]
+    skynet.call(game, "lua", "playerEnter", userData)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]

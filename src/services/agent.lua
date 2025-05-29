@@ -19,6 +19,8 @@ local bAuth = false -- 是否已认证
 local userid = 0
 local userStatus = 0
 local reportsessionid = 0
+local gameid = 0
+local roomid = 0
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -65,6 +67,8 @@ local function checkStatus()
 		setUserStatus(CONFIG.USER_STATUS.ONLINE)
 		return
 	elseif status.gameid > 0 then
+		gameid = status.gameid
+		roomid = status.roomid
 		setUserStatus(CONFIG.USER_STATUS.GAMEING)
 		return
 	end
@@ -246,8 +250,14 @@ skynet.register_protocol {
 -- CMD表：服务内部命令处理
 -- 进入游戏
 function CMD.enterGame(gamedata)
+	report("reportMatch", {code = 0, msg = "匹配成功"})
+	
 	setUserStatus(CONFIG.USER_STATUS.ENTERGAME, gamedata.gameid, gamedata.roomid)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.ENTERGAME, gameid = gamedata.gameid, roomid = gamedata.roomid})
+	gameid = gamedata.gameid
+	roomid = gamedata.roomid
+	local gameServer = skynet.localname(".game")
+	skynet.send(gameServer, "lua", "enterGame", userid, gamedata)
 end
 
 -- 内容推送

@@ -25,3 +25,11 @@ reportUserStatus 3 {
         roomid 2 : integer
     }
 }
+
+# 下发匹配状态
+reportMatch 4 {
+    request {
+        code 0 : integer
+        msg 1 : string
+    }
+}
