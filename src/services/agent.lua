@@ -76,12 +76,16 @@ end
 
 -- 发送请求到游戏服务
 local function sendToGame(name, args, response)
+	if args.gameid ~=gameid or args.roomid ~=roomid then
+		LOG.error("游戏id或房间id不匹配 %d %d %d %d", args.gameid, gameid, args.roomid, roomid)
+		return
+	end
 	local gameServer = skynet.localname(".gameManager")
 	if not gameServer then
 		LOG.error("gameManager not started")
 		return
 	else
-		skynet.send(gameServer, "lua", "onClinetMsg", gameid, roomid, {userid = userid}, client_fd)
+		skynet.send(gameServer, "lua", "onClinetMsg", userid, name, args, response)
 	end
 end
 

@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 require "skynet.manager"
 local logic = require "logic10001"
+local sprotoloader = require "sprotoloader"
 local CMD = {}
 local name = "game10001"
 local roomid = 0
@@ -15,7 +16,11 @@ local gameStatus = {
     START = 1,
     END = 2
 }
+local host
+local gate
 local gameStatus = gameStatus.NOT_START
+local XY = {}
+local reportsessionid = 0
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -49,6 +54,33 @@ local function testStart()
     end
 end
 
+local function send_package(client_fd, pack)
+    skynet.call(gate, "lua", "send", client_fd, pack)
+end
+
+-- 发送消息给单个玩家
+local function sendToOneClient(userid, name, data)
+    local client_fd = client_fds[userid]
+    if client_fd then
+        reportsessionid = reportsessionid + 1
+        send_request = host:attach(sprotoloader.load(2))
+        send_package(client_fd, send_request(name, data, reportsessionid))
+    end
+end
+
+-- 发送消息给所有玩家
+local function sendToAllClient(name, data)
+    reportsessionid = reportsessionid + 1
+    send_request = host:attach(sprotoloader.load(2))
+    for _, client_fd in pairs(client_fds) do
+        send_package(client_fd, send_request(name, data, reportsessionid))
+    end
+end
+
+function XY.gameReady()
+    sendToClient(userid, "gameReady", {})
+end
+
 -- 玩家在线，玩家客户端准备就绪
 function CMD.online(userid)
     if players[userid] then
@@ -80,8 +112,15 @@ function CMD.start(data)
     logic.init(#playerids, gameData.rule)
 end
 
-function CMD.onClinetMsg(name, args, response)
-
+function CMD.onClinetMsg(userid, name, args, response)
+    LOG.info("onClinetMsg %s", name)
+    local f = XY[name]
+    if f then
+        local ret = f(args)
+        if ret then
+            send_package(client_fds[userid], response(ret))
+        end
+    end
 end
 
 function CMD.connectGame(userid, client_fd)
@@ -97,4 +136,6 @@ skynet.start(function()
             skynet.ret(skynet.pack(f(...)))
         end
     end)
+    host = sprotoloader.load(1):host "package"
+    gate = skynet.localname(".wsgateserver")
 end)

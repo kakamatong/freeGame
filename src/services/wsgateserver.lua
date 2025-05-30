@@ -3,6 +3,7 @@
 local skynet = require "skynet"
 local netpack = require "skynet.netpack"
 local websocket = require "http.websocket"
+require "skynet.manager"
 local wsgateserver = {}
 
 local socket = require "skynet.socket"
@@ -12,7 +13,7 @@ local client_number = 0 -- 当前客户端连接数
 -- 命令表，带有垃圾回收功能
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local nodelay = false -- 是否启用无延迟模式
-
+local name = "wsgateserver"
 local connection = {} -- 连接状态表
 -- true : 已连接
 -- nil : 已关闭
@@ -72,6 +73,7 @@ function wsgateserver.start(handler)
 				skynet.ret(skynet.pack(handler.command(cmd, address, ...)))
 			end
 		end)
+		skynet.register("." .. name)
 	end
 
 	skynet.start(init)

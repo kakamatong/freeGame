@@ -44,13 +44,13 @@ function CMD.plyaerEnter(gameid, roomid, userData)
     return ret
 end
 
-function CMD.onClinetMsg(name, args, response)
+function CMD.onClinetMsg(userid, name, args, response)
     local game = allGames[args.gameid][args.roomid]
     if not game then
         LOG.error("game not found %s %s", args.gameid, args.roomid)
         return false
     end
-    local ret = skynet.call(game, "lua", "onClinetMsg", name, args, response)
+    local ret = skynet.send(game, "lua", "onClinetMsg", userid, name, args, response)
     return ret
 end
 
