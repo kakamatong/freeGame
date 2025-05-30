@@ -104,3 +104,15 @@ connectGame 8 {
         msg 1 : string
     }
 }
+
+# 游戏准备
+gameReady 9 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

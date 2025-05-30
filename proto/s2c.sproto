@@ -35,3 +35,13 @@ reportMatch 4 {
         msg 3 : string
     }
 }
+
+# 下发玩家准备
+reportGamePlayerStatus 5 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        userid 2 : integer
+        status 3 : integer
+    }
+}

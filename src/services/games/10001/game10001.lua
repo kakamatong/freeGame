@@ -77,8 +77,15 @@ local function sendToAllClient(name, data)
     end
 end
 
-function XY.gameReady()
-    sendToClient(userid, "gameReady", {})
+function XY.gameReady(userid, args)
+    local playerStatus = {
+        gameid = gameid,
+        roomid = roomid,
+        userid = userid,
+        status = 1
+    }
+
+    sendToAllClient("reportGamePlayerStatus", playerStatus)
 end
 
 -- 玩家在线，玩家客户端准备就绪
@@ -116,10 +123,7 @@ function CMD.onClinetMsg(userid, name, args, response)
     LOG.info("onClinetMsg %s", name)
     local f = XY[name]
     if f then
-        local ret = f(args)
-        if ret then
-            send_package(client_fds[userid], response(ret))
-        end
+        f(userid, args)
     end
 end
 

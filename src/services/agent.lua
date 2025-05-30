@@ -85,7 +85,7 @@ local function sendToGame(name, args, response)
 		LOG.error("gameManager not started")
 		return
 	else
-		skynet.send(gameServer, "lua", "onClinetMsg", userid, name, args, response)
+		skynet.send(gameServer, "lua", "onClinetMsg", userid, name, args)
 	end
 end
 
