@@ -9,6 +9,7 @@ local playerids = {}
 local gameData = {}
 local players = {}
 local onlines = {}
+local client_fds = {}
 local gameStatus = {
     NOT_START = 0,
     START = 1,
@@ -77,6 +78,16 @@ function CMD.start(data)
     playerids = data.players
     gameData = data.gameData
     logic.init(#playerids, gameData.rule)
+end
+
+function CMD.onClinetMsg(name, args, response)
+
+end
+
+function CMD.connectGame(userid, client_fd)
+    LOG.info("connectGame %d", userid)
+    client_fds[userid] = client_fd
+    return true
 end
 
 skynet.start(function()

@@ -35,8 +35,32 @@ end
 
 function CMD.plyaerEnter(gameid, roomid, userData)
     local game = allGames[gameid][roomid]
+    if not game then
+        LOG.error("game not found %s %s", gameid, roomid)
+        return false
+    end
     local ret = skynet.call(game, "lua", "playerEnter", userData)
     
+    return ret
+end
+
+function CMD.onClinetMsg(name, args, response)
+    local game = allGames[args.gameid][args.roomid]
+    if not game then
+        LOG.error("game not found %s %s", args.gameid, args.roomid)
+        return false
+    end
+    local ret = skynet.call(game, "lua", "onClinetMsg", name, args, response)
+    return ret
+end
+
+function CMD.connectGame(gameid, roomid, userid, client_fd)
+    local game = allGames[gameid][roomid]
+    if not game then
+        LOG.error("game not found %s %s", gameid, roomid)
+        return false
+    end
+    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd)
     return ret
 end
 

@@ -74,15 +74,26 @@ local function checkStatus()
 	end
 end
 
+-- 发送请求到游戏服务
+local function sendToGame(name, args, response)
+	local gameServer = skynet.localname(".gameManager")
+	if not gameServer then
+		LOG.error("gameManager not started")
+		return
+	else
+		skynet.send(gameServer, "lua", "onClinetMsg", gameid, roomid, {userid = userid}, client_fd)
+	end
+end
+
 -- 进入匹配队列
 local function enterMatch(args)
 	if userStatus == CONFIG.USER_STATUS.MATCHING then
 		return {code = 2, msg ="已经在匹配队列中"}
 	end
 
-	if userStatus == CONFIG.USER_STATUS.GAMEING then
-		return {code = 2, msg ="已经在游戏中"}
-	end
+	-- if userStatus == CONFIG.USER_STATUS.GAMEING then
+	-- 	return {code = 2, msg ="已经在游戏中"}
+	-- end
 
 	local matchServer = skynet.localname(".match")
 	if not matchServer then
@@ -205,11 +216,31 @@ function REQUEST:auth(args)
 	return {code = 0, msg = "success"}
 end
 
+-- 连接游戏
+function REQUEST:connectGame(args)
+	local gameServer = skynet.localname(".gameManager")
+	if not gameServer then
+		LOG.error("gameManager not started")
+		return
+	else
+		local ret = skynet.call(gameServer, "lua", "connectGame", gameid, roomid, userid, client_fd)
+		if ret then
+			return {code = 0, msg = "链接游戏成功"}
+		else
+			return {code = 1, msg = "链接游戏失败"}
+		end
+	end
+end
+
 -- 客户端请求分发
 local function request(name, args, response)
 	LOG.info("request %s", name)
 	if not bAuth and name ~= "auth" then
 		return 
+	end
+	if args.roomid  and args.roomid > 0 then
+		sendToGame(name, args, response)
+		return
 	end
 	local f = assert(REQUEST[name])
 	local r = f(REQUEST, args)
@@ -260,7 +291,7 @@ function CMD.enterGame(gamedata)
 		skynet.call(gameServer, "lua", "plyaerEnter", gameid, roomid, {userid = userid})
 	end
 
-	report("reportMatch", {code = 0, msg = "匹配成功"})
+	report("reportMatch", {code = 0, msg = "匹配成功", gameid = gameid, roomid = roomid})
 	
 	setUserStatus(CONFIG.USER_STATUS.GAMEING, gameid, roomid)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
