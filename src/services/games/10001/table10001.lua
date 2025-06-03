@@ -124,6 +124,12 @@ function CMD.start(data)
     playerids = data.players
     gameData = data.gameData
     logic.init(#playerids, gameData.rule)
+    skynet.fork(function()
+        while true do
+            skynet.sleep(10)
+            logic.update()
+        end
+    end)
 end
 
 -- 客户端消息处理

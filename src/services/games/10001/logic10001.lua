@@ -1,11 +1,14 @@
 local logic = {}
 local outHandInfo = {}
 local stepid = 0
+local roundid = 0
+local roundNum = 0
 local GAME_STEP = {
     NONE = 0,
-    OUT_HAND = 1,
-    COMPARE = 2,
-    END = 3,
+    START = 1,
+    OUT_HAND = 2,
+    ROUND_END = 3,
+    GAME_END = 4,
 }
 
 local HAND_FLAG = {
@@ -78,6 +81,10 @@ function logic.compare()
     elseif result == HAND_RESULT.SCISSORS_WIN then
         -- 剪刀胜
     end
+end
+
+function logic.update()
+    LOG.info("update")
 end
 
 return logic
