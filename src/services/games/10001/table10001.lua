@@ -6,11 +6,12 @@ local CMD = {}
 local name = "game10001"
 local roomid = 0
 local gameid = 0
-local playerids = {}
-local gameData = {}
-local players = {}
-local onlines = {}
-local client_fds = {}
+local playerids = {} -- 玩家id列表
+local gameData = {} -- 游戏数据
+local players = {} -- 玩家数据
+local onlines = {} -- 玩家在线状态
+local client_fds = {} -- 玩家连接信息
+local seats = {} -- 玩家座位信息
 local gameStatus = {
     NOT_START = 0,
     START = 1,
@@ -110,6 +111,8 @@ function CMD.playerEnter(userData)
         return false
     end
     players[userData.userid] = userData
+    -- 分配座位信息
+    table.insert(seats, userData.userid)
     return true
 end
 
