@@ -12,16 +12,18 @@ local players = {} -- 玩家数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
-local gameStatus = {
+local GAME_STATUS = {
     NOT_START = 0,
     START = 1,
     END = 2
 }
+
 local host
 local gate
-local gameStatus = gameStatus.NOT_START
+local gameStatus = GAME_STATUS.NOT_START
 local XY = {}
 local reportsessionid = 0
+local tableHandler = {}
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -30,7 +32,7 @@ local reportsessionid = 0
 
 -- 开始游戏
 local function startGame()
-    gameStatus = gameStatus.START
+    gameStatus = GAME_STATUS.START
     logic.startGame()
     LOG.info("game start")
 end
@@ -52,6 +54,19 @@ local function testStart()
         return true
     else
         return false
+    end
+end
+
+-- 玩家连入游戏，玩家客户端准备就绪
+function online(userid)
+    if players[userid] then
+        onlines[userid] = true
+        -- todo: 下发对局信息
+
+        if gameStatus == GAME_STATUS.NOT_START then
+            --gameStatus = gameStatus.START
+            testStart()
+        end
     end
 end
 
@@ -79,6 +94,21 @@ local function sendToAllClient(name, data)
     end
 end
 
+-- table接口,发送消息给单个玩家
+function tableHandler.sendToOneClient(seat, name, data)
+    local userid = seats[seat]
+    data.gameid = gameid
+    data.roomid = roomid
+    sendToOneClient(userid, name, data)
+end
+
+-- table接口,发送消息给所有玩家
+function tableHandler.sendToAllClient(name, data)
+    data.gameid = gameid
+    data.roomid = roomid
+    sendToAllClient(name, data)
+end
+
 -- 玩家准备就绪
 function XY.gameReady(userid, args)
     local playerStatus = {
@@ -89,19 +119,6 @@ function XY.gameReady(userid, args)
     }
 
     sendToAllClient("reportGamePlayerStatus", playerStatus)
-end
-
--- 玩家连入游戏，玩家客户端准备就绪
-function CMD.online(userid)
-    if players[userid] then
-        onlines[userid] = true
-        -- todo: 下发对局信息
-
-        if gameStatus == gameStatus.NOT_START then
-            --gameStatus = gameStatus.START
-            testStart()
-        end
-    end
 end
 
 -- 玩家进入游戏
@@ -123,7 +140,7 @@ function CMD.start(data)
     gameid = data.gameid
     playerids = data.players
     gameData = data.gameData
-    logic.init(#playerids, gameData.rule)
+    logic.init(#playerids, gameData.rule, tableHandler)
     skynet.fork(function()
         while true do
             skynet.sleep(10)
@@ -145,6 +162,7 @@ end
 function CMD.connectGame(userid, client_fd)
     LOG.info("connectGame %d", userid)
     client_fds[userid] = client_fd
+    online(userid)
     return true
 end
 

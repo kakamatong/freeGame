@@ -1,8 +1,10 @@
 local logic = {}
 local outHandInfo = {}
-local stepid = 0
 local roundid = 0
 local roundNum = 0
+local stepBeginTime = 0
+logic.stepid = 0
+logic.table = nil
 local GAME_STEP = {
     NONE = 0,
     START = 1,
@@ -30,6 +32,13 @@ local RESULT_TYPE = {
     LOSE = 2,
 }
 
+local STIP_TIME_LEN = {
+    [GAME_STEP.START] = 1,
+    [GAME_STEP.OUT_HAND] = 10,
+    [GAME_STEP.ROUND_END] = 1,
+    [GAME_STEP.GAME_END] = 0,
+}
+
 local function tableLength(t)
     local count = 0
     for _, _ in pairs(t) do
@@ -38,8 +47,9 @@ local function tableLength(t)
     return count
 end
 
-function logic.init(playerNum, rule)
+function logic.init(playerNum, rule, table)
     logic.playerNum = playerNum
+    logic.table = table
 end
 
 function logic.setPlayerNum(playerNum)
@@ -48,6 +58,7 @@ end
 
 function logic.startGame()
     LOG.info("startGame")
+    logic.startStep(GAME_STEP.START)
 end
 
 function logic.outHand(seatid, flag)
@@ -83,8 +94,154 @@ function logic.compare()
     end
 end
 
+-- 获取当前步骤id
+function logic.getStepId()
+    return logic.stepid
+end
+
+-- 设置当前步骤开始时间
+function logic.setStepBeginTime()
+    stepBeginTime = os.time()
+end
+
+-- 获取当前步骤时间长度
+function logic.getStepTimeLen(stepid)
+    return STIP_TIME_LEN[stepid] or 0
+end
+
+-- 开始步骤开始游戏
+function logic.startStepStartGame()
+    logic.sendToAllClient("reportGameStep", {
+        stepid = GAME_STEP.START,
+    })
+end
+
+-- 停止步骤开始游戏
+function logic.stopStepStartGame()
+    logic.startStep(GAME_STEP.OUT_HAND)
+end
+
+-- 步骤开始游戏超时
+function logic.onStepStartGameTimeout()
+    logic.stopStep(GAME_STEP.START)
+end
+
+-- 开始步骤出招
+function logic.startStepOutHand()
+    logic.sendToAllClient("reportGameStep", {
+        stepid = GAME_STEP.OUT_HAND,
+    })
+end
+
+-- 停止步骤出招
+function logic.stopStepOutHand()
+
+end
+
+-- 步骤出招超时
+function logic.onStepOutHandTimeout()
+
+end
+
+-- 开始一轮结束步骤
+function logic.startStepRoundEnd()
+
+end
+
+-- 停止一轮结束步骤
+function logic.stopStepRoundEnd()
+
+end
+
+-- 一轮结束步骤超时
+function logic.onStepRoundEndTimeout()
+
+end
+
+-- 开始游戏结束步骤
+function logic.startStepGameEnd()
+
+end
+
+-- 停止游戏结束步骤
+function logic.stopStepGameEnd()
+
+end
+
+-- 游戏结束步骤超时
+function logic.onStepGameEndTimeout()
+
+end
+
+-- 开始步骤
+function logic.startStep(stepid)
+    LOG.info("startStep %d", stepid)
+    logic.setStepBeginTime()
+    if stepid == GAME_STEP.START then
+        logic.startStepStartGame(stepid)
+    elseif stepid == GAME_STEP.OUT_HAND then
+        logic.startStepOutHand(stepid)
+    elseif stepid == GAME_STEP.ROUND_END then
+        logic.startStepRoundEnd(stepid)
+    elseif stepid == GAME_STEP.GAME_END then
+        logic.startStepGameEnd(stepid)
+    end
+end
+
+-- 停止步骤
+function logic.stopStep(stepid)
+    LOG.info("stopStep %d", stepid)
+    if stepid == GAME_STEP.START then
+        logic.stopStepStartGame(stepid)
+    elseif stepid == GAME_STEP.OUT_HAND then
+        logic.stopStepOutHand(stepid)
+    elseif stepid == GAME_STEP.ROUND_END then
+        logic.stopStepRoundEnd(stepid)
+    elseif stepid == GAME_STEP.GAME_END then
+        logic.stopStepGameEnd(stepid)
+    end
+end
+
+-- 步骤超时
+function logic.onStepTimeout(stepid)
+    LOG.info("onStepTimeout %d", stepid)
+    if stepid == GAME_STEP.START then
+        logic.onStepStartGameTimeout()
+    elseif stepid == GAME_STEP.OUT_HAND then
+        logic.onStepOutHandTimeout()
+    elseif stepid == GAME_STEP.ROUND_END then
+        logic.onStepRoundEndTimeout()
+    elseif stepid == GAME_STEP.GAME_END then
+        logic.onStepGameEndTimeout()
+    end
+end
+
+-- 定时器每0.1s调用一次
 function logic.update()
-    LOG.info("update")
+    --LOG.info("update")
+    local stepid = logic.getStepId()
+    if stepid == GAME_STEP.NONE then
+        return
+    end
+    local currentTime = os.time()
+    local timeLen = currentTime - stepBeginTime
+    if timeLen > logic.getStepTimeLen(stepid) then
+        logic.onStepTimeout(stepid)
+    end
+end
+
+-- 发送消息给所有玩家
+function logic.sendToAllClient(name, data)
+    if logic.table then
+        logic.table.sendToAllClient(name, data)
+    end
+end
+
+-- 发送消息给单个玩家
+function logic.sendToOneClient(seat, name, data)
+    if logic.table then
+        logic.table.sendToOneClient(seat, name, data)
+    end
 end
 
 return logic
