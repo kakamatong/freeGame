@@ -45,3 +45,78 @@ reportGamePlayerStatus 5 {
         status 3 : integer
     }
 }
+
+# 下发游戏阶段
+reportGameStep 6 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        stepid 2 : integer
+    }
+}
+
+# 下发游戏结果
+reportGameResult 7 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        type 2 : integer
+        roomRound 3 : integer
+        maxRound 4 : integer
+        roundWin 6 : *integer
+        tally 7 : *integer
+    }
+}
+
+# 下发游戏逻辑数据
+reportGameLogicData 8 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundid 2 : integer
+        ext 3 : string
+    }
+}
+
+# 下发游戏轮数
+reportGameRound 9 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundNum 2 : integer
+        outHandNum 3 : integer
+        time 4 : integer
+    }
+}
+
+# 下发这一轮游戏结果
+reportGameRoundResult 10 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundNum 2 : integer
+        outHandNum 3 : integer
+        type 4 : integer
+        continue 5 : integer
+    }
+}
+
+# 下发玩家出招
+reportGameOutHand 11 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        flag 3 : integer
+    }
+}
+
+# 下发玩家游戏姿态
+reportGamePlayerAttitude 12 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        att 3 : integer
+    }
+}

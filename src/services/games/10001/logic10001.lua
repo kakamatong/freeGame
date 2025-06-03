@@ -2,6 +2,7 @@ local logic = {}
 local outHandInfo = {}
 local stepid = 0
 local GAME_STEP = {
+    NONE = 0,
     OUT_HAND = 1,
     COMPARE = 2,
     END = 3,
@@ -20,7 +21,11 @@ local HAND_RESULT = {
     SCISSORS_WIN = 0x0110, -- 布胜
 }
 
-local 
+local RESULT_TYPE = {
+    DRAW = 0,
+    WIN = 1,
+    LOSE = 2,
+}
 
 local function tableLength(t)
     local count = 0

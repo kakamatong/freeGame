@@ -116,3 +116,12 @@ gameReady 9 {
         msg 1 : string
     }
 }
+
+# 出手
+gameOutHand 10 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        flag 2 : integer
+    }
+}
