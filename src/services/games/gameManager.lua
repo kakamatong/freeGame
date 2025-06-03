@@ -9,7 +9,7 @@ local roomid = 0
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
-    local name = "game" .. gameid
+    local name = "table" .. gameid
     local game = skynet.newservice(name)
     skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid})
     if not allGames[gameid] then

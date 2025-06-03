@@ -54,6 +54,7 @@ local function testStart()
     end
 end
 
+-- 发送消息
 local function send_package(client_fd, pack)
     skynet.call(gate, "lua", "send", client_fd, pack)
 end
@@ -77,6 +78,7 @@ local function sendToAllClient(name, data)
     end
 end
 
+-- 玩家准备就绪
 function XY.gameReady(userid, args)
     local playerStatus = {
         gameid = gameid,
@@ -88,7 +90,7 @@ function XY.gameReady(userid, args)
     sendToAllClient("reportGamePlayerStatus", playerStatus)
 end
 
--- 玩家在线，玩家客户端准备就绪
+-- 玩家连入游戏，玩家客户端准备就绪
 function CMD.online(userid)
     if players[userid] then
         onlines[userid] = true
@@ -101,6 +103,7 @@ function CMD.online(userid)
     end
 end
 
+-- 玩家进入游戏
 function CMD.playerEnter(userData)
     if players[userData.userid] then
         LOG.info("玩家已经在游戏中 %s", userData.userid)
@@ -110,6 +113,7 @@ function CMD.playerEnter(userData)
     return true
 end
 
+-- 初始化游戏逻辑
 function CMD.start(data)
     LOG.info("game10001 start %s", UTILS.tableToString(data))
     roomid = data.roomid
@@ -119,6 +123,7 @@ function CMD.start(data)
     logic.init(#playerids, gameData.rule)
 end
 
+-- 客户端消息处理
 function CMD.onClinetMsg(userid, name, args, response)
     LOG.info("onClinetMsg %s", name)
     local f = XY[name]
@@ -127,6 +132,7 @@ function CMD.onClinetMsg(userid, name, args, response)
     end
 end
 
+-- 连接游戏
 function CMD.connectGame(userid, client_fd)
     LOG.info("connectGame %d", userid)
     client_fds[userid] = client_fd

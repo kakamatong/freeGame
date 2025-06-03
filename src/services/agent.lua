@@ -238,7 +238,7 @@ end
 
 -- 客户端请求分发
 local function request(name, args, response)
-	LOG.info("request %s", name)
+	--LOG.info("request %s", name)
 	if not bAuth and name ~= "auth" then
 		return 
 	end
