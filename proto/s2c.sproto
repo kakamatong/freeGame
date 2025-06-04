@@ -120,3 +120,21 @@ reportGamePlayerAttitude 12 {
         att 3 : integer
     }
 }
+
+# 下发对局玩家信息
+reportGamePlayerInfo 13 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        status 3 : integer #加载中，进入中，准备中，短线中
+        userid 4 : integer
+        sex 5 : integer
+        nickname 6 : string
+        headurl 7 : string
+        ip 8 : string
+        province 9 : string
+        city 10 : string
+        ext 11 : string
+    }
+}

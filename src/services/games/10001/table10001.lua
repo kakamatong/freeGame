@@ -57,11 +57,22 @@ local function testStart()
     end
 end
 
+local function reportPlayerInfo(userid)
+    
+    
+end
+
 -- 玩家连入游戏，玩家客户端准备就绪
-function online(userid)
+local function online(userid)
     if players[userid] then
         onlines[userid] = true
         -- todo: 下发对局信息
+        reportPlayerInfo(userid)
+        for id, player in pairs(players) do
+            if id ~= userid then
+                reportPlayerInfo(id)
+            end
+        end
 
         if gameStatus == GAME_STATUS.NOT_START then
             --gameStatus = gameStatus.START
