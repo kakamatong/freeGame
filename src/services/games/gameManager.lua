@@ -33,7 +33,7 @@ function CMD.getGame(gameid, roomid)
     return allGames[gameid][roomid]
 end
 
-function CMD.plyaerEnter(gameid, roomid, userData)
+function CMD.playerEnter(gameid, roomid, userData)
     local game = allGames[gameid][roomid]
     if not game then
         LOG.error("game not found %s %s", gameid, roomid)

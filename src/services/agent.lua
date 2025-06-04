@@ -21,6 +21,7 @@ local userStatus = 0
 local reportsessionid = 0
 local gameid = 0
 local roomid = 0
+local userData = nil
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -131,6 +132,13 @@ local function leaveMatch()
 	end
 end
 
+-- 获取用户数据
+local function getUserData()
+	local db = getDB()
+	userData = skynet.call(db, "lua", "func", "getUserData", userid)
+	return userData
+end
+
 -- 以下为客户端请求处理函数（REQUEST表）
 function REQUEST:get()
 	print("get", self.what)
@@ -156,9 +164,12 @@ end
 
 -- 获取用户详细数据
 function REQUEST:userData(args)
-	local db = getDB()
-	local userData = skynet.call(db, "lua", "func", "getUserData", userid)
-	assert(userData)
+	if not userData then
+		local db = getDB()
+		userData = skynet.call(db, "lua", "func", "getUserData", userid)
+		assert(userData)
+		return userData
+	end
 	return userData
 end
 
@@ -216,6 +227,7 @@ function REQUEST:auth(args)
 	bAuth = true
 	userid = args.userid
 	leftTime = os.time()
+	getUserData()
 	checkStatus()
 	return {code = 0, msg = "success"}
 end
@@ -292,7 +304,7 @@ function CMD.enterGame(gamedata)
 		LOG.error("gameManager not started")
 		return
 	else
-		skynet.call(gameServer, "lua", "plyaerEnter", gameid, roomid, {userid = userid})
+		skynet.call(gameServer, "lua", "playerEnter", gameid, roomid, userData)
 	end
 
 	report("reportMatch", {code = 0, msg = "匹配成功", gameid = gameid, roomid = roomid})
