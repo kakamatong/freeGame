@@ -6,3 +6,8 @@
 .vscode
 game.pid
 src/config/gameConfig.lua
+
+#//////////////////////////
+# WebStorm
+#//////////////////////////
+/.cursor
