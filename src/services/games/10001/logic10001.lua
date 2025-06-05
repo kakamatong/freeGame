@@ -32,6 +32,12 @@ local RESULT_TYPE = {
     LOSE = 2,
 }
 
+local PLAYER_ATTITUDE = {
+    THINKING = 0,
+    READY = 1,
+    OUT_HAND = 2,
+}
+
 local STIP_TIME_LEN = {
     [GAME_STEP.START] = 1,
     [GAME_STEP.OUT_HAND] = 10,
@@ -94,6 +100,13 @@ function logic.compare()
     end
 end
 
+function logic.sendPlayerAttitude(seatid, flag)
+    logic.sendToOneClient(seatid, "reportGamePlayerAttitude", {
+        seat = seatid,
+        att = flag,
+    })
+end
+
 -- 获取当前步骤id
 function logic.getStepId()
     return logic.stepid
@@ -131,6 +144,10 @@ function logic.startStepOutHand()
     logic.sendToAllClient("reportGameStep", {
         stepid = GAME_STEP.OUT_HAND,
     })
+
+    for i = 1, logic.playerNum do
+        logic.sendPlayerAttitude(i, PLAYER_ATTITUDE.THINKING)
+    end
 end
 
 -- 停止步骤出招
@@ -177,14 +194,15 @@ end
 function logic.startStep(stepid)
     LOG.info("startStep %d", stepid)
     logic.setStepBeginTime()
+    logic.stepid = stepid
     if stepid == GAME_STEP.START then
-        logic.startStepStartGame(stepid)
+        logic.startStepStartGame()
     elseif stepid == GAME_STEP.OUT_HAND then
-        logic.startStepOutHand(stepid)
+        logic.startStepOutHand()
     elseif stepid == GAME_STEP.ROUND_END then
-        logic.startStepRoundEnd(stepid)
+        logic.startStepRoundEnd()
     elseif stepid == GAME_STEP.GAME_END then
-        logic.startStepGameEnd(stepid)
+        logic.startStepGameEnd()
     end
 end
 
@@ -192,13 +210,13 @@ end
 function logic.stopStep(stepid)
     LOG.info("stopStep %d", stepid)
     if stepid == GAME_STEP.START then
-        logic.stopStepStartGame(stepid)
+        logic.stopStepStartGame()
     elseif stepid == GAME_STEP.OUT_HAND then
-        logic.stopStepOutHand(stepid)
+        logic.stopStepOutHand()
     elseif stepid == GAME_STEP.ROUND_END then
-        logic.stopStepRoundEnd(stepid)
+        logic.stopStepRoundEnd()
     elseif stepid == GAME_STEP.GAME_END then
-        logic.stopStepGameEnd(stepid)
+        logic.stopStepGameEnd()
     end
 end
 
@@ -224,6 +242,7 @@ function logic.update()
         return
     end
     local currentTime = os.time()
+    --LOG.info("currentTime %d, stepBeginTime %d", currentTime, stepBeginTime)
     local timeLen = currentTime - stepBeginTime
     if timeLen > logic.getStepTimeLen(stepid) then
         logic.onStepTimeout(stepid)

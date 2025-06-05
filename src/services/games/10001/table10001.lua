@@ -74,7 +74,7 @@ local function sendToOneClient(userid, name, data)
     if client_fd then
         data.gameid = gameid
         data.roomid = roomid
-        LOG.info("sendToOneClient %s", UTILS.tableToString(data))
+        --LOG.info("sendToOneClient %s", UTILS.tableToString(data))
         reportsessionid = reportsessionid + 1
         send_request = host:attach(sprotoloader.load(2))
         send_package(client_fd, send_request(name, data, reportsessionid))
@@ -191,7 +191,7 @@ function CMD.start(data)
     logic.init(#playerids, gameData.rule, tableHandler)
     skynet.fork(function()
         while true do
-            skynet.sleep(10)
+            skynet.sleep(100)
             logic.update()
         end
     end)
