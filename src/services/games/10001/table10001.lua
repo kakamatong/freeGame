@@ -18,6 +18,12 @@ local GAME_STATUS = {
     END = 2
 }
 
+local PLAYER_STATUS = {
+    LOADING = 1,
+    DISCONNECT = 2,
+    PLAYING = 3,
+}
+
 local host
 local gate
 local gameStatus = GAME_STATUS.NOT_START
@@ -57,9 +63,70 @@ local function testStart()
     end
 end
 
-local function reportPlayerInfo(userid)
-    
-    
+-- 发送消息
+local function send_package(client_fd, pack)
+    skynet.call(gate, "lua", "send", client_fd, pack)
+end
+
+-- 发送消息给单个玩家
+local function sendToOneClient(userid, name, data)
+    local client_fd = client_fds[userid]
+    if client_fd then
+        data.gameid = gameid
+        data.roomid = roomid
+        LOG.info("sendToOneClient %s", UTILS.tableToString(data))
+        reportsessionid = reportsessionid + 1
+        send_request = host:attach(sprotoloader.load(2))
+        send_package(client_fd, send_request(name, data, reportsessionid))
+    end
+end
+
+-- 发送消息给所有玩家
+local function sendToAllClient(name, data)
+    data.gameid = gameid
+    data.roomid = roomid
+    reportsessionid = reportsessionid + 1
+    send_request = host:attach(sprotoloader.load(2))
+    for _, client_fd in pairs(client_fds) do
+        send_package(client_fd, send_request(name, data, reportsessionid))
+    end
+end
+
+-- seat 2 : integer
+-- status 3 : integer #加载中，进入中，准备中，短线中
+-- userid 4 : integer
+-- sex 5 : integer
+-- nickname 6 : string
+-- headurl 7 : string
+-- ip 8 : string
+-- province 9 : string
+-- city 10 : string
+-- ext 11 : string
+local function reportPlayerInfo(userid, playerid)
+    local player = players[playerid]
+    local status = PLAYER_STATUS.PLAYING
+    if not onlines[playerid] then
+        status = PLAYER_STATUS.LOADING
+    end
+    local seat = 0
+    for i, id in pairs(seats) do
+        if id == playerid then
+            seat = i
+            break
+        end
+    end
+    sendToOneClient(userid, "reportGamePlayerInfo", {
+        userid = playerid,
+        nickname = player.nickname,
+        headurl = player.headurl,
+        status = status,
+        seat = seat,
+        sex = player.sex,
+        ip = player.ip,
+        province = player.province,
+        city = player.city,
+        ext = player.ext,
+    })
 end
 
 -- 玩家连入游戏，玩家客户端准备就绪
@@ -67,10 +134,10 @@ local function online(userid)
     if players[userid] then
         onlines[userid] = true
         -- todo: 下发对局信息
-        reportPlayerInfo(userid)
+        reportPlayerInfo(userid, userid)
         for id, player in pairs(players) do
             if id ~= userid then
-                reportPlayerInfo(id)
+                reportPlayerInfo(userid, id)
             end
         end
 
@@ -81,50 +148,20 @@ local function online(userid)
     end
 end
 
--- 发送消息
-local function send_package(client_fd, pack)
-    skynet.call(gate, "lua", "send", client_fd, pack)
-end
-
--- 发送消息给单个玩家
-local function sendToOneClient(userid, name, data)
-    local client_fd = client_fds[userid]
-    if client_fd then
-        reportsessionid = reportsessionid + 1
-        send_request = host:attach(sprotoloader.load(2))
-        send_package(client_fd, send_request(name, data, reportsessionid))
-    end
-end
-
--- 发送消息给所有玩家
-local function sendToAllClient(name, data)
-    reportsessionid = reportsessionid + 1
-    send_request = host:attach(sprotoloader.load(2))
-    for _, client_fd in pairs(client_fds) do
-        send_package(client_fd, send_request(name, data, reportsessionid))
-    end
-end
-
 -- table接口,发送消息给单个玩家
 function tableHandler.sendToOneClient(seat, name, data)
     local userid = seats[seat]
-    data.gameid = gameid
-    data.roomid = roomid
     sendToOneClient(userid, name, data)
 end
 
 -- table接口,发送消息给所有玩家
 function tableHandler.sendToAllClient(name, data)
-    data.gameid = gameid
-    data.roomid = roomid
     sendToAllClient(name, data)
 end
 
 -- 玩家准备就绪
 function XY.gameReady(userid, args)
     local playerStatus = {
-        gameid = gameid,
-        roomid = roomid,
         userid = userid,
         status = 1
     }
