@@ -11,7 +11,7 @@ function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
     local name = "table" .. gameid
     local game = skynet.newservice(name)
-    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid})
+    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
     if not allGames[gameid] then
         allGames[gameid] = {}
     end
@@ -55,13 +55,13 @@ function CMD.onClinetMsg(userid, name, args)
     return ret
 end
 
-function CMD.connectGame(gameid, roomid, userid, client_fd)
+function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
     local game = allGames[gameid][roomid]
     if not game then
         LOG.error("game not found %s %s", gameid, roomid)
         return false
     end
-    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd)
+    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd, agent)
     return ret
 end
 

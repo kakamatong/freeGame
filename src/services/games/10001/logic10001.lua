@@ -93,6 +93,8 @@ function logic.outHand(seatid, args)
             logic.sendOutHandInfo(SEAT_FLAG.SEAT_ALL, seat, tmpflag)
         end
         logic.compare()
+        --test code
+        logic.stopStepGameEnd()
     else
         -- 下发自己的
         logic.sendOutHandInfo(seatid,seatid, flag)
@@ -216,7 +218,8 @@ end
 
 -- 停止游戏结束步骤
 function logic.stopStepGameEnd()
-
+    logic.stepid = GAME_STEP.NONE
+    logic.table.gameEnd()
 end
 
 -- 游戏结束步骤超时

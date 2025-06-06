@@ -12,6 +12,8 @@ local players = {} -- 玩家数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
+local canDestroy = false -- 是否可以销毁
+local agents = {} -- 玩家代理
 local GAME_STATUS = {
     NOT_START = 0,
     START = 1,
@@ -30,6 +32,7 @@ local gameStatus = GAME_STATUS.NOT_START
 local XY = {}
 local reportsessionid = 0
 local tableHandler = {}
+local gameManager
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -156,6 +159,16 @@ local function online(userid)
     end
 end
 
+local function gameEnd()
+    gameStatus = GAME_STATUS.END
+    canDestroy = true
+
+    if canDestroy then
+        --gameManager.destroyGame(gameid, roomid)
+        skynet.send(gameManager, "lua", "destroyGame", gameid, roomid)
+    end
+end
+
 -- table接口,发送消息给单个玩家
 function tableHandler.sendToOneClient(seat, name, data)
     local userid = seats[seat]
@@ -165,6 +178,11 @@ end
 -- table接口,发送消息给所有玩家
 function tableHandler.sendToAllClient(name, data)
     sendToAllClient(name, data)
+end
+
+function tableHandler.gameEnd()
+    gameEnd()
+    --logic.gameEnd()
 end
 
 -- 玩家准备就绪
@@ -203,6 +221,7 @@ function CMD.start(data)
     gameid = data.gameid
     playerids = data.players
     gameData = data.gameData
+    gameManager = data.gameManager
     logic.init(#playerids, gameData.rule, tableHandler)
     skynet.fork(function()
         while true do
@@ -222,11 +241,19 @@ function CMD.onClinetMsg(userid, name, args, response)
 end
 
 -- 连接游戏
-function CMD.connectGame(userid, client_fd)
+function CMD.connectGame(userid, client_fd, agent)
     LOG.info("connectGame %d", userid)
     client_fds[userid] = client_fd
+    agents[userid] = agent
     online(userid)
     return true
+end
+
+function CMD.stop()
+    -- 清理玩家
+    for userid, agent in pairs(agents) do
+        skynet.send(agent, "lua", "leaveGame")
+    end
 end
 
 skynet.start(function()

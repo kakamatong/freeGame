@@ -96,9 +96,9 @@ local function enterMatch(args)
 		return {code = 2, msg ="已经在匹配队列中"}
 	end
 
-	-- if userStatus == CONFIG.USER_STATUS.GAMEING then
-	-- 	return {code = 2, msg ="已经在游戏中"}
-	-- end
+	if userStatus == CONFIG.USER_STATUS.GAMEING then
+		return {code = 2, msg ="已经在游戏中"}
+	end
 
 	local matchServer = skynet.localname(".match")
 	if not matchServer then
@@ -239,7 +239,7 @@ function REQUEST:connectGame(args)
 		LOG.error("gameManager not started")
 		return
 	else
-		local ret = skynet.call(gameServer, "lua", "connectGame", gameid, roomid, userid, client_fd)
+		local ret = skynet.call(gameServer, "lua", "connectGame", gameid, roomid, userid, client_fd, skynet.self())
 		if ret then
 			return {code = 0, msg = "链接游戏成功"}
 		else
@@ -311,6 +311,13 @@ function CMD.enterGame(gamedata)
 	
 	setUserStatus(CONFIG.USER_STATUS.GAMEING, gameid, roomid)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
+end
+
+function CMD.leaveGame()
+	gameid = 0
+	roomid = 0
+	setUserStatus(CONFIG.USER_STATUS.ONLINE)
+	report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE})
 end
 
 -- 内容推送
