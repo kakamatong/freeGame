@@ -317,7 +317,7 @@ function CMD.leaveGame()
 	gameid = 0
 	roomid = 0
 	setUserStatus(CONFIG.USER_STATUS.ONLINE)
-	report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE})
+	report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE, gameid = gameid, roomid = roomid})
 end
 
 -- 内容推送
