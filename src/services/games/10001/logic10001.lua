@@ -33,16 +33,23 @@ local RESULT_TYPE = {
 }
 
 local PLAYER_ATTITUDE = {
-    THINKING = 0,
-    READY = 1,
-    OUT_HAND = 2,
+    THINKING = 0, -- 思考
+    READY = 1, -- 准备
+    OUT_HAND = 2, -- 出招
 }
 
 local STIP_TIME_LEN = {
     [GAME_STEP.START] = 1,
-    [GAME_STEP.OUT_HAND] = 10,
+    [GAME_STEP.OUT_HAND] = 30,
     [GAME_STEP.ROUND_END] = 1,
     [GAME_STEP.GAME_END] = 0,
+}
+
+local SEAT_FLAG = {
+    SEAT_ALL = 0,
+    SEAT_1 = 1,
+    SEAT_2 = 2,
+    SEAT_3 = 3,
 }
 
 local function tableLength(t)
@@ -67,16 +74,28 @@ function logic.startGame()
     logic.startStep(GAME_STEP.START)
 end
 
-function logic.outHand(seatid, flag)
+function logic.outHand(seatid, args)
+    if logic.stepid ~= GAME_STEP.OUT_HAND then
+        return
+    end
+    local flag = args.flag
     LOG.info("outHand %d %d", seatid, flag)
     if not outHandInfo[seatid] then
         outHandInfo[seatid] = flag
     else
         -- 已经出过招
+        outHandInfo[seatid] = flag
     end
 
     if tableLength(outHandInfo) == logic.playerNum then
         -- 比较大小
+        for seat, tmpflag in pairs(outHandInfo) do
+            logic.sendOutHandInfo(SEAT_FLAG.SEAT_ALL, seat, tmpflag)
+        end
+        logic.compare()
+    else
+        -- 下发自己的
+        logic.sendOutHandInfo(seatid,seatid, flag)
     end
 end
 
@@ -105,6 +124,21 @@ function logic.sendPlayerAttitude(seatid, flag)
         seat = seatid,
         att = flag,
     })
+end
+
+function logic.sendOutHandInfo(toseat, seatid, flag)
+    if toseat == SEAT_FLAG.SEAT_ALL then
+        logic.sendToAllClient("reportGameOutHand", {
+            seat = seatid,
+            flag = flag,
+        })
+    else
+        logic.sendToOneClient(toseat, "reportGameOutHand", {
+            seat = seatid,
+            flag = flag,
+        })
+    end
+    
 end
 
 -- 获取当前步骤id

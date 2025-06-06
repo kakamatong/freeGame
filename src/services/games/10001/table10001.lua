@@ -43,6 +43,14 @@ local function startGame()
     LOG.info("game start")
 end
 
+local function getPlayerSeat(userid)
+    for i, id in pairs(seats) do
+        if id == userid then
+            return i
+        end
+    end
+end
+
 -- 测试是否可以开始游戏
 local function testStart()
     LOG.info("testStart")
@@ -167,6 +175,13 @@ function XY.gameReady(userid, args)
     }
 
     sendToAllClient("reportGamePlayerStatus", playerStatus)
+end
+
+function XY.gameOutHand(userid, args)
+    local seat = getPlayerSeat(userid)
+    if seat then
+        logic.outHand(seat, args)
+    end
 end
 
 -- 玩家进入游戏
