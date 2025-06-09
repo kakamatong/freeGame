@@ -89,6 +89,12 @@ reportGameRound 9 {
     }
 }
 
+.ResultInfo {
+    seat 0 : integer
+    outHand 1 : integer
+    endResult 2 : integer
+}
+
 # 下发这一轮游戏结果
 reportGameRoundResult 10 {
     request {
@@ -96,8 +102,8 @@ reportGameRoundResult 10 {
         roomid 1 : integer
         roundNum 2 : integer
         outHandNum 3 : integer
-        type 4 : integer
-        continue 5 : integer
+        continue 4 : integer
+        info 5 : *ResultInfo
     }
 }
 

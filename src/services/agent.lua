@@ -96,9 +96,9 @@ local function enterMatch(args)
 		return {code = 2, msg ="已经在匹配队列中"}
 	end
 
-	if userStatus == CONFIG.USER_STATUS.GAMEING then
-		return {code = 2, msg ="已经在游戏中"}
-	end
+	-- if userStatus == CONFIG.USER_STATUS.GAMEING then
+	-- 	return {code = 2, msg ="已经在游戏中"}
+	-- end
 
 	local matchServer = skynet.localname(".match")
 	if not matchServer then

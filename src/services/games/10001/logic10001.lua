@@ -3,6 +3,7 @@ local outHandInfo = {}
 local roundid = 0
 local roundNum = 0
 local stepBeginTime = 0
+local outHandNum = 0
 logic.stepid = 0
 logic.table = nil
 local GAME_STEP = {
@@ -110,15 +111,45 @@ function logic.compare()
         result = result & flag
     end
 
-    if result == HAND_RESULT.DRAW then
-        -- 平局
-    elseif result == HAND_RESULT.ROCK_WIN then
+    outHandNum = outHandNum + 1
+
+    if result == HAND_RESULT.ROCK_WIN then
         -- 布胜
+        logic.sendResult(HAND_FLAG.ROCK)
     elseif result == HAND_RESULT.PAPER_WIN then
         -- 石头胜
+        logic.sendResult(HAND_FLAG.PAPER)
     elseif result == HAND_RESULT.SCISSORS_WIN then
         -- 剪刀胜
+        logic.sendResult(HAND_FLAG.SCISSORS)
+    else
+        logic.sendResult(0)
     end
+end
+
+function logic.sendResult(result)
+    local playerResult = {}
+    for seatid, flag in pairs(outHandInfo) do
+        local tmp = {}
+        local endflag = 0
+        if flag == result then
+            endflag = 1
+        elseif result == 0 then
+            endflag = 2
+        end
+        tmp.seat = seatid
+        tmp.outHand = flag
+        tmp.endResult = endflag
+        table.insert(playerResult, tmp)
+    end
+    local info = {
+        roundNum = roundNum,
+        outHandNum = outHandNum,
+        continue = 0,
+        info = playerResult,
+    }
+
+    logic.sendToAllClient("reportGameRoundResult", info)
 end
 
 function logic.sendPlayerAttitude(seatid, flag)
@@ -163,6 +194,9 @@ function logic.startStepStartGame()
     logic.sendToAllClient("reportGameStep", {
         stepid = GAME_STEP.START,
     })
+
+    roundNum = roundNum + 1
+    -- 下发roundNum
 end
 
 -- 停止步骤开始游戏
