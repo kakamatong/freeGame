@@ -68,8 +68,23 @@ local function checkStatus()
 		setUserStatus(CONFIG.USER_STATUS.ONLINE)
 		return
 	elseif status.gameid > 0 then
+		-- 检查房间是否存在,不存在则直接设置为在线
+		local gameServer = skynet.localname(".gameManager")
+		if not gameServer then
+			LOG.error("gameManager not started")
+			return
+		end
+
+		local b = skynet.call(gameServer, "lua", "checkHaveRoom", status.gameid, status.roomid)
+		if not b then
+			LOG.error("game not found %d %d", status.gameid, status.roomid)
+			setUserStatus(CONFIG.USER_STATUS.ONLINE, 0, 0)
+			return
+		end
+
 		gameid = status.gameid
 		roomid = status.roomid
+
 		setUserStatus(CONFIG.USER_STATUS.GAMEING)
 		return
 	end
@@ -96,9 +111,9 @@ local function enterMatch(args)
 		return {code = 2, msg ="已经在匹配队列中"}
 	end
 
-	-- if userStatus == CONFIG.USER_STATUS.GAMEING then
-	-- 	return {code = 2, msg ="已经在游戏中"}
-	-- end
+	if userStatus == CONFIG.USER_STATUS.GAMEING then
+		return {code = 2, msg ="已经在游戏中"}
+	end
 
 	local matchServer = skynet.localname(".match")
 	if not matchServer then

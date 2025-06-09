@@ -4,11 +4,12 @@ require "skynet.manager"
 local CMD = {}
 local name = "gameManager"
 local allGames = {}
-local roomid = 0
+local roomid = os.time() * 100000
 
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
+    LOG.info("createGame %d", roomid)
     local name = "table" .. gameid
     local game = skynet.newservice(name)
     skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
@@ -25,6 +26,17 @@ function CMD.destroyGame(gameid, roomid)
     local game = allGames[gameid][roomid]
     skynet.call(game, "lua", "stop")
     allGames[gameid][roomid] = nil
+    return true
+end
+
+-- 检查房间是否存在
+function CMD.checkHaveRoom(gameid, roomid)
+    if not allGames[gameid] then
+        return false
+    end
+    if not allGames[gameid][roomid] then
+        return false
+    end
     return true
 end
 
