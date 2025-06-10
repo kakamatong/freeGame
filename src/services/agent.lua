@@ -236,8 +236,8 @@ function REQUEST:match(args)
 end
 
 -- 认证请求处理
-function REQUEST:auth(args)
-	LOG.info("auth username %s, password %s", args.userid, args.password)
+function REQUEST:login(args)
+	LOG.info("login username %s, password %s", args.userid, args.password)
 	local db =getDB()
 	local authInfo = skynet.call(db, "lua", "func", "getAuth", args.userid)
 	if not authInfo then
@@ -284,7 +284,7 @@ end
 -- 客户端请求分发
 local function request(name, args, response)
 	--LOG.info("request %s", name)
-	if not bAuth and name ~= "auth" then
+	if not bAuth and name ~= "login" then
 		return 
 	end
 	if args.roomid  and args.roomid > 0 then
