@@ -26,10 +26,10 @@ skynet.start(function()
 	skynet.call(dbserver, "lua", "cmd", "start")
 	--skynet.newservice("simpledb")
 	-- 启动WebSocket登录服务
-	local loginservice = skynet.newservice("wslogind")
+	local loginservice = skynet.newservice("wsAuthd")
 
 	-- 启动WebSocket网关服务器
-	local wswatchdog = skynet.newservice("wswatchdog")
+	local wswatchdog = skynet.newservice("wsWatchdog")
 	local addr,port = skynet.call(wswatchdog, "lua", "start", {
 		address = "0.0.0.0",
 		port = 9002,

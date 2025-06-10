@@ -1,6 +1,6 @@
--- wslogind.lua
+-- wsAuthd.lua
 -- WebSocket 登录服务，负责处理用户登录、认证和网关注册
-local login = require "wsloginserver"
+local auth = require "wsAuthserver"
 local crypt = require "skynet.crypt"
 local skynet = require "skynet"
 
@@ -9,7 +9,7 @@ local server = {
 	host = "0.0.0.0",           -- 监听地址
 	port = 8002,                -- 监听端口
 	multilogin = false,         -- 是否允许多端登录
-	name = "ws_login_master",  -- 服务名
+	name = "ws_auth_master",  -- 服务名
 }
 
 local server_list = {}    -- 注册的网关服务器列表
@@ -41,7 +41,7 @@ function server.auth_handler(token)
 end
 
 -- 登录处理函数，分配subid
-function server.login_handler(server, userid, secret, loginType)
+function server.auth_after_handler(server, userid, secret, loginType)
 	LOG.info("111")
 	LOG.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local gameserver = assert(server_list[server], "Unknown server")
@@ -82,4 +82,4 @@ function server.command_handler(command, ...)
 end
 
 -- 启动WebSocket登录服务
-login(server)
+auth(server)

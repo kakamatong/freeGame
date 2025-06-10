@@ -63,5 +63,5 @@ skynet.start(function()
 		end
 	end)
 
-	gate = skynet.newservice("wsgate")
+	gate = skynet.newservice("wsGate")
 end)

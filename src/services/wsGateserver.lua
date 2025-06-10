@@ -1,10 +1,10 @@
--- wsgateserver.lua
+-- wsGateserver.lua
 -- WebSocket 网关服务器底层实现，负责监听端口、管理连接和消息转发
 local skynet = require "skynet"
 local netpack = require "skynet.netpack"
 local websocket = require "http.websocket"
 require "skynet.manager"
-local wsgateserver = {}
+local wsGateserver = {}
 
 local socket = require "skynet.socket"
 local queue -- 消息队列
@@ -13,19 +13,19 @@ local client_number = 0 -- 当前客户端连接数
 -- 命令表，带有垃圾回收功能
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local nodelay = false -- 是否启用无延迟模式
-local name = "wsgateserver"
+local name = "wsGateserver"
 local connection = {} -- 连接状态表
 -- true : 已连接
 -- nil : 已关闭
 -- false : 关闭读取
 
 -- 打开客户端连接，记录连接信息
-function wsgateserver.openclient(fd)
+function wsGateserver.openclient(fd)
 	connection[fd] = {}
 end
 
 -- 关闭客户端连接，释放资源
-function wsgateserver.closeclient(fd)
+function wsGateserver.closeclient(fd)
 	local c = connection[fd]
 	if c ~= nil then
 		connection[fd] = nil
@@ -34,7 +34,7 @@ function wsgateserver.closeclient(fd)
 end
 
 -- 启动网关服务器，监听端口并处理连接
-function wsgateserver.start(handler)
+function wsGateserver.start(handler)
 	assert(handler.message) -- 确保有消息处理函数
 	assert(handler.connect) -- 确保有连接处理函数
 
@@ -79,4 +79,4 @@ function wsgateserver.start(handler)
 	skynet.start(init)
 end
 
-return wsgateserver
+return wsGateserver

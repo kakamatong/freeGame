@@ -12,7 +12,7 @@ auth 1 {
         password 2 : string
         device 3 : string
         version 4 : string
-        channel 5 : integer
+        channel 5 : string
         subid 6 : integer
     }
     response {

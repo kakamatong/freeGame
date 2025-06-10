@@ -1,4 +1,4 @@
--- wsloginserver.lua
+-- wsAuthserver.lua
 -- WebSocket 登录认证底层实现，负责加密握手、token校验和连接管理
 local skynet = require "skynet"
 local websocket = require "http.websocket"
@@ -11,12 +11,12 @@ local function ws_auth(fd)
     -- 生成挑战字符串，防止重放攻击
     local challenge = crypt.randomkey()
     local challenge_b64 = crypt.base64encode(challenge)
-    LOG.info("login challenge_b64 %s", challenge_b64)
+    LOG.info("auth challenge_b64 %s", challenge_b64)
     websocket.write(fd, challenge_b64, "binary")
 
     -- 读取客户端密钥
     local client_key = websocket.read(fd)
-    LOG.info("login client_key_b64 %s", client_key)
+    LOG.info("auth client_key_b64 %s", client_key)
     client_key = crypt.base64decode(client_key)
     if #client_key ~= 8 then
         LOG.info("Invalid client key length")
@@ -26,7 +26,7 @@ local function ws_auth(fd)
     local server_key = crypt.randomkey()
     local server_key_dh = crypt.dhexchange(server_key)
     local server_key_b64 = crypt.base64encode(server_key_dh)
-    LOG.info("login server_key_b64 %s", server_key_b64)
+    LOG.info("auth server_key_b64 %s", server_key_b64)
     websocket.write(fd, server_key_b64, "binary")
 
     -- 计算共享密钥
@@ -63,7 +63,7 @@ local function handle_ws_connection(fd, addr, conf)
         return
     end
     -- 调用登录逻辑
-    local ok, subid = pcall(conf.login_handler, srv, uid, secret, loginType)
+    local ok, subid = pcall(conf.auth_after_handler, srv, uid, secret, loginType)
     if not ok then
         websocket.write(fd, "406 Not Acceptable", "binary")
         websocket.close(fd)
@@ -76,8 +76,8 @@ local function handle_ws_connection(fd, addr, conf)
 end
 
 -- 启动WebSocket登录服务，监听端口并处理连接
-local function login(conf)
-    assert(conf.login_handler)
+local function auth(conf)
+    assert(conf.auth_handler)
 	assert(conf.command_handler)
     assert(conf.host)
     assert(conf.port)
@@ -119,4 +119,4 @@ local function login(conf)
     end) 
 end
 
-return login
+return auth

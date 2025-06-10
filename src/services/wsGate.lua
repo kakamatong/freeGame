@@ -1,5 +1,5 @@
 local skynet = require "skynet"
-local wsgateserver = require "wsgateserver"
+local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
@@ -12,7 +12,7 @@ skynet.register_protocol {
 
 local function register_handler(name)
 	LOG.info("wsgate register_handler")
-	local loginservice = skynet.localname(".ws_login_master")
+	local loginservice = skynet.localname(".ws_auth_master")
 	if loginservice then
 		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
 	else
@@ -62,7 +62,7 @@ function handler.handshake(fd, header, url)
 	}
 	connection[fd] = c
 	skynet.send(watchdog, "lua", "socket", "open", fd, addr)
-	wsgateserver.openclient(fd)
+	wsGateserver.openclient(fd)
 end
 
 local function unforward(c)
@@ -81,7 +81,7 @@ end
 local function kickByUserid(userid)
 	local c = logins[userid]
 	if c then
-		wsgateserver.closeclient(c.fd)
+		wsGateserver.closeclient(c.fd)
 	end
 end
 
@@ -124,12 +124,12 @@ end
 function CMD.accept(source, fd)
 	local c = assert(connection[fd])
 	unforward(c)
-	wsgateserver.openclient(fd)
+	wsGateserver.openclient(fd)
 end
 
 function CMD.kick(source, fd)
 	LOG.info("wsgate kick")
-	wsgateserver.closeclient(fd)
+	wsGateserver.closeclient(fd)
 end
 
 function CMD.authSuccess(source,userid, fd)
@@ -157,4 +157,4 @@ function handler.command(cmd, source, ...)
 	return f(source, ...)
 end
 
-wsgateserver.start(handler)
+wsGateserver.start(handler)

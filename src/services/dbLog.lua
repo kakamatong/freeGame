@@ -33,4 +33,31 @@ function dbLog.insertLoginLog(mysqlLog, ...)
     return true
 end
 
+-- CREATE TABLE `logAuth` (
+--   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+--   `username` varchar(128) NOT NULL,
+--   `ip` varchar(50) DEFAULT NULL,
+--   `loginType` varchar(32) DEFAULT NULL COMMENT 'auth类型（渠道）',
+--   `status` tinyint(1) DEFAULT NULL COMMENT 'auth状态(0失败 1成功)',
+--   `ext` varchar(256) DEFAULT NULL COMMENT '扩展数据',
+--   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+--   PRIMARY KEY (`id`),
+--   KEY `idx_user_id` (`username`),
+--   KEY `idx_status` (`status`),
+--   KEY `idx_loginType` (`loginType`),
+--   KEY `idx_create_time` (`create_time`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='认证日志表';
+
+function dbLog.insertAuthLog(mysqlLog, ...)
+    local username, ip, loginType, status, ext = ...
+    local sql = string.format("INSERT INTO logAuth (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
+    local res, err = mysqlLog:query(sql)
+    LOG.info(UTILS.tableToString(res))
+    if not res then
+        LOG.error("insert logAuth error: %s", err)
+        return false
+    end
+    return true
+end
+
 return dbLog
