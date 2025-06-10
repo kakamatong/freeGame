@@ -56,7 +56,7 @@ local function handle_ws_connection(fd, addr, conf)
         return
     end
     -- 调用认证逻辑
-    local ok, srv, uid, loginType = pcall(conf.auth_handler, token)
+    local ok, srv, uid, loginType = pcall(conf.auth_handler, token, addr)
     if not ok then
         websocket.write(fd, "403 Forbidden", "binary")
         websocket.close(fd)

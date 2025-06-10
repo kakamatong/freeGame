@@ -19,8 +19,17 @@ local login_type = {
 	account = true,           -- 允许的登录类型
 }
 
+local function pushLog(username, ip, loginType, status, ext)
+	local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		LOG.error("wsgate auth error: dbserver not started")
+		return
+	end
+	skynet.send(dbserver, "lua", "funcLog", "insertAuthLog", username, ip, loginType, status, ext)
+end
+
 -- 认证处理函数，校验token并返回用户信息
-function server.auth_handler(token)
+function server.auth_handler(token, addr)
 	-- token格式：base64(user)@base64(server):base64(password)#base64(loginType)
 	local user, server, password, loginType = token:match("([^@]+)@([^:]+):([^#]+)#(.+)")
 	user = crypt.base64decode(user)
@@ -36,13 +45,26 @@ function server.auth_handler(token)
 	end
 	-- 校验用户名和密码
 	local userInfo = skynet.call(dbserver, "lua", "func", "login", user,password,loginType)
+	-- 抛送日志
+	local status = 0
+	if userInfo then
+		status = 1
+	end
+	local ip = ""
+	if addr then
+		ip = addr:match("^%d+%.%d+%.%d+%.%d+")
+		if not ip then
+			ip = '0.0.0.0'
+		end
+	end
+	pushLog(user, ip, loginType, status, token)
+
 	assert(userInfo, "account or password error")
 	return server, userInfo.userid, loginType
 end
 
 -- 登录处理函数，分配subid
 function server.auth_after_handler(server, userid, secret, loginType)
-	LOG.info("111")
 	LOG.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local gameserver = assert(server_list[server], "Unknown server")
 	-- 只允许一个用户在线
