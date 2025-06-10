@@ -24,8 +24,8 @@ end
 -- 销毁游戏
 function CMD.destroyGame(gameid, roomid)
     local game = allGames[gameid][roomid]
-    skynet.call(game, "lua", "stop")
     allGames[gameid][roomid] = nil
+    skynet.send(game, "lua", "stop")
     return true
 end
 
@@ -37,6 +37,7 @@ function CMD.checkHaveRoom(gameid, roomid)
     if not allGames[gameid][roomid] then
         return false
     end
+
     return true
 end
 
