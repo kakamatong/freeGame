@@ -11,7 +11,7 @@ local agent = {}
 function SOCKET.open(fd, addr)
 	LOG.info("New client from : " .. addr)
 	agent[fd] = skynet.newservice("agent")
-	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self() })
+	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self(), addr = addr })
 end
 
 -- 关闭指定fd的agent服务

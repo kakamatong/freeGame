@@ -22,6 +22,17 @@ local reportsessionid = 0
 local gameid = 0
 local roomid = 0
 local userData = nil
+local addr = ''
+local ip =''
+
+local function pushLog(userid, nickname, ip, loginType, status, ext)
+	local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		LOG.error("wsgate login error: dbserver not started")
+		return
+	end
+	skynet.send(dbserver, "lua", "funcLog", "insertLoginLog", userid, nickname, ip, loginType, status, ext)
+end
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -230,14 +241,21 @@ function REQUEST:auth(args)
 	local db =getDB()
 	local authInfo = skynet.call(db, "lua", "func", "getAuth", args.userid)
 	if not authInfo then
+		pushLog(args.userid, '', ip, args.channel, 0, 'acc failed')
 		return {code = 1, msg = "acc failed"}
 	end
+
 	if authInfo.secret ~= args.password then
+		pushLog(args.userid, '', ip, args.channel, 0, 'pass failed')
 		return {code = 2, msg = "pass failed"}
 	end
+
 	if authInfo.subid ~= args.subid then
+		pushLog(args.userid, '', ip, args.channel, 0, 'subid failed')
 		return {code = 3, msg = "subid failed"}
 	end
+	pushLog(args.userid, '', ip, args.channel, 1, 'success')
+
 	skynet.call(db, "lua", "func", "addSubid", args.userid, authInfo.subid + 1)
 	bAuth = true
 	userid = args.userid
@@ -347,6 +365,11 @@ function CMD.start(conf)
 	gate = conf.gate
 	WATCHDOG = conf.watchdog
 	client_fd = fd
+	addr = conf.addr
+	ip = addr:match("^%d+%.%d+%.%d+%.%d+")
+	if not ip then
+		ip = '0.0.0.0'
+	end
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
 	leftTime = os.time()
