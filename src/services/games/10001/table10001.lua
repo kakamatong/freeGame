@@ -254,6 +254,7 @@ function CMD.stop()
     for userid, agent in pairs(agents) do
         skynet.send(agent, "lua", "leaveGame")
     end
+    skynet.exit()
 end
 
 skynet.start(function()
@@ -264,5 +265,5 @@ skynet.start(function()
         end
     end)
     host = sprotoloader.load(1):host "package"
-    gate = skynet.localname(".wsgateserver")
+    gate = skynet.localname(".wsGateserver")
 end)
