@@ -13,6 +13,7 @@ skynet.start(function()
 		local console = skynet.newservice("console")
 	end
 	-- 启动调试控制台，监听8000端口
+	--skynet.newservice("debug_console","0.0.0.0",8000)
 	skynet.newservice("debug_console",8000)
 
 	skynet.newservice("gameManager")

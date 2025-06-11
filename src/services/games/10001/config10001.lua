@@ -1,6 +1,6 @@
 local config = {
     WAITTING_CONNECT_TIME = 8, -- 等待连接时间
-    GAME_TIME = 10, -- 游戏时间
+    GAME_TIME = 900, -- 游戏时间
     GAME_STATUS = { -- 游戏状态
         NONE = 0,
         WAITTING_CONNECT = 1,
