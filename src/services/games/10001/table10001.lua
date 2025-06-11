@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local config = require "config10001"
 require "skynet.manager"
 local logic = require "logic10001"
 local sprotoloader = require "sprotoloader"
@@ -14,23 +15,13 @@ local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
 local canDestroy = false -- 是否可以销毁
 local agents = {} -- 玩家代理
-local GAME_STATUS = {
-    NOT_START = 0,
-    START = 1,
-    END = 2
-}
-
-local PLAYER_STATUS = {
-    LOADING = 1,
-    DISCONNECT = 2,
-    PLAYING = 3,
-}
-
+local createTableTime = 0
 local host
 local gate
-local gameStatus = GAME_STATUS.NOT_START
+local gameStatus = config.GAME_STATUS.NONE
 local XY = {}
 local reportsessionid = 0
+local gameStartTime = 0
 local tableHandler = {}
 local gameManager
 -- 更新玩家状态
@@ -41,7 +32,8 @@ local gameManager
 
 -- 开始游戏
 local function startGame()
-    gameStatus = GAME_STATUS.START
+    gameStatus = config.GAME_STATUS.START
+    gameStartTime = os.time()
     logic.startGame()
     LOG.info("game start")
 end
@@ -76,7 +68,7 @@ end
 
 -- 发送消息
 local function send_package(client_fd, pack)
-    skynet.call(gate, "lua", "send", client_fd, pack)
+    skynet.send(gate, "lua", "send", client_fd, pack)
 end
 
 -- 发送消息给单个玩家
@@ -115,9 +107,9 @@ end
 -- ext 11 : string
 local function reportPlayerInfo(userid, playerid)
     local player = players[playerid]
-    local status = PLAYER_STATUS.PLAYING
+    local status = config.PLAYER_STATUS.PLAYING
     if not onlines[playerid] then
-        status = PLAYER_STATUS.LOADING
+        status = config.PLAYER_STATUS.LOADING
     end
     local seat = 0
     for i, id in pairs(seats) do
@@ -152,7 +144,7 @@ local function online(userid)
             end
         end
 
-        if gameStatus == GAME_STATUS.NOT_START then
+        if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
             --gameStatus = gameStatus.START
             testStart()
         end
@@ -160,12 +152,28 @@ local function online(userid)
 end
 
 local function gameEnd()
-    gameStatus = GAME_STATUS.END
+    gameStatus = config.GAME_STATUS.END
     canDestroy = true
 
     if canDestroy then
         --gameManager.destroyGame(gameid, roomid)
         skynet.send(gameManager, "lua", "destroyGame", gameid, roomid)
+    end
+end
+
+-- 检查桌子状态，如果超时，则销毁桌子
+local function checkTableStatus()
+    if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        local timeNow = os.time()
+        if timeNow - createTableTime > config.WAITTING_CONNECT_TIME then
+            --testStart()
+            gameEnd()
+        end
+    elseif gameStatus == config.GAME_STATUS.START then
+        local timeNow = os.time()
+        if timeNow - gameStartTime > config.GAME_TIME then
+            gameEnd()
+        end
     end
 end
 
@@ -223,12 +231,15 @@ function CMD.start(data)
     gameData = data.gameData
     gameManager = data.gameManager
     logic.init(#playerids, gameData.rule, tableHandler)
+    createTableTime = os.time()
     skynet.fork(function()
         while true do
             skynet.sleep(100)
             logic.update()
+            checkTableStatus()
         end
     end)
+    gameStatus = config.GAME_STATUS.WAITTING_CONNECT
 end
 
 -- 客户端消息处理

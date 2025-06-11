@@ -118,6 +118,10 @@ function CMD.forward(source, fd, client, address)
 end
 
 function CMD.send(source, fd, msg)
+	if not connection[fd] then
+		LOG.info("wsgate send error: fd not found")
+		return
+	end
 	websocket.write(fd, msg, "binary")
 end
 

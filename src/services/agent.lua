@@ -71,6 +71,22 @@ local function setUserStatus(status, gameid, roomid)
 	skynet.call(db, "lua", "func", "setUserStatus", userid, status, gameid, roomid)
 end
 
+local function checkInGame(tmpGameid, tmpRoomid)
+	local gameServer = skynet.localname(".gameManager")
+	if not gameServer then
+		LOG.error("gameManager not started")
+		return
+	end
+
+	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
+	if not b then
+		LOG.error("game not found %d %d", tmpGameid, tmpRoomid)
+		return
+	end
+
+	return true
+end
+
 -- 检查并同步用户状态
 local function checkStatus()
 	local db = getDB()
@@ -80,16 +96,10 @@ local function checkStatus()
 		return
 	elseif status.gameid > 0 then
 		-- 检查房间是否存在,不存在则直接设置为在线
-		local gameServer = skynet.localname(".gameManager")
-		if not gameServer then
-			LOG.error("gameManager not started")
-			return
-		end
-
-		local b = skynet.call(gameServer, "lua", "checkHaveRoom", status.gameid, status.roomid)
+		
+		local b = checkInGame(status.gameid, status.roomid)
 		if not b then
-			LOG.error("game not found %d %d", status.gameid, status.roomid)
-			setUserStatus(CONFIG.USER_STATUS.ONLINE, 0, 0)
+			setUserStatus(CONFIG.USER_STATUS.ONLINE)
 			return
 		end
 
@@ -118,11 +128,11 @@ end
 
 -- 进入匹配队列
 local function enterMatch(args)
-	if userStatus == CONFIG.USER_STATUS.MATCHING then
-		return {code = 2, msg ="已经在匹配队列中"}
-	end
+	-- if userStatus == CONFIG.USER_STATUS.MATCHING then
+	-- 	return {code = 2, msg ="已经在匹配队列中"}
+	-- end
 
-	if userStatus == CONFIG.USER_STATUS.GAMEING then
+	if userStatus == CONFIG.USER_STATUS.GAMEING and checkInGame(gameid, roomid) then
 		return {code = 2, msg ="已经在游戏中"}
 	end
 
@@ -347,9 +357,10 @@ function CMD.enterGame(gamedata)
 end
 
 function CMD.leaveGame()
+	LOG.info("leaveGame")
 	gameid = 0
 	roomid = 0
-	setUserStatus(CONFIG.USER_STATUS.ONLINE)
+	setUserStatus(CONFIG.USER_STATUS.ONLINE, gameid, roomid)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE, gameid = gameid, roomid = roomid})
 end
 
