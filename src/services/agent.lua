@@ -23,7 +23,7 @@ local gameid = 0
 local roomid = 0
 local userData = nil
 local addr = ''
-local ip =''
+local ip ="0.0.0.0"
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".dbserver")
@@ -377,9 +377,8 @@ function CMD.start(conf)
 	WATCHDOG = conf.watchdog
 	client_fd = fd
 	addr = conf.addr
-	ip = addr:match("^%d+%.%d+%.%d+%.%d+")
-	if not ip then
-		ip = '0.0.0.0'
+	if conf.ip then
+		ip = conf.ip
 	end
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"

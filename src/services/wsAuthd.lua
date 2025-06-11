@@ -29,7 +29,7 @@ local function pushLog(username, ip, loginType, status, ext)
 end
 
 -- 认证处理函数，校验token并返回用户信息
-function server.auth_handler(token, addr)
+function server.auth_handler(token, ip)
 	-- token格式：base64(user)@base64(server):base64(password)#base64(loginType)
 	local user, server, password, loginType = token:match("([^@]+)@([^:]+):([^#]+)#(.+)")
 	user = crypt.base64decode(user)
@@ -50,14 +50,8 @@ function server.auth_handler(token, addr)
 	if userInfo then
 		status = 1
 	end
-	local ip = ""
-	if addr then
-		ip = addr:match("^%d+%.%d+%.%d+%.%d+")
-		if not ip then
-			ip = '0.0.0.0'
-		end
-	end
-	pushLog(user, ip, loginType, status, token)
+
+	pushLog(user, ip or "0.0.0.0", loginType, status, token)
 
 	assert(userInfo, "account or password error")
 	return server, userInfo.userid, loginType

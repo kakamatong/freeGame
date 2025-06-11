@@ -48,7 +48,7 @@ local function ws_auth(fd)
 end
 
 -- WebSocket连接处理器，负责整个登录流程
-local function handle_ws_connection(fd, addr, conf)
+local function handle_ws_connection(fd, addr, ip, conf)
     local ok, token, secret = pcall(ws_auth, fd)
     if not ok then
         websocket.write(fd, "401 Unauthorized", "binary")
@@ -56,7 +56,7 @@ local function handle_ws_connection(fd, addr, conf)
         return
     end
     -- 调用认证逻辑
-    local ok, srv, uid, loginType = pcall(conf.auth_handler, token, addr)
+    local ok, srv, uid, loginType = pcall(conf.auth_handler, token, ip)
     if not ok then
         websocket.write(fd, "403 Forbidden", "binary")
         websocket.close(fd)
@@ -93,7 +93,8 @@ local function auth(conf)
             local ok, err = websocket.accept(fd, {
                 handshake = function(fd, header, url)
                     LOG.info("login handshake %s",url)
-                    pcall(handle_ws_connection, fd, addr, conf)
+                    local ip = websocket.real_ip(fd)
+                    pcall(handle_ws_connection, fd, addr, ip, conf)
                     return true  -- 接受所有连接
                 end,
                 connect = function(fd)

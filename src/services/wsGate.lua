@@ -53,15 +53,16 @@ end
 function handler.handshake(fd, header, url)
 	local addr = websocket.addrinfo(fd)
 	LOG.info("wsgate handshake from: %s, url %s, addr %s" ,tostring(fd), url, addr)
-
+	local ip = websocket.real_ip(fd)
 	local c = {
 		fd = fd,
-		ip = addr,
+		addr = addr,
 		url = url,
 		header = header,
+		ip = ip,
 	}
 	connection[fd] = c
-	skynet.send(watchdog, "lua", "socket", "open", fd, addr)
+	skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip)
 	wsGateserver.openclient(fd)
 end
 
