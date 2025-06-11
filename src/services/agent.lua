@@ -133,7 +133,7 @@ local function enterMatch(args)
 	-- end
 
 	if userStatus == CONFIG.USER_STATUS.GAMEING and checkInGame(gameid, roomid) then
-		return {code = 2, msg ="已经在游戏中"}
+		return {code = 3, msg ="已经在游戏中", gameid = gameid, roomid = roomid}
 	end
 
 	local matchServer = skynet.localname(".match")

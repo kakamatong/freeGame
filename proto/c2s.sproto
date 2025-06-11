@@ -91,6 +91,8 @@ match 7 {
     response {
         code 0 : integer
         msg 1 : string
+        gameid 2 : integer
+        roomid 3 : integer
     }
 }
 
