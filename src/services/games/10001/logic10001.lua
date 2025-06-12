@@ -6,52 +6,7 @@ local stepBeginTime = 0
 local outHandNum = 0
 logic.stepid = 0
 logic.table = nil
-local GAME_STEP = {
-    NONE = 0,
-    START = 1,
-    OUT_HAND = 2,
-    ROUND_END = 3,
-    GAME_END = 4,
-}
-
-local HAND_FLAG = {
-    ROCK = 0x0001, -- 石头
-    PAPER = 0x0010, -- 剪刀
-    SCISSORS = 0x0100, -- 布
-}
-
-local HAND_RESULT = {
-    DRAW = 0x0000, -- 平局
-    ROCK_WIN = 0x0101, -- 石头胜
-    PAPER_WIN = 0x0011, -- 剪刀胜
-    SCISSORS_WIN = 0x0110, -- 布胜
-}
-
-local RESULT_TYPE = {
-    DRAW = 0,
-    WIN = 1,
-    LOSE = 2,
-}
-
-local PLAYER_ATTITUDE = {
-    THINKING = 0, -- 思考
-    READY = 1, -- 准备
-    OUT_HAND = 2, -- 出招
-}
-
-local STIP_TIME_LEN = {
-    [GAME_STEP.START] = 1,
-    [GAME_STEP.OUT_HAND] = 30,
-    [GAME_STEP.ROUND_END] = 1,
-    [GAME_STEP.GAME_END] = 0,
-}
-
-local SEAT_FLAG = {
-    SEAT_ALL = 0,
-    SEAT_1 = 1,
-    SEAT_2 = 2,
-    SEAT_3 = 3,
-}
+local config = require("configLogic10001")
 
 local function tableLength(t)
     local count = 0
@@ -72,11 +27,11 @@ end
 
 function logic.startGame()
     LOG.info("startGame")
-    logic.startStep(GAME_STEP.START)
+    logic.startStep(config.GAME_STEP.START)
 end
 
 function logic.outHand(seatid, args)
-    if logic.stepid ~= GAME_STEP.OUT_HAND then
+    if logic.stepid ~= config.GAME_STEP.OUT_HAND then
         return
     end
     local flag = args.flag
@@ -91,7 +46,7 @@ function logic.outHand(seatid, args)
     if tableLength(outHandInfo) == logic.playerNum then
         -- 比较大小
         for seat, tmpflag in pairs(outHandInfo) do
-            logic.sendOutHandInfo(SEAT_FLAG.SEAT_ALL, seat, tmpflag)
+            logic.sendOutHandInfo(config.SEAT_FLAG.SEAT_ALL, seat, tmpflag)
         end
         logic.compare()
         --test code
@@ -113,15 +68,15 @@ function logic.compare()
 
     outHandNum = outHandNum + 1
 
-    if result == HAND_RESULT.ROCK_WIN then
+    if result == config.HAND_RESULT.ROCK_WIN then
         -- 布胜
-        logic.sendResult(HAND_FLAG.ROCK)
-    elseif result == HAND_RESULT.PAPER_WIN then
+        logic.sendResult(config.HAND_FLAG.ROCK)
+    elseif result == config.HAND_RESULT.PAPER_WIN then
         -- 石头胜
-        logic.sendResult(HAND_FLAG.PAPER)
-    elseif result == HAND_RESULT.SCISSORS_WIN then
+        logic.sendResult(config.HAND_FLAG.PAPER)
+    elseif result == config.HAND_RESULT.SCISSORS_WIN then
         -- 剪刀胜
-        logic.sendResult(HAND_FLAG.SCISSORS)
+        logic.sendResult(config.HAND_FLAG.SCISSORS)
     else
         logic.sendResult(0)
     end
@@ -160,7 +115,7 @@ function logic.sendPlayerAttitude(seatid, flag)
 end
 
 function logic.sendOutHandInfo(toseat, seatid, flag)
-    if toseat == SEAT_FLAG.SEAT_ALL then
+    if toseat == config.SEAT_FLAG.SEAT_ALL then
         logic.sendToAllClient("reportGameOutHand", {
             seat = seatid,
             flag = flag,
@@ -186,13 +141,13 @@ end
 
 -- 获取当前步骤时间长度
 function logic.getStepTimeLen(stepid)
-    return STIP_TIME_LEN[stepid] or 0
+    return config.STIP_TIME_LEN[stepid] or 0
 end
 
 -- 开始步骤开始游戏
 function logic.startStepStartGame()
     logic.sendToAllClient("reportGameStep", {
-        stepid = GAME_STEP.START,
+        stepid = config.GAME_STEP.START,
     })
 
     roundNum = roundNum + 1
@@ -201,22 +156,22 @@ end
 
 -- 停止步骤开始游戏
 function logic.stopStepStartGame()
-    logic.startStep(GAME_STEP.OUT_HAND)
+    logic.startStep(config.GAME_STEP.OUT_HAND)
 end
 
 -- 步骤开始游戏超时
 function logic.onStepStartGameTimeout()
-    logic.stopStep(GAME_STEP.START)
+    logic.stopStep(config.GAME_STEP.START)
 end
 
 -- 开始步骤出招
 function logic.startStepOutHand()
     logic.sendToAllClient("reportGameStep", {
-        stepid = GAME_STEP.OUT_HAND,
+        stepid = config.GAME_STEP.OUT_HAND,
     })
 
     for i = 1, logic.playerNum do
-        logic.sendPlayerAttitude(i, PLAYER_ATTITUDE.THINKING)
+        logic.sendPlayerAttitude(i, config.PLAYER_ATTITUDE.THINKING)
     end
 end
 
@@ -252,7 +207,7 @@ end
 
 -- 停止游戏结束步骤
 function logic.stopStepGameEnd()
-    logic.stepid = GAME_STEP.NONE
+    logic.stepid = config.GAME_STEP.NONE
     logic.table.gameEnd()
 end
 
@@ -266,13 +221,13 @@ function logic.startStep(stepid)
     LOG.info("startStep %d", stepid)
     logic.setStepBeginTime()
     logic.stepid = stepid
-    if stepid == GAME_STEP.START then
+    if stepid == config.GAME_STEP.START then
         logic.startStepStartGame()
-    elseif stepid == GAME_STEP.OUT_HAND then
+    elseif stepid == config.GAME_STEP.OUT_HAND then
         logic.startStepOutHand()
-    elseif stepid == GAME_STEP.ROUND_END then
+    elseif stepid == config.GAME_STEP.ROUND_END then
         logic.startStepRoundEnd()
-    elseif stepid == GAME_STEP.GAME_END then
+    elseif stepid == config.GAME_STEP.GAME_END then
         logic.startStepGameEnd()
     end
 end
@@ -280,13 +235,13 @@ end
 -- 停止步骤
 function logic.stopStep(stepid)
     LOG.info("stopStep %d", stepid)
-    if stepid == GAME_STEP.START then
+    if stepid == config.GAME_STEP.START then
         logic.stopStepStartGame()
-    elseif stepid == GAME_STEP.OUT_HAND then
+    elseif stepid == config.GAME_STEP.OUT_HAND then
         logic.stopStepOutHand()
-    elseif stepid == GAME_STEP.ROUND_END then
+    elseif stepid == config.GAME_STEP.ROUND_END then
         logic.stopStepRoundEnd()
-    elseif stepid == GAME_STEP.GAME_END then
+    elseif stepid == config.GAME_STEP.GAME_END then
         logic.stopStepGameEnd()
     end
 end
@@ -294,13 +249,13 @@ end
 -- 步骤超时
 function logic.onStepTimeout(stepid)
     LOG.info("onStepTimeout %d", stepid)
-    if stepid == GAME_STEP.START then
+    if stepid == config.GAME_STEP.START then
         logic.onStepStartGameTimeout()
-    elseif stepid == GAME_STEP.OUT_HAND then
+    elseif stepid == config.GAME_STEP.OUT_HAND then
         logic.onStepOutHandTimeout()
-    elseif stepid == GAME_STEP.ROUND_END then
+    elseif stepid == config.GAME_STEP.ROUND_END then
         logic.onStepRoundEndTimeout()
-    elseif stepid == GAME_STEP.GAME_END then
+    elseif stepid == config.GAME_STEP.GAME_END then
         logic.onStepGameEndTimeout()
     end
 end
@@ -309,7 +264,7 @@ end
 function logic.update()
     --LOG.info("update")
     local stepid = logic.getStepId()
-    if stepid == GAME_STEP.NONE then
+    if stepid == config.GAME_STEP.NONE then
         return
     end
     local currentTime = os.time()
