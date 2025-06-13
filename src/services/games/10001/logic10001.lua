@@ -5,8 +5,10 @@ local roundNum = 0
 local stepBeginTime = 0
 local outHandNum = 0
 logic.stepid = 0
-logic.table = nil
+logic.tableHandler = nil
 local config = require("configLogic10001")
+
+local logicHandler = {}
 
 local function tableLength(t)
     local count = 0
@@ -16,9 +18,9 @@ local function tableLength(t)
     return count
 end
 
-function logic.init(playerNum, rule, table)
+function logic.init(playerNum, rule, tableHandler)
     logic.playerNum = playerNum
-    logic.table = table
+    logic.tableHandler = tableHandler
 end
 
 function logic.setPlayerNum(playerNum)
@@ -218,7 +220,7 @@ end
 -- 停止游戏结束步骤
 function logic.stopStepGameEnd()
     logic.stepid = config.GAME_STEP.NONE
-    logic.table.gameEnd()
+    logic.tableHandler.gameEnd()
 end
 
 -- 游戏结束步骤超时
@@ -327,21 +329,43 @@ end
 
 -- 发送消息给所有玩家
 function logic.sendToAllClient(name, data)
-    if logic.table then
-        logic.table.sendToAllClient(name, data)
+    if logic.tableHandler then
+        logic.tableHandler.sendToAllClient(name, data)
     end
 end
 
 -- 发送消息给单个玩家
 function logic.sendToOneClient(seat, name, data)
-    if logic.table then
-        logic.table.sendToOneClient(seat, name, data)
+    if logic.tableHandler then
+        logic.tableHandler.sendToOneClient(seat, name, data)
     end
 end
 
-function logic.relink(seat)
-    LOG.info("relink %d", seat)
+------------------------------------------------------------------------------------------------------------
+-- 游戏逻辑接口提供给table调用
+-- 重新连接
+function logicHandler.relink(seat)
     logic.onRelink(seat)
 end
 
-return logic
+-- 开始游戏
+function logicHandler.startGame()
+    logic.startGame()
+end
+
+-- 出招
+function logicHandler.outHand(seatid, args)
+    logic.outHand(seatid, args)
+end
+
+-- 初始化
+function logicHandler.init(playerNum, rule, tableHandler)
+    logic.init(playerNum, rule, tableHandler)
+end
+
+-- 定时器每0.1s调用一次
+function logicHandler.update()
+    logic.update()
+end
+
+return logicHandler

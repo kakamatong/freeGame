@@ -46,6 +46,7 @@ function CMD.getGame(gameid, roomid)
     return allGames[gameid][roomid]
 end
 
+-- 玩家进入游戏
 function CMD.playerEnter(gameid, roomid, userData)
     local game = allGames[gameid][roomid]
     if not game then
@@ -57,6 +58,7 @@ function CMD.playerEnter(gameid, roomid, userData)
     return ret
 end
 
+-- 客户端消息处理
 function CMD.onClinetMsg(userid, name, args)
     LOG.info("onClinetMsg %s %s %s", userid, name, args)
     local game = allGames[args.gameid][args.roomid]
@@ -68,6 +70,7 @@ function CMD.onClinetMsg(userid, name, args)
     return ret
 end
 
+-- 连接游戏
 function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
     local game = allGames[gameid][roomid]
     if not game then
@@ -78,6 +81,7 @@ function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
     return ret
 end
 
+-- 玩家断线
 function CMD.offLine(gameid, roomid, userid)
     local game = allGames[gameid][roomid]
     if not game then

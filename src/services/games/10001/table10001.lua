@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local config = require "config10001"
 require "skynet.manager"
-local logic = require "logic10001"
+local logicHandler = require "logic10001"
 local sprotoloader = require "sprotoloader"
 local CMD = {}
 local name = "game10001"
@@ -35,7 +35,7 @@ local send_request = nil
 local function startGame()
     gameStatus = config.GAME_STATUS.START
     gameStartTime = os.time()
-    logic.startGame()
+    logicHandler.startGame()
     LOG.info("game start")
 end
 
@@ -150,7 +150,7 @@ end
 
 local function relink(userid)
     local seat = getPlayerSeat(userid)
-    logic.relink(seat)
+    logicHandler.relink(seat)
 end
 
 -- 玩家连入游戏，玩家客户端准备就绪
@@ -213,7 +213,6 @@ end
 
 function tableHandler.gameEnd()
     gameEnd()
-    --logic.gameEnd()
 end
 
 -- 玩家准备就绪
@@ -229,7 +228,7 @@ end
 function XY.gameOutHand(userid, args)
     local seat = getPlayerSeat(userid)
     if seat then
-        logic.outHand(seat, args)
+        logicHandler.outHand(seat, args)
     end
 end
 
@@ -253,12 +252,12 @@ function CMD.start(data)
     playerids = data.players
     gameData = data.gameData
     gameManager = data.gameManager
-    logic.init(#playerids, gameData.rule, tableHandler)
+    logicHandler.init(#playerids, gameData.rule, tableHandler)
     createTableTime = os.time()
     skynet.fork(function()
         while true do
             skynet.sleep(100)
-            logic.update()
+            logicHandler.update()
             checkTableStatus()
         end
     end)
