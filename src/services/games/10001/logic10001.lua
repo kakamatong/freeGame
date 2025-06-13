@@ -1,12 +1,13 @@
+local config = require("configLogic10001")
 local logic = {}
-local outHandInfo = {}
-local roundid = 0
-local roundNum = 0
-local stepBeginTime = 0
-local outHandNum = 0
+
+logic.outHandInfo = {}
+logic.roundid = 0
+logic.roundNum = 0
+logic.stepBeginTime = 0
+logic.outHandNum = 0
 logic.stepid = 0
 logic.tableHandler = nil
-local config = require("configLogic10001")
 
 local logicHandler = {}
 
@@ -23,31 +24,34 @@ function logic.init(playerNum, rule, tableHandler)
     logic.tableHandler = tableHandler
 end
 
+-- 设置玩家数量
 function logic.setPlayerNum(playerNum)
     logic.playerNum = playerNum
 end
 
+-- 开始游戏
 function logic.startGame()
     LOG.info("startGame")
     logic.startStep(config.GAME_STEP.START)
 end
 
+-- 出招
 function logic.outHand(seatid, args)
     if logic.stepid ~= config.GAME_STEP.OUT_HAND then
         return
     end
     local flag = args.flag
     LOG.info("outHand %d %d", seatid, flag)
-    if not outHandInfo[seatid] then
-        outHandInfo[seatid] = flag
+    if not logic.outHandInfo[seatid] then
+        logic.outHandInfo[seatid] = flag
     else
         -- 已经出过招
-        outHandInfo[seatid] = flag
+        logic.outHandInfo[seatid] = flag
     end
 
-    if tableLength(outHandInfo) == logic.playerNum then
+    if tableLength(logic.outHandInfo) == logic.playerNum then
         -- 比较大小
-        for seat, tmpflag in pairs(outHandInfo) do
+        for seat, tmpflag in pairs(logic.outHandInfo) do
             logic.sendOutHandInfo(config.SEAT_FLAG.SEAT_ALL, seat, tmpflag)
             logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.OUT_HAND)
         end
@@ -62,16 +66,17 @@ function logic.outHand(seatid, args)
     end
 end
 
+-- 比较大小
 function logic.compare()
     LOG.info("compare")
     local maxFlag = 0
     local maxSeatid = 0
     local result = 0x0000
-    for seatid, flag in pairs(outHandInfo) do
+    for seatid, flag in pairs(logic.outHandInfo) do
         result = result & flag
     end
 
-    outHandNum = outHandNum + 1
+    logic.outHandNum = logic.outHandNum + 1
 
     if result == config.HAND_RESULT.ROCK_WIN then
         -- 布胜
@@ -89,7 +94,7 @@ end
 
 function logic.sendResult(result)
     local playerResult = {}
-    for seatid, flag in pairs(outHandInfo) do
+    for seatid, flag in pairs(logic.outHandInfo) do
         local tmp = {}
         local endflag = 0
         if flag == result then
@@ -103,8 +108,8 @@ function logic.sendResult(result)
         table.insert(playerResult, tmp)
     end
     local info = {
-        roundNum = roundNum,
-        outHandNum = outHandNum,
+        roundNum = logic.roundNum,
+        outHandNum = logic.outHandNum,
         continue = 0,
         info = playerResult,
     }
@@ -148,7 +153,7 @@ end
 
 -- 设置当前步骤开始时间
 function logic.setStepBeginTime()
-    stepBeginTime = os.time()
+    logic.stepBeginTime = os.time()
 end
 
 -- 获取当前步骤时间长度
@@ -162,7 +167,7 @@ function logic.startStepStartGame()
         stepid = config.GAME_STEP.START,
     })
 
-    roundNum = roundNum + 1
+    logic.roundNum = logic.roundNum + 1
     -- 下发roundNum
 end
 
@@ -277,8 +282,8 @@ function logic.onRelinkStartGame(seat)
 end
 
 function logic.onRelinkOutHand(seat)
-    if outHandInfo[seat] then
-        logic.sendOutHandInfo(seat, seat, outHandInfo[seat])
+    if logic.outHandInfo[seat] then
+        logic.sendOutHandInfo(seat, seat, logic.outHandInfo[seat])
         logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.READY)
     else
         logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.THINKING)
@@ -320,8 +325,8 @@ function logic.update()
         return
     end
     local currentTime = os.time()
-    --LOG.info("currentTime %d, stepBeginTime %d", currentTime, stepBeginTime)
-    local timeLen = currentTime - stepBeginTime
+    --LOG.info("currentTime %d, logic.stepBeginTime %d", currentTime, logic.stepBeginTime)
+    local timeLen = currentTime - logic.stepBeginTime
     if timeLen > logic.getStepTimeLen(stepid) then
         logic.onStepTimeout(stepid)
     end
