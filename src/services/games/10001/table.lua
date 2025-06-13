@@ -1,7 +1,7 @@
 local skynet = require "skynet"
-local config = require "config10001"
+local config = require "10001.config"
 require "skynet.manager"
-local logicHandler = require "logic10001"
+local logicHandler = require "10001.logic"
 local sprotoloader = require "sprotoloader"
 local CMD = {}
 local name = "game10001"

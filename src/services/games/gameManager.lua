@@ -10,7 +10,7 @@ local roomid = os.time() * 100000
 function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
     LOG.info("createGame %d", roomid)
-    local name = "table" .. gameid
+    local name = gameid .. "/table"
     local game = skynet.newservice(name)
     skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
     if not allGames[gameid] then

@@ -1,13 +1,12 @@
-local config = require("configLogic10001")
+local config = require("10001.configLogic")
 local logic = {}
-
-logic.outHandInfo = {}
-logic.roundid = 0
-logic.roundNum = 0
-logic.stepBeginTime = 0
-logic.outHandNum = 0
-logic.stepid = 0
-logic.tableHandler = nil
+logic.outHandInfo = {} -- 出招信息
+logic.roundid = 0 -- 轮次id
+logic.roundNum = 0 -- 轮次
+logic.stepBeginTime = 0 -- 步骤开始时间
+logic.outHandNum = 0 -- 出招次数
+logic.stepid = 0 -- 步骤id
+logic.tableHandler = nil -- 桌子处理
 
 local logicHandler = {}
 
