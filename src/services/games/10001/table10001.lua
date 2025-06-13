@@ -102,16 +102,6 @@ local function sendToAllClient(name, data)
     end
 end
 
--- seat 2 : integer
--- status 3 : integer #加载中，进入中，准备中，短线中
--- userid 4 : integer
--- sex 5 : integer
--- nickname 6 : string
--- headurl 7 : string
--- ip 8 : string
--- province 9 : string
--- city 10 : string
--- ext 11 : string
 local function reportPlayerInfo(userid, playerid)
     local player = players[playerid]
     local status = config.PLAYER_STATUS.PLAYING
@@ -168,7 +158,7 @@ local function online(userid)
     if players[userid] then
         onlines[userid] = true
         -- todo: 下发对局信息
-        reportPlayerInfo(userid, userid)
+        reportPlayerInfo(0, userid)
         for id, player in pairs(players) do
             if id ~= userid then
                 reportPlayerInfo(userid, id)
