@@ -9,7 +9,7 @@ local config = {
     },
     PLAYER_STATUS = { -- 玩家状态
         LOADING = 1,
-        DISCONNECT = 2,
+        OFFLINE = 2,
         PLAYING = 3,
     },
 }

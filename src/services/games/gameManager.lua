@@ -78,6 +78,15 @@ function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
     return ret
 end
 
+function CMD.offLine(gameid, roomid, userid)
+    local game = allGames[gameid][roomid]
+    if not game then
+        LOG.error("game not found %s %s", gameid, roomid)
+        return false
+    end
+    skynet.send(game, "lua", "offLine", userid)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]

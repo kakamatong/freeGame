@@ -47,11 +47,14 @@ function logic.outHand(seatid, args)
         -- 比较大小
         for seat, tmpflag in pairs(outHandInfo) do
             logic.sendOutHandInfo(config.SEAT_FLAG.SEAT_ALL, seat, tmpflag)
+            logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.OUT_HAND)
         end
         logic.compare()
+
         --test code
         logic.stopStepGameEnd()
     else
+        logic.sendPlayerAttitude(seatid, config.PLAYER_ATTITUDE.READY)
         -- 下发自己的
         logic.sendOutHandInfo(seatid,seatid, flag)
     end
@@ -108,10 +111,17 @@ function logic.sendResult(result)
 end
 
 function logic.sendPlayerAttitude(seatid, flag)
-    logic.sendToOneClient(seatid, "reportGamePlayerAttitude", {
-        seat = seatid,
-        att = flag,
-    })
+    if seatid == config.SEAT_FLAG.SEAT_ALL then
+        logic.sendToAllClient("reportGamePlayerAttitude", {
+            seat = seatid,
+            att = flag,
+        })
+    else
+        logic.sendToOneClient(seatid, "reportGamePlayerAttitude", {
+            seat = seatid,
+            att = flag,
+        })
+    end 
 end
 
 function logic.sendOutHandInfo(toseat, seatid, flag)
@@ -260,6 +270,46 @@ function logic.onStepTimeout(stepid)
     end
 end
 
+function logic.onRelinkStartGame(seat)
+
+end
+
+function logic.onRelinkOutHand(seat)
+    if outHandInfo[seat] then
+        logic.sendOutHandInfo(seat, seat, outHandInfo[seat])
+        logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.READY)
+    else
+        logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.THINKING)
+    end
+end
+
+function logic.onRelinkRoundEnd(seat)
+
+end
+
+function logic.onRelinkGameEnd(seat)
+
+end
+
+-- 重新连接
+function logic.onRelink(seat)
+    LOG.info("onRelink %d", seat)
+    local stepid = logic.getStepId()
+    logic.sendToOneClient(seat, "reportGameStep", {
+        stepid = stepid,
+    })
+
+    if stepid == config.GAME_STEP.START then
+        logic.onRelinkStartGame(seat)
+    elseif stepid == config.GAME_STEP.OUT_HAND then
+        logic.onRelinkOutHand(seat)
+    elseif stepid == config.GAME_STEP.ROUND_END then
+        logic.onRelinkRoundEnd(seat)
+    elseif stepid == config.GAME_STEP.GAME_END then
+        logic.onRelinkGameEnd(seat)
+    end
+end
+
 -- 定时器每0.1s调用一次
 function logic.update()
     --LOG.info("update")
@@ -287,6 +337,11 @@ function logic.sendToOneClient(seat, name, data)
     if logic.table then
         logic.table.sendToOneClient(seat, name, data)
     end
+end
+
+function logic.relink(seat)
+    LOG.info("relink %d", seat)
+    logic.onRelink(seat)
 end
 
 return logic

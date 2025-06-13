@@ -24,6 +24,7 @@ local reportsessionid = 0
 local gameStartTime = 0
 local tableHandler = {}
 local gameManager
+local send_request = nil
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -51,7 +52,7 @@ local function testStart()
     LOG.info("testStart")
     local onlineCount = 0
     for _, playerid in pairs(playerids) do
-        if onlines[playerid] then
+        if onlines[playerid] ~= nil then
             onlineCount = onlineCount + 1
         else
             return false
@@ -73,25 +74,31 @@ end
 
 -- 发送消息给单个玩家
 local function sendToOneClient(userid, name, data)
+    if not send_request then
+        return 
+    end
     local client_fd = client_fds[userid]
     if client_fd then
         data.gameid = gameid
         data.roomid = roomid
         --LOG.info("sendToOneClient %s", UTILS.tableToString(data))
         reportsessionid = reportsessionid + 1
-        send_request = host:attach(sprotoloader.load(2))
         send_package(client_fd, send_request(name, data, reportsessionid))
     end
 end
 
 -- 发送消息给所有玩家
 local function sendToAllClient(name, data)
+    if not send_request then
+        return 
+    end
     data.gameid = gameid
     data.roomid = roomid
     reportsessionid = reportsessionid + 1
-    send_request = host:attach(sprotoloader.load(2))
-    for _, client_fd in pairs(client_fds) do
-        send_package(client_fd, send_request(name, data, reportsessionid))
+    for userid, client_fd in pairs(client_fds) do
+        if onlines[userid] then
+            send_package(client_fd, send_request(name, data, reportsessionid))
+        end
     end
 end
 
@@ -108,8 +115,11 @@ end
 local function reportPlayerInfo(userid, playerid)
     local player = players[playerid]
     local status = config.PLAYER_STATUS.PLAYING
-    if not onlines[playerid] then
+    if onlines[playerid] == nil then
         status = config.PLAYER_STATUS.LOADING
+    end
+    if onlines[playerid] == false then
+        status = config.PLAYER_STATUS.OFFLINE
     end
     local seat = 0
     for i, id in pairs(seats) do
@@ -118,18 +128,39 @@ local function reportPlayerInfo(userid, playerid)
             break
         end
     end
-    sendToOneClient(userid, "reportGamePlayerInfo", {
-        userid = playerid,
-        nickname = player.nickname,
-        headurl = player.headurl,
-        status = status,
-        seat = seat,
-        sex = player.sex,
-        ip = player.ip,
-        province = player.province,
-        city = player.city,
-        ext = player.ext,
-    })
+    if userid == 0 then
+        sendToAllClient("reportGamePlayerInfo", {
+            userid = playerid,
+            nickname = player.nickname,
+            headurl = player.headurl,
+            status = status,
+            seat = seat,
+            sex = player.sex,
+            ip = player.ip,
+            province = player.province,
+            city = player.city,
+            ext = player.ext,
+        })
+    else
+        sendToOneClient(userid, "reportGamePlayerInfo", {
+            userid = playerid,
+            nickname = player.nickname,
+            headurl = player.headurl,
+            status = status,
+            seat = seat,
+            sex = player.sex,
+            ip = player.ip,
+            province = player.province,
+            city = player.city,
+            ext = player.ext,
+        })
+    end
+    
+end
+
+local function relink(userid)
+    local seat = getPlayerSeat(userid)
+    logic.relink(seat)
 end
 
 -- 玩家连入游戏，玩家客户端准备就绪
@@ -147,6 +178,8 @@ local function online(userid)
         if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
             --gameStatus = gameStatus.START
             testStart()
+        elseif gameStatus == config.GAME_STATUS.START then
+            relink(userid)
         end
     end
 end
@@ -268,6 +301,13 @@ function CMD.stop()
     skynet.exit()
 end
 
+function CMD.offLine(userid)
+    if players[userid] and onlines[userid] then
+        onlines[userid] = false
+        reportPlayerInfo(0, userid)
+    end
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]
@@ -276,5 +316,6 @@ skynet.start(function()
         end
     end)
     host = sprotoloader.load(1):host "package"
+    send_request = host:attach(sprotoloader.load(2))
     gate = skynet.localname(".wsGateserver")
 end)

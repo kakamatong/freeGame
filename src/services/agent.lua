@@ -403,6 +403,9 @@ function CMD.disconnect()
 	if userStatus == CONFIG.USER_STATUS.MATCHING then
 		local matchServer = skynet.localname(".match")
 		skynet.send(matchServer, "lua", "leaveQueue", userid)
+	elseif userStatus == CONFIG.USER_STATUS.GAMEING then
+		local gameServer = skynet.localname(".gameManager")
+		skynet.send(gameServer, "lua", "offLine", gameid, roomid, userid)
 	end
 	setUserStatus(CONFIG.USER_STATUS.OFFLINE)
 	LOG.info("agent disconnect")
