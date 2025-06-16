@@ -3,7 +3,7 @@ require "skynet.manager"
 
 local CMD = {}
 
-function CMD.getRobot(gameid, num)
+function CMD.getRobots(gameid, num)
     
 end
 
