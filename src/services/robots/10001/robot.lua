@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 require "skynet.manager"
-
+local config = require "10001.config"
 local CMD = {}
 
 function CMD.getRobots(gameid, num)
