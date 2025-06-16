@@ -184,5 +184,22 @@ function db.getUserStatus(mysql,redis,...)
     return res[1] -- 返回用户状态
 end
 
+-- 获取机器人列表
+function db.getRobots(mysql,redis,...)
+    local idbegin,idend =...
+    local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
+    local res, err = mysql:query(sql)
+    --LOG.info(UTILS.tableToString(res))
+    if not res then
+        LOG.error("select auth error: %s", err)
+        return false
+    end
+    
+    if #res == 0 then
+        return nil
+    end
+    return res
+end
+
 -- 返回db表，供外部调用
 return db

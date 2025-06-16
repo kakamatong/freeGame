@@ -1,23 +1,18 @@
 local skynet = require "skynet"
 require "skynet.manager"
 local name = "robotManager"
-local robotConfig = {10001}
-local robotList = {}
+local config = require "robot.config"
+local robotDatas = {}
 local CMD = {}
-
 function CMD.getRobots(gameid, num)
-    local robotSvr = robotList[gameid]
-    if not robotSvr then
-        return nil
-    end
-    local robots = skynet.call(robotSvr, "lua", "getRobots", gameid, num)
-    return robots
+    
 end
 
 function CMD.start()
-    for _, gameid in ipairs(robotConfig) do
-        local robot = skynet.newservice(gameid .. "/robot")
-        robotList[gameid] = robot
+    local dbSvr = skynet.localname(".dbserver")
+    local robots = skynet.call(dbSvr, "lua", "func","getRobots", config.idbegin, config.idend)
+    if robots then
+        robotDatas = robots
     end
 end
 
