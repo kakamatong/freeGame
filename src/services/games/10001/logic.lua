@@ -1,4 +1,4 @@
-local config = require("10001.configLogic")
+local config = require("games.10001.configLogic")
 local logic = {}
 logic.outHandInfo = {} -- 出招信息
 logic.roundid = 0 -- 轮次id

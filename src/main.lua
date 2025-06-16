@@ -16,7 +16,7 @@ skynet.start(function()
 	--skynet.newservice("debug_console","0.0.0.0",8000)
 	skynet.newservice("debug_console",8000)
 
-	skynet.newservice("gameManager")
+	skynet.newservice("games/gameManager")
 
 	-- 启动匹配服务
 	local match = skynet.newservice("match")

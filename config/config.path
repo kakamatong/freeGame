@@ -1,8 +1,7 @@
 root = "./"
 skynetRoot = root .. "skynet/"
-gamePath = ""
-luaservice = skynetRoot.."service/?.lua;"..root.."src/?.lua;"..root.."src/services/?.lua;" .. root .. "src/services/games/?.lua;" .. gamePath
+luaservice = skynetRoot.."service/?.lua;"..root.."src/?.lua;"..root.."src/services/?.lua;"
 lualoader = skynetRoot .. "lualib/loader.lua"
-lua_path = skynetRoot.."lualib/?.lua;"..skynetRoot.."lualib/?/init.lua;"..root.."src/services/?.lua;"..root.."src/config/?.lua;"..root.."src/services/games/?.lua;" .. gamePath
+lua_path = skynetRoot.."lualib/?.lua;"..skynetRoot.."lualib/?/init.lua;"..root.."src/services/?.lua;"..root.."src/config/?.lua;"
 lua_cpath = skynetRoot .. "luaclib/?.so"
 snax = root.."src/?.lua;"

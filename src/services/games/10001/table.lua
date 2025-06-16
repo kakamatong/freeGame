@@ -1,10 +1,9 @@
 local skynet = require "skynet"
-local config = require "10001.config"
+local config = require "games.10001.config"
 require "skynet.manager"
-local logicHandler = require "10001.logic"
+local logicHandler = require "games.10001.logic"
 local sprotoloader = require "sprotoloader"
 local CMD = {}
-local name = "game10001"
 local roomid = 0
 local gameid = 0
 local playerids = {} -- 玩家id列表
