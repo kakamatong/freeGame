@@ -45,6 +45,22 @@ function CMD.returnRobots(ids)
     end
 end
 
+function CMD.robotEnter(gameid, roomid, userid)
+    local robot = robotDatas[userid]
+    if not robot then
+        LOG.error("robotEnter robot not found %d", userid)
+        return
+    end
+    
+    local gameManager = skynet.localname(".gameManager")
+    if not gameManager then
+        LOG.error("robotEnter gameManager not found")
+        return
+    end
+    skynet.send(gameManager, "lua", "playerEnter", gameid, roomid, robot)
+    skynet.send(gameServer, "lua", "connectGame", gameid, roomid, userid,)
+end
+
 function CMD.start()
     local dbSvr = skynet.localname(".dbserver")
     local robots = skynet.call(dbSvr, "lua", "func","getRobots", config.idbegin, config.idend)

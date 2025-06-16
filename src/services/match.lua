@@ -8,6 +8,7 @@ local users = {}         -- 记录所有正在匹配的用户信息
 local queueNum = 4       -- 匹配队列数量
 local queueUserids = {}  -- queueUserids[gameid][queueid] = {userid1, ...}
 local dTime = 1          -- 匹配检查间隔（秒）
+local CHECK_MAX_NUM = 5       -- 匹配检查次数
 
 local function checkGame(gameid, queueid)
     local gameConfig = CONFIG.MATCH_GAMES[gameid]
@@ -69,6 +70,33 @@ local function matchSuccess(userid1, userid2)
     leaveQueue(userid2)
 end
 
+local function matchWithRobot(userid, robotData)
+    local playerids = {userid, robotData.userid}
+    local gameid = users[userid].gameid
+    local gameManager = skynet.localname(".gameManager")
+    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, {rule = "", robots = {robotData.userid}})
+    local gameData = {gameid = gameid, roomid = roomid}
+    -- 通知机器人进入游戏
+    local robotManager = skynet.localname(".robotManager")
+    if not robotManager then
+        return nil
+    end
+    skynet.send(robotManager, "lua", "robotEnter", gameid, roomid, robotData.userid)
+
+    reportToAgent(userid, gameData)
+    
+    leaveQueue(userid1)
+end
+
+local function getRobots(gameid, num)
+    local robotManager = skynet.localname(".robotManager")
+    if not robotManager then
+        return nil
+    end
+    local robot = skynet.call(robotManager, "lua", "getRobots", gameid, num)
+    return robot
+end
+
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
     LOG.info("checkQueue %d %d", gameid, queueid)
@@ -82,7 +110,29 @@ local function checkQueue(gameid, queueid)
             if math.abs(user1.rate - user2.rate) < 0.05 then
                 LOG.info("match success %d %d", userid1, userid2)
                 matchSuccess(userid1, userid2)
+            else
+                user1.checkNum = user1.checkNum + 1
+                if i == #que - 1 then
+                    user2.checkNum = user2.checkNum + 1
+                end
+                if user1.checkNum >= CHECK_MAX_NUM then
+                    --table.remove(que, i)
+                    local robot = getRobots(gameid, 1)
+                    if robot then
+                        matchWithRobot(userid1, robot)
+                    end
+                end
+                if user2.checkNum >= CHECK_MAX_NUM then
+                    local robot = getRobots(gameid, 1)
+                    if robot then
+                        matchWithRobot(userid2, robot)
+                    end
+                end
             end
+        else
+            local userid1 = que[i]
+            local user1 = users[userid1]
+            user1.checkNum = user1.checkNum + 1
         end
     end
 end
@@ -94,9 +144,7 @@ function CMD.start()
         while true do
             for gameid, queues in pairs(queueUserids) do
                 for queueid, que in pairs(queues) do
-                    if #que >= 2 then
-                        checkQueue(gameid, queueid)
-                    end
+                    checkQueue(gameid, queueid)
                 end
             end
             skynet.sleep(dTime * 100)
@@ -127,6 +175,7 @@ function CMD.enterQueue(agent, userid, gameid, queueid, rate)
             queueid = queueid or 0,
             rate = rate or 0,
             agent = agent,
+            checkNum = 0,
             time = os.time(),
         }
     else
