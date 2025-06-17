@@ -113,8 +113,13 @@ local function checkQueue(gameid, queueid)
             if not user1 or not user2 then
                 break
             end
+            if user1.matchSuccess or user2.matchSuccess then
+                break
+            end
             if math.abs(user1.rate - user2.rate) < 0.05 then
                 LOG.info("match success %d %d", userid1, userid2)
+                user1.matchSuccess = true
+                user2.matchSuccess = true
                 matchSuccess(userid1, userid2)
             else
                 user1.checkNum = user1.checkNum + 1
@@ -139,6 +144,9 @@ local function checkQueue(gameid, queueid)
             local userid1 = que[i]
             local user1 = users[userid1]
             if not user1 then
+                break
+            end
+            if user1.matchSuccess then
                 break
             end
             user1.checkNum = user1.checkNum + 1
@@ -185,6 +193,7 @@ function CMD.enterQueue(agent, userid, gameid, queueid, rate)
             rate = rate or 0,
             agent = agent,
             checkNum = 0,
+            matchSuccess = false,
             time = os.time(),
         }
     else
