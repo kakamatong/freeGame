@@ -23,6 +23,7 @@ function CMD.getRobots(gameid, num)
     local n = 0
     for i = 1, num do
         local id = getFreeRobotid()
+        LOG.info("getRobots %s %d", id, n)
         if id and robotDatas[id] then
             table.insert(datas, robotDatas[id])
             usingRobots[id] = true
@@ -58,7 +59,7 @@ function CMD.robotEnter(gameid, roomid, userid)
         return
     end
     skynet.send(gameManager, "lua", "playerEnter", gameid, roomid, robot)
-    skynet.send(gameServer, "lua", "connectGame", gameid, roomid, userid)
+    skynet.send(gameManager, "lua", "connectGame", gameid, roomid, userid)
 end
 
 function CMD.start()
@@ -67,7 +68,7 @@ function CMD.start()
     if robots then
         for _,robot in pairs(robots) do
             robotDatas[robot.userid] = robot
-            table.insert(freeRobots, robot)
+            table.insert(freeRobots, robot.userid)
         end
     end
 end
