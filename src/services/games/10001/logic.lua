@@ -6,7 +6,7 @@ logic.roundNum = 0 -- 轮次
 logic.stepBeginTime = 0 -- 步骤开始时间
 logic.outHandNum = 0 -- 出招次数
 logic.stepid = 0 -- 步骤id
-logic.tableHandler = nil -- 桌子处理
+logic.roomHandler = nil -- 房间处理
 
 local logicHandler = {}
 
@@ -18,9 +18,9 @@ local function tableLength(t)
     return count
 end
 
-function logic.init(playerNum, rule, tableHandler)
+function logic.init(playerNum, rule, roomHandler)
     logic.playerNum = playerNum
-    logic.tableHandler = tableHandler
+    logic.roomHandler = roomHandler
 end
 
 -- 设置玩家数量
@@ -224,7 +224,7 @@ end
 -- 停止游戏结束步骤
 function logic.stopStepGameEnd()
     logic.stepid = config.GAME_STEP.NONE
-    logic.tableHandler.gameEnd()
+    logic.roomHandler.gameEnd()
 end
 
 -- 游戏结束步骤超时
@@ -333,15 +333,15 @@ end
 
 -- 发送消息给所有玩家
 function logic.sendToAllClient(name, data)
-    if logic.tableHandler then
-        logic.tableHandler.sendToAllClient(name, data)
+    if logic.roomHandler then
+        logic.roomHandler.sendToAllClient(name, data)
     end
 end
 
 -- 发送消息给单个玩家
 function logic.sendToOneClient(seat, name, data)
-    if logic.tableHandler then
-        logic.tableHandler.sendToOneClient(seat, name, data)
+    if logic.roomHandler then
+        logic.roomHandler.sendToOneClient(seat, name, data)
     end
 end
 
@@ -363,8 +363,8 @@ function logicHandler.outHand(seatid, args)
 end
 
 -- 初始化
-function logicHandler.init(playerNum, rule, tableHandler)
-    logic.init(playerNum, rule, tableHandler)
+function logicHandler.init(playerNum, rule, roomHandler)
+    logic.init(playerNum, rule, roomHandler)
 end
 
 -- 定时器每0.1s调用一次

@@ -3,7 +3,6 @@ local config = require "games.10001.config"
 require "skynet.manager"
 local logicHandler = require "games.10001.logic"
 local sprotoloader = require "sprotoloader"
-local CMD = {}
 local roomid = 0
 local gameid = 0
 local playerids = {} -- 玩家id列表
@@ -14,14 +13,14 @@ local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
 local canDestroy = false -- 是否可以销毁
 local agents = {} -- 玩家代理
-local createTableTime = 0
+local createRoomTime = 0
 local host
 local gate
 local gameStatus = config.GAME_STATUS.NONE
 local XY = {}
 local reportsessionid = 0
 local gameStartTime = 0
-local tableHandler = {}
+local roomHandler = {}
 local gameManager
 local send_request = nil
 -- 更新玩家状态
@@ -80,7 +79,7 @@ local function sendToOneClient(userid, name, data)
     if client_fd then
         data.gameid = gameid
         data.roomid = roomid
-        --LOG.info("sendToOneClient %s", UTILS.tableToString(data))
+        --LOG.info("sendToOneClient %s", UTILS.roomToString(data))
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
     end
@@ -184,10 +183,10 @@ local function gameEnd()
 end
 
 -- 检查桌子状态，如果超时，则销毁桌子
-local function checkTableStatus()
+local function checkRoomStatus()
     if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
         local timeNow = os.time()
-        if timeNow - createTableTime > config.WAITTING_CONNECT_TIME then
+        if timeNow - createRoomTime > config.WAITTING_CONNECT_TIME then
             --testStart()
             gameEnd()
         end
@@ -199,18 +198,18 @@ local function checkTableStatus()
     end
 end
 
--- table接口,发送消息给单个玩家
-function tableHandler.sendToOneClient(seat, name, data)
+-- room接口,发送消息给单个玩家
+function roomHandler.sendToOneClient(seat, name, data)
     local userid = seats[seat]
     sendToOneClient(userid, name, data)
 end
 
--- table接口,发送消息给所有玩家
-function tableHandler.sendToAllClient(name, data)
+-- room接口,发送消息给所有玩家
+function roomHandler.sendToAllClient(name, data)
     sendToAllClient(name, data)
 end
 
-function tableHandler.gameEnd()
+function roomHandler.gameEnd()
     gameEnd()
 end
 
@@ -231,6 +230,9 @@ function XY.gameOutHand(userid, args)
     end
 end
 
+-- region 命令接口
+------------------------------------------------------------------------------------------------------------ 命令接口
+local CMD = {}
 -- 玩家进入游戏
 function CMD.playerEnter(userData)
     if players[userData.userid] then
@@ -251,13 +253,13 @@ function CMD.start(data)
     playerids = data.players
     gameData = data.gameData
     gameManager = data.gameManager
-    logicHandler.init(#playerids, gameData.rule, tableHandler)
-    createTableTime = os.time()
+    logicHandler.init(#playerids, gameData.rule, roomHandler)
+    createRoomTime = os.time()
     skynet.fork(function()
         while true do
             skynet.sleep(100)
             logicHandler.update()
-            checkTableStatus()
+            checkRoomStatus()
         end
     end)
     gameStatus = config.GAME_STATUS.WAITTING_CONNECT
@@ -295,6 +297,7 @@ function CMD.offLine(userid)
         reportPlayerInfo(0, userid)
     end
 end
+------------------------------------------------------------------------------------------------------------
 
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)

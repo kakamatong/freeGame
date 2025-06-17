@@ -39,17 +39,19 @@ local function leaveQueue(userid)
     end
     local gameid = users[userid].gameid
     local queueid = users[userid].queueid
-    if not queueUserids[gameid] or not queueUserids[gameid][queueid] then
+    local queue = queueUserids[gameid][queueid]
+    LOG.info("queueUserids start %s", UTILS.tableToString(queue))
+    if not queueUserids[gameid] or not queue then
         return false
     end 
-    for i, v in ipairs(queueUserids[gameid][queueid]) do
+    for i, v in ipairs(queue) do
         if v == userid then
-            table.remove(queueUserids[gameid][queueid], i)
+            table.remove(queue, i)
             break
         end
     end
     users[userid] = nil
-    LOG.info("queueUserids %s", UTILS.tableToString(queueUserids))
+    LOG.info("queueUserids end %s", UTILS.tableToString(queue))
     return true
 end
 
@@ -99,14 +101,18 @@ end
 
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
-    LOG.info("checkQueue %d %d", gameid, queueid)
+    --LOG.info("checkQueue %d %d", gameid, queueid)
     local que = queueUserids[gameid][queueid]
+    --LOG.info("que %s", UTILS.tableToString(que))
     for i = 1, #que do
         if i < #que then
             local userid1 = que[i]
             local userid2 = que[i+1]
             local user1 = users[userid1]
             local user2 = users[userid2]
+            if not user1 or not user2 then
+                break
+            end
             if math.abs(user1.rate - user2.rate) < 0.05 then
                 LOG.info("match success %d %d", userid1, userid2)
                 matchSuccess(userid1, userid2)
@@ -132,6 +138,9 @@ local function checkQueue(gameid, queueid)
         else
             local userid1 = que[i]
             local user1 = users[userid1]
+            if not user1 then
+                break
+            end
             user1.checkNum = user1.checkNum + 1
         end
     end

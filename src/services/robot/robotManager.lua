@@ -58,7 +58,7 @@ function CMD.robotEnter(gameid, roomid, userid)
         return
     end
     skynet.send(gameManager, "lua", "playerEnter", gameid, roomid, robot)
-    skynet.send(gameServer, "lua", "connectGame", gameid, roomid, userid,)
+    skynet.send(gameServer, "lua", "connectGame", gameid, roomid, userid)
 end
 
 function CMD.start()

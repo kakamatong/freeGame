@@ -175,7 +175,8 @@ local function getUserData()
 	return userData
 end
 
--- 以下为客户端请求处理函数（REQUEST表）
+-- region 以下为客户端请求处理函数（REQUEST表）
+------------------------------------------------------------------------------------------------------------
 function REQUEST:get()
 	print("get", self.what)
 	local r = skynet.call("SIMPLEDB", "lua", "get", self.what)
@@ -336,8 +337,10 @@ skynet.register_protocol {
 		end
 	end
 }
+------------------------------------------------------------------------------------------------------------
 
--- CMD表：服务内部命令处理
+-- region CMD表：服务内部命令处理
+------------------------------------------------------------------------------------------------------------
 -- 进入游戏
 function CMD.enterGame(gamedata)
 	gameid = gamedata.gameid
@@ -411,6 +414,7 @@ function CMD.disconnect()
 	LOG.info("agent disconnect")
 	skynet.exit()
 end
+------------------------------------------------------------------------------------------------------------
 
 -- 启动服务，分发命令
 skynet.start(function()
