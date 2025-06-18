@@ -37,6 +37,24 @@ local function startGame()
     LOG.info("game start")
 end
 
+-- 判断是否是机器人
+local function isRobotByUserid(userid)
+    if gameData.robots and #gameData.robots > 0 and userid and userid > 0 then
+        for _, id in pairs(gameData.robots) do
+            if id == userid then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- 判断是否是机器人
+local function isRobotBySeat(seat)
+    local userid = seats[seat]
+    return isRobotByUserid(userid)
+end
+
 local function getPlayerSeat(userid)
     for i, id in pairs(seats) do
         if id == userid then
@@ -76,12 +94,14 @@ local function sendToOneClient(userid, name, data)
         return 
     end
     local client_fd = client_fds[userid]
-    if client_fd then
+    if client_fd and onlines[userid] then
         data.gameid = gameid
         data.roomid = roomid
         --LOG.info("sendToOneClient %s", UTILS.roomToString(data))
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
+    elseif isRobotByUserid(userid) then
+        -- 发给ai
     end
 end
 
@@ -90,13 +110,9 @@ local function sendToAllClient(name, data)
     if not send_request then
         return 
     end
-    data.gameid = gameid
-    data.roomid = roomid
-    reportsessionid = reportsessionid + 1
-    for userid, client_fd in pairs(client_fds) do
-        if onlines[userid] then
-            send_package(client_fd, send_request(name, data, reportsessionid))
-        end
+
+    for i, userid in pairs(playerids) do
+        sendToOneClient(userid, name, data)
     end
 end
 
@@ -198,6 +214,7 @@ local function checkRoomStatus()
     end
 end
 
+------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
 -- room接口,发送消息给单个玩家
 function roomHandler.sendToOneClient(seat, name, data)
     local userid = seats[seat]
@@ -213,6 +230,7 @@ function roomHandler.gameEnd()
     gameEnd()
 end
 
+------------------------------------------------------------------------------------------------------------ 客户端发上来的协议
 -- 玩家准备就绪
 function XY.gameReady(userid, args)
     local playerStatus = {

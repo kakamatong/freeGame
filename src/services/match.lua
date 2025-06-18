@@ -55,6 +55,13 @@ local function leaveQueue(userid)
     return true
 end
 
+-- 创建游戏
+local function createGame(gameid, playerids, gameData)
+    local gameManager = skynet.localname(".gameManager")
+    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
+    return roomid
+end
+
 -- 匹配成功
 local function matchSuccess(userid1, userid2)
     -- 1.创建游戏
@@ -62,8 +69,7 @@ local function matchSuccess(userid1, userid2)
     -- 3.删除queue里的用户
     local playerids = {userid1, userid2}
     local gameid = users[userid1].gameid
-    local gameManager = skynet.localname(".gameManager")
-    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, {rule = ""})
+    local roomid = createGame(gameid, playerids, {rule = ""})
     local gameData = {gameid = gameid, roomid = roomid}
     reportToAgent(userid1, gameData)
     reportToAgent(userid2, gameData)
@@ -76,8 +82,7 @@ local function matchWithRobot(userid, robotData)
     LOG.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
     local gameid = users[userid].gameid
-    local gameManager = skynet.localname(".gameManager")
-    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, {rule = "", robots = {robotData.userid}})
+    local roomid = createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
     local gameData = {gameid = gameid, roomid = roomid}
     -- 通知机器人进入游戏
     local robotManager = skynet.localname(".robotManager")
