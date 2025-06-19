@@ -3,6 +3,7 @@ local config = require "games.10001.config"
 require "skynet.manager"
 local logicHandler = require "games.10001.logic"
 local sprotoloader = require "sprotoloader"
+local aiHandler = require "games.10001.ai"
 local roomid = 0
 local gameid = 0
 local playerids = {} -- 玩家id列表
@@ -21,6 +22,7 @@ local XY = {}
 local reportsessionid = 0
 local gameStartTime = 0
 local roomHandler = {}
+local roomHandlerAi = {}
 local gameManager
 local send_request = nil
 -- 更新玩家状态
@@ -102,6 +104,8 @@ local function sendToOneClient(userid, name, data)
         send_package(client_fd, send_request(name, data, reportsessionid))
     elseif isRobotByUserid(userid) then
         -- 发给ai
+        local seat = getPlayerSeat(userid)
+        aiHandler.onMsg(seat, name, data)
     end
 end
 
@@ -214,6 +218,17 @@ local function checkRoomStatus()
     end
 end
 
+------------------------------------------------------------------------------------------------------------ ai消息处理
+-- 处理ai消息
+function roomHandlerAi.onAiMsg(seat, name, data)
+    LOG.info("roomHandlerAi.onMsg", seat, name, data)
+    local f = XY[name]
+    if f then
+        local userid = seats[seat]
+        f(userid, data)
+    end
+end
+
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
 -- room接口,发送消息给单个玩家
 function roomHandler.sendToOneClient(seat, name, data)
@@ -281,6 +296,7 @@ function CMD.start(data)
         end
     end)
     gameStatus = config.GAME_STATUS.WAITTING_CONNECT
+    aiHandler.init(roomHandlerAi)
 end
 
 -- 客户端消息处理
