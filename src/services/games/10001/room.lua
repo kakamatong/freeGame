@@ -25,6 +25,7 @@ local roomHandler = {}
 local roomHandlerAi = {}
 local gameManager
 local send_request = nil
+local dTime = 100
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -57,6 +58,7 @@ local function isRobotBySeat(seat)
     return isRobotByUserid(userid)
 end
 
+-- 获取玩家座位
 local function getPlayerSeat(userid)
     for i, id in pairs(seats) do
         if id == userid then
@@ -120,6 +122,7 @@ local function sendToAllClient(name, data)
     end
 end
 
+-- 广播玩家信息
 local function reportPlayerInfo(userid, playerid)
     local player = players[playerid]
     local status = config.PLAYER_STATUS.PLAYING
@@ -166,6 +169,7 @@ local function reportPlayerInfo(userid, playerid)
     
 end
 
+-- 玩家重新连接
 local function relink(userid)
     local seat = getPlayerSeat(userid)
     logicHandler.relink(seat)
@@ -192,6 +196,7 @@ local function online(userid)
     end
 end
 
+-- 游戏结束
 local function gameEnd()
     gameStatus = config.GAME_STATUS.END
     canDestroy = true
@@ -241,6 +246,7 @@ function roomHandler.sendToAllClient(name, data)
     sendToAllClient(name, data)
 end
 
+-- room接口,游戏结束
 function roomHandler.gameEnd()
     gameEnd()
 end
@@ -256,6 +262,7 @@ function XY.gameReady(userid, args)
     sendToAllClient("reportGamePlayerStatus", playerStatus)
 end
 
+-- 玩家出招
 function XY.gameOutHand(userid, args)
     local seat = getPlayerSeat(userid)
     if seat then
@@ -291,7 +298,7 @@ function CMD.start(data)
     createRoomTime = os.time()
     skynet.fork(function()
         while true do
-            skynet.sleep(100)
+            skynet.sleep(dTime)
             logicHandler.update()
             aiHandler.update()
             checkRoomStatus()

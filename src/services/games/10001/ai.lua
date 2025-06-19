@@ -16,13 +16,14 @@ aiLogic.timeFlag = {
 aiLogic.seat = 0
 aiLogic.data = nil
 
-
+-- 处理步骤
 function aiLogic.dealStep()
     if aiLogic.stepid == config.GAME_STEP.OUT_HAND then
         aiLogic.dealGameOutHand()
     end
 end
 
+-- 处理出牌
 function aiLogic.dealGameOutHand()
     LOG.info("XY.dealGameOutHand", seat, data)
     aiLogic.timeFlag[config.GAME_STEP.OUT_HAND] = false
@@ -39,11 +40,13 @@ function aiLogic.dealGameOutHand()
     end
 end
 
+-- 开始步骤
 function aiLogic.startStep(stepid)
     aiLogic.stepid = stepid
     aiLogic.stepBeginTime = os.time()
 end
 
+-- 计时器更新
 function aiLogic.update()
     local stepid = aiLogic.stepid
     local timeNow = os.time()
@@ -54,11 +57,12 @@ function aiLogic.update()
 end
 
 ------------------------------------------------------------------------------------------------------------ 处理协议
--- 处理协议
+-- 收到阶段消息
 function XY.reportGameStep(seat, data)
     aiLogic.startStep(data.stepid)
 end
 
+-- 收到玩家态度消息
 function XY.reportGamePlayerAttitude(seat, data)
     LOG.info("XY.reportGamePlayerAttitude", seat, data)
     aiLogic.seat = seat
@@ -68,11 +72,10 @@ end
 
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 function aiHandler.onMsg(seat, name, data)
-    LOG.info("aiHandler.onMsg", seat, name, data)
     if XY[name] then
         XY[name](seat, data)
     else
-        LOG.info("aiHandler.onMsg", seat, name, data, "not found")
+        LOG.info("aiHandler.onMsg not found")
     end
 end
 
