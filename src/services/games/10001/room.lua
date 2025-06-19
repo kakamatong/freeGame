@@ -287,16 +287,17 @@ function CMD.start(data)
     gameData = data.gameData
     gameManager = data.gameManager
     logicHandler.init(#playerids, gameData.rule, roomHandler)
+    aiHandler.init(roomHandlerAi)
     createRoomTime = os.time()
     skynet.fork(function()
         while true do
             skynet.sleep(100)
             logicHandler.update()
+            aiHandler.update()
             checkRoomStatus()
         end
     end)
     gameStatus = config.GAME_STATUS.WAITTING_CONNECT
-    aiHandler.init(roomHandlerAi)
 end
 
 -- 客户端消息处理
