@@ -330,6 +330,13 @@ function CMD.stop()
     for userid, agent in pairs(agents) do
         skynet.send(agent, "lua", "leaveGame")
     end
+
+    if gameData.robots and #gameData.robots > 0 then
+        local robotManager = skynet.localname(".robotManager")
+        if robotManager then
+            skynet.send(robotManager, "lua", "returnRobots", gameData.robots)
+        end
+    end
     skynet.exit()
 end
 
