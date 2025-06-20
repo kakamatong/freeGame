@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local cjson = require "cjson"
 local config = require "games.10001.config"
 require "skynet.manager"
 local logicHandler = require "games.10001.logic"
@@ -319,7 +320,12 @@ function CMD.start(data)
     gameStatus = config.GAME_STATUS.WAITTING_CONNECT
 
     -- 创建房间日志
-    pushLog(config.LOG_TYPE.CREATE_ROOM, 0, gameid, roomid, "")
+    local ext = {
+        playerids = playerids,
+        gameData = gameData
+    }
+    local extstr = cjson.encode(ext)
+    pushLog(config.LOG_TYPE.CREATE_ROOM, 0, gameid, roomid, extstr)
 end
 
 -- 客户端消息处理
