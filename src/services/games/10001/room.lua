@@ -32,6 +32,18 @@ local dTime = 100
 -- 销毁逻辑
 -- 未开局销毁逻辑
 
+local function pushLog(logtype, userid, gameid, roomid, ext)
+    local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		LOG.error("wsgate login error: dbserver not started")
+		return
+	end
+
+    local time = os.time()
+    local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
+    skynet.send(dbserver, "lua", "funcLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
+end
+
 -- 开始游戏
 local function startGame()
     gameStatus = config.GAME_STATUS.START
@@ -305,6 +317,9 @@ function CMD.start(data)
         end
     end)
     gameStatus = config.GAME_STATUS.WAITTING_CONNECT
+
+    -- 创建房间日志
+    pushLog(config.LOG_TYPE.CREATE_ROOM, 0, gameid, roomid, "")
 end
 
 -- 客户端消息处理

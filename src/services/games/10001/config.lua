@@ -12,6 +12,13 @@ local config = {
         OFFLINE = 2,
         PLAYING = 3,
     },
+
+    LOG_TYPE = {
+        CREATE_ROOM = 0,
+        DESTROY_ROOM = 1,
+        GAME_START = 2,
+        GAME_END = 3,
+    },
 }
 
 return config
