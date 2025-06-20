@@ -52,14 +52,14 @@ function logic.outHand(seatid, args)
         -- 比较大小
         for seat, tmpflag in pairs(logic.outHandInfo) do
             logic.sendOutHandInfo(config.SEAT_FLAG.SEAT_ALL, seat, tmpflag)
-            logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.OUT_HAND)
+            logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, seat, config.PLAYER_ATTITUDE.OUT_HAND)
         end
         logic.compare()
 
         --test code
         logic.stopStepGameEnd()
     else
-        logic.sendPlayerAttitude(seatid, config.PLAYER_ATTITUDE.READY)
+        logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, seatid, config.PLAYER_ATTITUDE.READY)
         -- 下发自己的
         logic.sendOutHandInfo(seatid,seatid, flag)
     end
@@ -72,16 +72,15 @@ function logic.compare()
     local maxSeatid = 0
     local result = 0x0000
     for seatid, flag in pairs(logic.outHandInfo) do
-        result = result & flag
+        result = result | flag
     end
-
     logic.outHandNum = logic.outHandNum + 1
 
     if result == config.HAND_RESULT.ROCK_WIN then
-        -- 布胜
+        -- 石头胜
         logic.sendResult(config.HAND_FLAG.ROCK)
     elseif result == config.HAND_RESULT.PAPER_WIN then
-        -- 石头胜
+        -- 布胜
         logic.sendResult(config.HAND_FLAG.PAPER)
     elseif result == config.HAND_RESULT.SCISSORS_WIN then
         -- 剪刀胜
@@ -116,14 +115,14 @@ function logic.sendResult(result)
     logic.sendToAllClient("reportGameRoundResult", info)
 end
 
-function logic.sendPlayerAttitude(seatid, flag)
-    if seatid == config.SEAT_FLAG.SEAT_ALL then
+function logic.sendPlayerAttitude(toseat, seatid, flag)
+    if toseat == config.SEAT_FLAG.SEAT_ALL then
         logic.sendToAllClient("reportGamePlayerAttitude", {
             seat = seatid,
             att = flag,
         })
     else
-        logic.sendToOneClient(seatid, "reportGamePlayerAttitude", {
+        logic.sendToOneClient(toseat, "reportGamePlayerAttitude", {
             seat = seatid,
             att = flag,
         })
@@ -187,7 +186,7 @@ function logic.startStepOutHand()
     })
 
     for i = 1, logic.playerNum do
-        logic.sendPlayerAttitude(i, config.PLAYER_ATTITUDE.THINKING)
+        logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, i, config.PLAYER_ATTITUDE.THINKING)
     end
 end
 
@@ -264,7 +263,7 @@ end
 
 -- 步骤超时
 function logic.onStepTimeout(stepid)
-    LOG.info("onStepTimeout %d", stepid)
+    --LOG.info("onStepTimeout %d", stepid)
     if stepid == config.GAME_STEP.START then
         logic.onStepStartGameTimeout()
     elseif stepid == config.GAME_STEP.OUT_HAND then
@@ -283,9 +282,9 @@ end
 function logic.onRelinkOutHand(seat)
     if logic.outHandInfo[seat] then
         logic.sendOutHandInfo(seat, seat, logic.outHandInfo[seat])
-        logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.READY)
+        logic.sendPlayerAttitude(seat,seat, config.PLAYER_ATTITUDE.READY)
     else
-        logic.sendPlayerAttitude(seat, config.PLAYER_ATTITUDE.THINKING)
+        logic.sendPlayerAttitude(seat,seat, config.PLAYER_ATTITUDE.THINKING)
     end
 end
 

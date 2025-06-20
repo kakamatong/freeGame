@@ -8,15 +8,15 @@ local GAME_STEP = {
 
 local HAND_FLAG = {
     ROCK = 0x0001, -- 石头
-    PAPER = 0x0010, -- 剪刀
-    SCISSORS = 0x0100, -- 布
+    PAPER = 0x0010, -- 布
+    SCISSORS = 0x0100, -- 剪刀
 }
 
 local HAND_RESULT = {
     DRAW = 0x0000, -- 平局
     ROCK_WIN = 0x0101, -- 石头胜
-    PAPER_WIN = 0x0011, -- 剪刀胜
-    SCISSORS_WIN = 0x0110, -- 布胜
+    PAPER_WIN = 0x0011, -- 布胜
+    SCISSORS_WIN = 0x0110, -- 剪刀胜
 }
 
 local RESULT_TYPE = {

@@ -65,9 +65,11 @@ end
 -- 收到玩家态度消息
 function XY.reportGamePlayerAttitude(seat, data)
     LOG.info("XY.reportGamePlayerAttitude", seat, data)
-    aiLogic.seat = seat
-    aiLogic.data = data
-    aiLogic.timeFlag[aiLogic.stepid] = true
+    if seat == data.seat then
+        aiLogic.seat = seat
+        aiLogic.data = data
+        aiLogic.timeFlag[aiLogic.stepid] = true
+    end
 end
 
 ------------------------------------------------------------------------------------------------------------ ai消息处理
