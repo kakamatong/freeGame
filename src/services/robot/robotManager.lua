@@ -7,6 +7,7 @@ local freeRobots = {}
 local usingRobots = {}
 local CMD = {}
 
+-- 获取空闲机器人id
 local function getFreeRobotid()
     if #freeRobots > 0 then
         return table.remove(freeRobots, 1)
@@ -14,6 +15,7 @@ local function getFreeRobotid()
     return nil
 end
 
+-- 获取机器人
 function CMD.getRobots(gameid, num)
     if not gameid or not num or gameid == 0 or num <= 0 then
         return nil
@@ -37,6 +39,7 @@ function CMD.getRobots(gameid, num)
     return datas
 end
 
+-- 返回机器人
 function CMD.returnRobots(ids)
     for _,id in ipairs(ids) do
         if usingRobots[id] then
@@ -46,6 +49,7 @@ function CMD.returnRobots(ids)
     end
 end
 
+-- 机器人进入游戏
 function CMD.robotEnter(gameid, roomid, userid)
     local robot = robotDatas[userid]
     if not robot then
