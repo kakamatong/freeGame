@@ -50,6 +50,7 @@ local function startGame()
     gameStatus = config.GAME_STATUS.START
     gameStartTime = os.time()
     logicHandler.startGame()
+    pushLog(config.LOG_TYPE.GAME_START, 0, gameid, roomid, "")
     LOG.info("game start")
 end
 
@@ -218,6 +219,7 @@ local function gameEnd()
         --gameManager.destroyGame(gameid, roomid)
         skynet.send(gameManager, "lua", "destroyGame", gameid, roomid)
     end
+    pushLog(config.LOG_TYPE.GAME_END, 0, gameid, roomid, "")
 end
 
 -- 检查桌子状态，如果超时，则销毁桌子
@@ -358,6 +360,8 @@ function CMD.stop()
             skynet.send(robotManager, "lua", "returnRobots", gameData.robots)
         end
     end
+
+    pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, gameid, roomid, "")
     skynet.exit()
 end
 
