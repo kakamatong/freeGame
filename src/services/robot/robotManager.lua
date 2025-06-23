@@ -15,6 +15,17 @@ local function getFreeRobotid()
     return nil
 end
 
+function start()
+    local dbSvr = skynet.localname(".dbserver")
+    local robots = skynet.call(dbSvr, "lua", "func","getRobots", config.idbegin, config.idend)
+    if robots then
+        for _,robot in pairs(robots) do
+            robotDatas[robot.userid] = robot
+            table.insert(freeRobots, robot.userid)
+        end
+    end
+end
+
 -- 获取机器人
 function CMD.getRobots(gameid, num)
     if not gameid or not num or gameid == 0 or num <= 0 then
@@ -66,17 +77,6 @@ function CMD.robotEnter(gameid, roomid, userid)
     skynet.send(gameManager, "lua", "connectGame", gameid, roomid, userid)
 end
 
-function CMD.start()
-    local dbSvr = skynet.localname(".dbserver")
-    local robots = skynet.call(dbSvr, "lua", "func","getRobots", config.idbegin, config.idend)
-    if robots then
-        for _,robot in pairs(robots) do
-            robotDatas[robot.userid] = robot
-            table.insert(freeRobots, robot.userid)
-        end
-    end
-end
-
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]
@@ -88,4 +88,6 @@ skynet.start(function()
         end
     end)
     skynet.register("." .. name)
+
+    start()
 end)

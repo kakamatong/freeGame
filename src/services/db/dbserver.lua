@@ -53,7 +53,7 @@ local function startRedis()
     })
 end
 
-function CMD.start()
+function start()
     startMysql()
     startRedis()
 end
@@ -95,4 +95,6 @@ skynet.start(function()
     end)
 
     skynet.register("." .. name)
+    
+    start()
 end)

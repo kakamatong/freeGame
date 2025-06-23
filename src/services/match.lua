@@ -168,7 +168,7 @@ local function checkQueue(gameid, queueid)
 end
 
 -- 启动匹配服务，定时检查所有队列
-function CMD.start()
+function start()
     LOG.info("match start")
     skynet.fork(function()
         while true do
@@ -243,4 +243,6 @@ skynet.start(function()
 		skynet.ret(skynet.pack(f(...)))
 	end)
     skynet.register("." .. name)
+
+    start()
 end)
