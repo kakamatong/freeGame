@@ -2,6 +2,7 @@
 -- 匹配服务，负责玩家匹配逻辑和队列管理
 local skynet = require "skynet"
 require "skynet.manager"
+local log = require "log"
 local CMD = {}
 local name = "match"
 local users = {}         -- 记录所有正在匹配的用户信息
@@ -33,14 +34,14 @@ end
 
 -- 离开队列
 local function leaveQueue(userid)
-    LOG.info("leaveQueue %d", userid)
+    log.info("leaveQueue %d", userid)
     if not users[userid] then
         return false
     end
     local gameid = users[userid].gameid
     local queueid = users[userid].queueid
     local queue = queueUserids[gameid][queueid]
-    LOG.info("queueUserids start %s", UTILS.tableToString(queue))
+    log.info("queueUserids start %s", UTILS.tableToString(queue))
     if not queueUserids[gameid] or not queue then
         return false
     end 
@@ -51,7 +52,7 @@ local function leaveQueue(userid)
         end
     end
     users[userid] = nil
-    LOG.info("queueUserids end %s", UTILS.tableToString(queue))
+    log.info("queueUserids end %s", UTILS.tableToString(queue))
     return true
 end
 
@@ -79,7 +80,7 @@ local function matchSuccess(userid1, userid2)
 end
 
 local function matchWithRobot(userid, robotData)
-    LOG.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
+    log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
     local gameid = users[userid].gameid
     local roomid = createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
@@ -107,10 +108,10 @@ end
 
 -- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
 local function checkMatchNum(gameid,userid)
-    LOG.info("checkMatchNum %d", userid)
+    log.info("checkMatchNum %d", userid)
     local user = users[userid]
     if user and user.checkNum >= CHECK_MAX_NUM then
-        LOG.info("checkMatchNum %d %d", userid, user.checkNum)
+        log.info("checkMatchNum %d %d", userid, user.checkNum)
         local robot = getRobots(gameid, 1)
         if robot and #robot > 0 then
             user.matchSuccess = true
@@ -121,9 +122,9 @@ end
 
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
-    --LOG.info("checkQueue %d %d", gameid, queueid)
+    --log.info("checkQueue %d %d", gameid, queueid)
     local que = queueUserids[gameid][queueid]
-    --LOG.info("que %s", UTILS.tableToString(que))
+    --log.info("que %s", UTILS.tableToString(que))
     for i = 1, #que do
         if i < #que then
             local userid1 = que[i]
@@ -137,7 +138,7 @@ local function checkQueue(gameid, queueid)
                 break
             end
             if math.abs(user1.rate - user2.rate) < 0.05 then
-                LOG.info("match success %d %d", userid1, userid2)
+                log.info("match success %d %d", userid1, userid2)
                 user1.matchSuccess = true
                 user2.matchSuccess = true
                 matchSuccess(userid1, userid2)
@@ -169,7 +170,7 @@ end
 
 -- 启动匹配服务，定时检查所有队列
 function start()
-    LOG.info("match start")
+    log.info("match start")
     skynet.fork(function()
         while true do
             for gameid, queues in pairs(queueUserids) do
@@ -184,12 +185,12 @@ end
 
 -- 停止匹配服务
 function CMD.stop()
-    LOG.info("match stop")
+    log.info("match stop")
 end
 
 -- 玩家进入匹配队列
 function CMD.enterQueue(agent, userid, gameid, queueid, rate)
-    LOG.info("enterQueue %d %d %d", userid, gameid, queueid)
+    log.info("enterQueue %d %d %d", userid, gameid, queueid)
     if not gameid or not queueid or queueid == 0 then
         return false
     end

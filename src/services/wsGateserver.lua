@@ -5,7 +5,7 @@ local netpack = require "skynet.netpack"
 local websocket = require "http.websocket"
 require "skynet.manager"
 local wsGateserver = {}
-
+local log = require "log"
 local socket = require "skynet.socket"
 local queue -- 消息队列
 local maxclient -- 最大客户端连接数
@@ -44,9 +44,9 @@ function wsGateserver.start(handler)
 		local port = assert(conf.port)
 		local protocol = "ws"
         local id = socket.listen(address, port)
-        LOG.info(string.format("Listen websocket addr %s port %d protocol:%s", address, port, protocol))
+        log.info(string.format("Listen websocket addr %s port %d protocol:%s", address, port, protocol))
         socket.start(id, function(id, addr)
-            LOG.info(string.format("accept client wssocket_id: %s addr:%s", id, addr))
+            log.info(string.format("accept client wssocket_id: %s addr:%s", id, addr))
             local ok, err = websocket.accept(id, handler, protocol, addr)
             if not ok then
                 LOG.error(err)

@@ -1,7 +1,7 @@
 -- dbLog.lua
 -- 数据库业务逻辑模块，负责用户认证、数据查询和状态管理等
 local skynet = require "skynet"
-
+local log = require "log"
 -- 定义db表，存放所有数据库相关的业务函数
 local dbLog = {}
 
@@ -25,7 +25,7 @@ function dbLog.insertLoginLog(mysqlLog, ...)
     local userid, nickname, ip, loginType, status, ext = ...
     local sql = string.format("INSERT INTO logLogin (userid, nickname, ip, loginType, status, ext) VALUES (%d, '%s', '%s', '%s', %d, '%s');", userid, nickname, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("insert logLogin error: %s", err)
         return false
@@ -52,7 +52,7 @@ function dbLog.insertAuthLog(mysqlLog, ...)
     local username, ip, loginType, status, ext = ...
     local sql = string.format("INSERT INTO logAuth (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("insert logAuth error: %s", err)
         return false
@@ -78,7 +78,7 @@ function dbLog.insertRoomLog(mysqlLog, ...)
     local logtype, userid, gameid, roomid, time, ext = ...
     local sql = string.format("INSERT INTO logRoom10001 (type, userid, gameid, roomid, time, ext) VALUES (%d, %d, %d, %d, '%s', '%s');", logtype, userid, gameid, roomid, time, ext)
     local res, err = mysqlLog:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("insert logRoom10001 error: %s", err)
         return false

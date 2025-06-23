@@ -2,8 +2,10 @@ include "config.path"
 
 preload = root .."src/preload.lua"	-- run preload.lua before every lua service run
 thread = 8
-logger = nil
-logpath = "."
+logger = "logger"
+logservice = "snlua"  -- 现在日志服务用 Lua 实现
+logpath    = "./log/" -- 日志输出目录
+loggroup   = "test"   -- 日志文件分组名
 harbor = 1
 address = "127.0.0.1:2526"
 master = "127.0.0.1:2013"

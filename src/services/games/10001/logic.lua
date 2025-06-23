@@ -1,4 +1,5 @@
 local config = require("games.10001.configLogic")
+local log = require "log"
 local logic = {}
 logic.outHandInfo = {} -- 出招信息
 logic.roundid = 0 -- 轮次id
@@ -30,7 +31,7 @@ end
 
 -- 开始游戏
 function logic.startGame()
-    LOG.info("startGame")
+    log.info("startGame")
     logic.startStep(config.GAME_STEP.START)
 end
 
@@ -40,7 +41,7 @@ function logic.outHand(seatid, args)
         return
     end
     local flag = args.flag
-    LOG.info("outHand %d %d", seatid, flag)
+    log.info("outHand %d %d", seatid, flag)
     if not logic.outHandInfo[seatid] then
         logic.outHandInfo[seatid] = flag
     else
@@ -67,7 +68,7 @@ end
 
 -- 比较大小
 function logic.compare()
-    LOG.info("compare")
+    log.info("compare")
     local maxFlag = 0
     local maxSeatid = 0
     local result = 0x0000
@@ -233,7 +234,7 @@ end
 
 -- 开始步骤
 function logic.startStep(stepid)
-    LOG.info("startStep %d", stepid)
+    log.info("startStep %d", stepid)
     logic.setStepBeginTime()
     logic.stepid = stepid
     if stepid == config.GAME_STEP.START then
@@ -249,7 +250,7 @@ end
 
 -- 停止步骤
 function logic.stopStep(stepid)
-    LOG.info("stopStep %d", stepid)
+    log.info("stopStep %d", stepid)
     if stepid == config.GAME_STEP.START then
         logic.stopStepStartGame()
     elseif stepid == config.GAME_STEP.OUT_HAND then
@@ -263,7 +264,7 @@ end
 
 -- 步骤超时
 function logic.onStepTimeout(stepid)
-    --LOG.info("onStepTimeout %d", stepid)
+    --log.info("onStepTimeout %d", stepid)
     if stepid == config.GAME_STEP.START then
         logic.onStepStartGameTimeout()
     elseif stepid == config.GAME_STEP.OUT_HAND then
@@ -298,7 +299,7 @@ end
 
 -- 重新连接
 function logic.onRelink(seat)
-    LOG.info("onRelink %d", seat)
+    log.info("onRelink %d", seat)
     local stepid = logic.getStepId()
     logic.sendToOneClient(seat, "reportGameStep", {
         stepid = stepid,
@@ -317,13 +318,13 @@ end
 
 -- 定时器每0.1s调用一次
 function logic.update()
-    --LOG.info("update")
+    --log.info("update")
     local stepid = logic.getStepId()
     if stepid == config.GAME_STEP.NONE then
         return
     end
     local currentTime = os.time()
-    --LOG.info("currentTime %d, logic.stepBeginTime %d", currentTime, logic.stepBeginTime)
+    --log.info("currentTime %d, logic.stepBeginTime %d", currentTime, logic.stepBeginTime)
     local timeLen = currentTime - logic.stepBeginTime
     if timeLen > logic.getStepTimeLen(stepid) then
         logic.onStepTimeout(stepid)

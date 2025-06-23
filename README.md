@@ -19,3 +19,4 @@
 
 cjson使用云风版本：https://github.com/cloudwu/lua-cjson
 
+log 模块使用 https://github.com/Veinin/skynet-logger

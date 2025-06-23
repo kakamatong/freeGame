@@ -4,14 +4,14 @@ local websocket = require "http.websocket"
 local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> login : { uid, login } 登入池子
-
+local log = require "log"
 skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
 }
 
 local function register_handler(name)
-	LOG.info("wsgate register_handler")
+	log.info("wsgate register_handler")
 	local loginservice = skynet.localname(".ws_auth_master")
 	if loginservice then
 		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
@@ -23,23 +23,23 @@ end
 local handler = {}
 
 function handler.open(source, conf)
-	LOG.info("wsgate open")
+	log.info("wsgate open")
 	watchdog = conf.watchdog or source
 	register_handler("lobbyGate") -- 注册到login服务
 	return conf.address, conf.port
 end
 
 function handler.message(fd, msg, msgType)
-	--LOG.info("wsgate message")
+	--log.info("wsgate message")
 	-- recv a package, forward it
 	local c = connection[fd]
 	local agent = c.agent
 	if agent then
-		--LOG.info("wsgate message forward")
+		--log.info("wsgate message forward")
 		-- It's safe to redirect msg directly , gateserver framework will not free msg.
 		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
 	else
-		LOG.info("wsgate message send")
+		log.info("wsgate message send")
 		skynet.send(watchdog, "lua", "socket", "data", fd, msg)
 		-- skynet.tostring will copy msg to a string, so we must free msg here.
 		skynet.trash(msg,string.len(msg))
@@ -47,12 +47,12 @@ function handler.message(fd, msg, msgType)
 end
 
 function handler.connect(fd)
-	LOG.info("wsgate connect")
+	log.info("wsgate connect")
 end
 
 function handler.handshake(fd, header, url)
 	local addr = websocket.addrinfo(fd)
-	LOG.info("wsgate handshake from: %s, url %s, addr %s" ,tostring(fd), url, addr)
+	log.info("wsgate handshake from: %s, url %s, addr %s" ,tostring(fd), url, addr)
 	local ip = websocket.real_ip(fd)
 	local c = {
 		fd = fd,
@@ -96,13 +96,13 @@ local function close_fd(fd)
 end
 
 function handler.close(fd)
-	LOG.info("wsgate close")
+	log.info("wsgate close")
 	close_fd(fd)
 	skynet.send(watchdog, "lua", "socket", "close", fd)
 end
 
 function handler.error(fd, msg)
-	LOG.info("wsgate error")
+	log.info("wsgate error")
 	close_fd(fd)
 	skynet.send(watchdog, "lua", "socket", "error", fd, msg)
 end
@@ -110,7 +110,7 @@ end
 local CMD = {}
 
 function CMD.forward(source, fd, client, address)
-	LOG.info("wsgate forward")
+	log.info("wsgate forward")
 	local c = assert(connection[fd])
 	unforward(c)
 	c.client = client or 0
@@ -120,7 +120,7 @@ end
 
 function CMD.send(source, fd, msg)
 	if not connection[fd] then
-		LOG.info("wsgate send error: fd not found")
+		log.info("wsgate send error: fd not found")
 		return
 	end
 	websocket.write(fd, msg, "binary")
@@ -133,7 +133,7 @@ function CMD.accept(source, fd)
 end
 
 function CMD.kick(source, fd)
-	LOG.info("wsgate kick")
+	log.info("wsgate kick")
 	wsGateserver.closeclient(fd)
 end
 

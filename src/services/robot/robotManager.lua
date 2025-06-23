@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local log = require "log"
 require "skynet.manager"
 local name = "robotManager"
 local config = require "robot.config"
@@ -36,7 +37,7 @@ function CMD.getRobots(gameid, num)
     local n = 0
     for i = 1, num do
         local id = getFreeRobotid()
-        LOG.info("getRobots %s %d", id, n)
+        log.info("getRobots %s %d", id, n)
         if id and robotDatas[id] then
             table.insert(datas, robotDatas[id])
             usingRobots[id] = true

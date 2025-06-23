@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local log = require "log"
 require "skynet.manager"
 
 local CMD = {}
@@ -9,7 +10,7 @@ local roomid = os.time() * 100000
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
-    LOG.info("createGame %d", roomid)
+    log.info("createGame %d", roomid)
     local name = "games/" .. gameid .. "/room"
     local game = skynet.newservice(name)
     skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
@@ -60,7 +61,7 @@ end
 
 -- 客户端消息处理
 function CMD.onClinetMsg(userid, name, args)
-    LOG.info("onClinetMsg %s %s %s", userid, name, args)
+    log.info("onClinetMsg %s %s %s", userid, name, args)
     local game = allGames[args.gameid][args.roomid]
     if not game then
         LOG.error("game not found %s %s", args.gameid, args.roomid)

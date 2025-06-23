@@ -7,3 +7,4 @@
 game.pid
 src/config/gameConfig.lua
 skynet.pid
+/log/*

@@ -2,7 +2,7 @@
 -- 游戏服务器主入口，负责启动各个核心服务
 local skynet = require "skynet"
 local sprotoloader = require "sprotoloader"
-
+local log = require "log"
 local max_client = 64 -- 最大客户端连接数
 
 skynet.start(function()
@@ -41,7 +41,7 @@ skynet.start(function()
 		-- 	skynet.call(loginservice, "lua", "register_gate", "lobbyGate", source)
 		-- end,
 	})
-	LOG.info("Wswatchdog listen on " .. addr .. ":" .. port)
+	log.info("Wswatchdog listen on " .. addr .. ":" .. port)
 	-- 启动完成后退出主服务
 	skynet.exit()
 end)

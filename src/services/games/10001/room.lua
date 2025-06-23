@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local log = require "log"
 local cjson = require "cjson"
 local config = require "games.10001.config"
 require "skynet.manager"
@@ -51,7 +52,7 @@ local function startGame()
     gameStartTime = os.time()
     logicHandler.startGame()
     pushLog(config.LOG_TYPE.GAME_START, 0, gameid, roomid, "")
-    LOG.info("game start")
+    log.info("game start")
 end
 
 -- 判断是否是机器人
@@ -83,7 +84,7 @@ end
 
 -- 测试是否可以开始游戏
 local function testStart()
-    LOG.info("testStart")
+    log.info("testStart")
     local onlineCount = 0
     for _, playerid in pairs(playerids) do
         if onlines[playerid] ~= nil then
@@ -115,7 +116,7 @@ local function sendToOneClient(userid, name, data)
     if client_fd and onlines[userid] then
         data.gameid = gameid
         data.roomid = roomid
-        --LOG.info("sendToOneClient %s", UTILS.roomToString(data))
+        --log.info("sendToOneClient %s", UTILS.roomToString(data))
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
     elseif isRobotByUserid(userid) then
@@ -241,7 +242,7 @@ end
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
-    LOG.info("roomHandlerAi.onMsg", seat, name, data)
+    log.info("roomHandlerAi.onMsg", seat, name, data)
     local f = XY[name]
     if f then
         local userid = seats[seat]
@@ -291,7 +292,7 @@ local CMD = {}
 -- 玩家进入游戏
 function CMD.playerEnter(userData)
     if players[userData.userid] then
-        LOG.info("玩家已经在游戏中 %s", userData.userid)
+        log.info("玩家已经在游戏中 %s", userData.userid)
         return false
     end
     players[userData.userid] = userData
@@ -302,7 +303,7 @@ end
 
 -- 初始化游戏逻辑
 function CMD.start(data)
-    LOG.info("game10001 start %s", UTILS.tableToString(data))
+    log.info("game10001 start %s", UTILS.tableToString(data))
     roomid = data.roomid
     gameid = data.gameid
     playerids = data.players
@@ -332,7 +333,7 @@ end
 
 -- 客户端消息处理
 function CMD.onClinetMsg(userid, name, args, response)
-    LOG.info("onClinetMsg %s", name)
+    log.info("onClinetMsg %s", name)
     local f = XY[name]
     if f then
         f(userid, args)
@@ -341,7 +342,7 @@ end
 
 -- 连接游戏
 function CMD.connectGame(userid, client_fd, agent)
-    LOG.info("connectGame %d", userid)
+    log.info("connectGame %d", userid)
     client_fds[userid] = client_fd
     agents[userid] = agent
     online(userid)

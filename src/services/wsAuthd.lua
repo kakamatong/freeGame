@@ -3,6 +3,7 @@
 local auth = require "wsAuthserver"
 local crypt = require "skynet.crypt"
 local skynet = require "skynet"
+local log = require "log"
 
 -- 服务器配置信息
 local server = {
@@ -37,7 +38,7 @@ function server.auth_handler(token, ip)
 	password = crypt.base64decode(password)
 	loginType = crypt.base64decode(loginType)
 	assert(login_type[loginType])
-	LOG.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
+	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
 		LOG.error("wsgate login error: dbserver not started")
@@ -59,7 +60,7 @@ end
 
 -- 登录处理函数，分配subid
 function server.auth_after_handler(server, userid, secret, loginType)
-	LOG.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
+	log.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local gameserver = assert(server_list[server], "Unknown server")
 	-- 只允许一个用户在线
 	-- local last = user_online[numid]
@@ -79,7 +80,7 @@ local CMD = {}
 
 -- 注册网关服务器
 function CMD.register_gate(server, address)
-	LOG.info(string.format("Register gate %s %s", server, address))
+	log.info(string.format("Register gate %s %s", server, address))
 	server_list[server] = address
 end
 

@@ -1,4 +1,5 @@
 require "skynet"
+local log = require "log"
 local config = require "games.10001.configLogic"
 local aiHandler = {}
 local aiLogic = {}
@@ -25,7 +26,7 @@ end
 
 -- 处理出牌
 function aiLogic.dealGameOutHand()
-    LOG.info("XY.dealGameOutHand", seat, data)
+    log.info("XY.dealGameOutHand", seat, data)
     aiLogic.timeFlag[config.GAME_STEP.OUT_HAND] = false
     if aiLogic.data.att == config.PLAYER_ATTITUDE.THINKING then
         local flags = {
@@ -64,7 +65,7 @@ end
 
 -- 收到玩家态度消息
 function XY.reportGamePlayerAttitude(seat, data)
-    LOG.info("XY.reportGamePlayerAttitude", seat, data)
+    log.info("XY.reportGamePlayerAttitude", seat, data)
     if seat == data.seat then
         aiLogic.seat = seat
         aiLogic.data = data
@@ -77,7 +78,7 @@ function aiHandler.onMsg(seat, name, data)
     if XY[name] then
         XY[name](seat, data)
     else
-        LOG.info("aiHandler.onMsg not found")
+        log.info("aiHandler.onMsg not found")
     end
 end
 

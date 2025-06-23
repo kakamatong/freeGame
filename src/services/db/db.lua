@@ -1,7 +1,7 @@
 -- db.lua
 -- 数据库业务逻辑模块，负责用户认证、数据查询和状态管理等
 local skynet = require "skynet"
-
+local log = require "log"
 -- 定义db表，存放所有数据库相关的业务函数
 local db = {}
 
@@ -16,9 +16,9 @@ function db.setAuth(mysql,redis,...)
     local userid, secret, subid, strType = ...
     -- 构造插入或更新auth表的SQL语句
     local sql = string.format("INSERT INTO auth (userid, secret, subid, type) VALUES (%d, '%s', %d, '%s') ON DUPLICATE KEY UPDATE secret = '%s',type= VALUES(type),subid=subid+1, updated_at = CURRENT_TIMESTAMP;",userid,secret,subid,strType,secret)
-    LOG.info(sql) -- 打印SQL语句
+    log.info(sql) -- 打印SQL语句
     local res = mysql:query(sql) -- 执行SQL
-    LOG.info(UTILS.tableToString(res)) -- 打印结果
+    log.info(UTILS.tableToString(res)) -- 打印结果
     if res.err then
         LOG.error("insert auth error: %s", res.err) -- 插入出错
         return false
@@ -31,7 +31,7 @@ end
 function db.getAuthSubid(mysql,redis,userid)
     local sql = string.format("SELECT subid FROM auth WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -45,10 +45,10 @@ end
 -- 获取用户认证信息
 function db.getAuth(mysql,redis,...)
     local userid = ...
-    LOG.info("getAuth:"..userid)
+    log.info("getAuth:"..userid)
     local sql = string.format("SELECT * FROM auth WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -64,7 +64,7 @@ function db.doAuth(mysql,redis,...)
     local userid, secret =...
     local sql = string.format("UPDATE auth SET secret = '%s' WHERE userid = %d;",secret,userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("update auth error: %s", err)
         return false
@@ -77,7 +77,7 @@ function db.checkAuth(mysql,redis,...)
     local userid, secret =...
     local sql = string.format("SELECT * FROM auth WHERE userid = %d AND secret = '%s';",userid,secret)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -93,7 +93,7 @@ function db.addSubid(mysql,redis,...)
     local userid, newSubid = ...
     local sql = string.format("UPDATE auth SET subid = %d WHERE userid = %d;",newSubid,userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("update auth error: %s", err)
         return false
@@ -107,7 +107,7 @@ function db.login(mysql,redis,...)
     -- loginType决定查哪个表
     local sql = string.format("SELECT * FROM %s WHERE username = '%s' AND password = UPPER(MD5('%s'));",loginType,username,password)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -123,7 +123,7 @@ function db.getUserData(mysql,redis,...)
     local userid =...
     local sql = string.format("SELECT * FROM userData WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -139,7 +139,7 @@ function db.getUserRiches(mysql,redis,...)
     local userid =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -155,7 +155,7 @@ function db.getUserRichesByType(mysql,redis,...)
     local userid,richType =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select userRiches error: %s", err)
         return false
@@ -171,7 +171,7 @@ function db.addUserRiches(mysql,redis,...)
     local userid,richType,richNums =...
     local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("addUserRiches error: %s", err)
         return false
@@ -192,7 +192,7 @@ function db.reduceUserRiches(mysql,redis,...)
     end
     local sql = string.format("UPDATE userRiches SET richNums = richNums - %d WHERE userid = %d AND richType = %d;",richNums,userid,richType)
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("reduceUserRiches error: %s", err)
         return false
@@ -209,7 +209,7 @@ function db.setUserStatus(mysql,redis,...)
         sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d;",userid,status,gameid,roomid,status,gameid,roomid)
     end
     local res, err = mysql:query(sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     if not res or res.badresult then
         LOG.error("setUserStatus error: %s", res.err)
         return false
@@ -222,8 +222,8 @@ function db.getUserStatus(mysql,redis,...)
     local userid =...
     local sql = string.format("SELECT * FROM userStatus WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
-    LOG.info('----------------getUserStatus: %s',sql)
-    LOG.info(UTILS.tableToString(res))
+    log.info('----------------getUserStatus: %s',sql)
+    log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false
@@ -239,7 +239,7 @@ function db.getRobots(mysql,redis,...)
     local idbegin,idend =...
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
     local res, err = mysql:query(sql)
-    --LOG.info(UTILS.tableToString(res))
+    --log.info(UTILS.tableToString(res))
     if not res then
         LOG.error("select auth error: %s", err)
         return false

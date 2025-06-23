@@ -101,34 +101,6 @@ _G.UTILS = {
     end,
 }
 
--- 日志工具，方便输出调试信息
-local LOG_LEVEL = {
-    DEBUG = 1,
-    INFO = 2,
-    WARN = 3,
-    ERROR = 4,
-}
-
-_G.LOG = {
-    debug = function(fmt, ...)
-        if config.debug then
-            skynet.error(string.format("[DEBUG] " .. fmt, ...))
-        end
-    end,
-    
-    info = function(fmt, ...)
-        skynet.error(string.format("[INFO] " .. fmt, ...))
-    end,
-    
-    warn = function(fmt, ...)
-        skynet.error(string.format("[WARN] " .. fmt, ...))
-    end,
-    
-    error = function(fmt, ...)
-        skynet.error(string.format("[ERROR] " .. fmt, ...))
-    end,
-}
-
 -- 性能统计相关工具
 _G.STAT = {
     -- 计时开始，记录某个操作的起始时间
@@ -175,4 +147,4 @@ _G.ERROR = {
 }
 
 -- 在这里可以添加更多的全局初始化内容
---LOG.info("Preload completed") 
+--log.info("Preload completed") 

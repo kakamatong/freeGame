@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local mysql = require "skynet.db.mysql"
 local redis = require "skynet.db.redis"
+local log = require "log"
 require "skynet.manager"
 local CMD = {}
 local FUNC = require "db" or {}
@@ -11,11 +12,11 @@ local redis_db = nil
 local mysqlLog_db = nil
 local function startMysql()
     if mysql_db or mysqlLog_db then
-        LOG.info("mysql already started")
+        log.info("mysql already started")
         return
     end
     local onConnect = function(db)
-        LOG.info("**mysql connected**")
+        log.info("**mysql connected**")
     end
 
     mysql_db = mysql.connect({
@@ -28,7 +29,7 @@ local function startMysql()
     })
 
     local onConnectLog = function(db)
-        LOG.info("**mysqlLog connected**")
+        log.info("**mysqlLog connected**")
     end
 
     mysqlLog_db = mysql.connect({
@@ -43,7 +44,7 @@ end
 
 local function startRedis()
     if redis_db then
-        LOG.info("redis already started")
+        log.info("redis already started")
         return
     end
     redis_db = redis.connect({
@@ -71,7 +72,7 @@ end
 
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
-        LOG.info("%s cmd %s %s",name, cmd, subcmd)
+        log.info("%s cmd %s %s",name, cmd, subcmd)
         if cmd == "func" then
             if not mysql_db or not redis_db then
                 LOG.error("mysql or redis not started")
@@ -95,6 +96,6 @@ skynet.start(function()
     end)
 
     skynet.register("." .. name)
-    
+
     start()
 end)

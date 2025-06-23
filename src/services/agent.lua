@@ -4,7 +4,7 @@ local skynet = require "skynet"
 local websocket = require "http.websocket"
 local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
-
+local log = require "log"
 local WATCHDOG
 local gate
 local host
@@ -48,7 +48,7 @@ end
 
 -- 关闭连接
 local function close()
-	LOG.info("agent close")
+	log.info("agent close")
 	skynet.call(gate, "lua", "kick", client_fd)
 	--skynet.exit()
 end
@@ -217,8 +217,8 @@ function REQUEST:userRiches(args)
 		table.insert(richType, v.richType)
 		table.insert(richNums, v.richNums)
 	end
-	LOG.info("richType %s", UTILS.tableToString(richType))
-	LOG.info("richNums %s", UTILS.tableToString(richNums))
+	log.info("richType %s", UTILS.tableToString(richType))
+	log.info("richNums %s", UTILS.tableToString(richNums))
 	return {richType = richType, richNums = richNums}
 end
 
@@ -244,7 +244,7 @@ end
 
 -- 认证请求处理
 function REQUEST:login(args)
-	LOG.info("login username %s, password %s", args.userid, args.password)
+	log.info("login username %s, password %s", args.userid, args.password)
 	local db =getDB()
 	local authInfo = skynet.call(db, "lua", "func", "getAuth", args.userid)
 	if not authInfo then
@@ -291,7 +291,7 @@ end
 
 -- 客户端请求分发
 local function request(name, args, response)
-	--LOG.info("request %s", name)
+	--log.info("request %s", name)
 	if not bAuth and name ~= "login" then
 		return 
 	end
@@ -311,12 +311,12 @@ skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
 	unpack = function (msg, sz)
-		--LOG.info("agent unpack msg %s, sz %d", type(msg), sz)
+		--log.info("agent unpack msg %s, sz %d", type(msg), sz)
 		local str = skynet.tostring(msg, sz)
 		return host:dispatch(str, sz)
 	end,
 	dispatch = function (fd, _, type, ...)
-		--LOG.info("agent dispatch fd %d, type %s", fd, type)
+		--log.info("agent dispatch fd %d, type %s", fd, type)
 		assert(fd == client_fd) -- 只能处理自己的fd
 		skynet.ignoreret() -- session是fd，不需要返回
 		if type == "REQUEST" then
@@ -357,7 +357,7 @@ function CMD.enterGame(gamedata)
 end
 
 function CMD.leaveGame()
-	LOG.info("leaveGame")
+	log.info("leaveGame")
 	gameid = 0
 	roomid = 0
 	setUserStatus(CONFIG.USER_STATUS.ONLINE, gameid, roomid)
@@ -366,7 +366,7 @@ end
 
 -- 内容推送
 function CMD.content()
-	LOG.info("agent content")
+	log.info("agent content")
 	report("reportContent",{code = 1})
 end
 
@@ -388,7 +388,7 @@ function CMD.start(conf)
 		while true do
 			local now = os.time()
 			if now - leftTime >= dTime then
-				LOG.info("agent heartbeat fd %d now %d leftTime %d", client_fd, now, leftTime)
+				log.info("agent heartbeat fd %d now %d leftTime %d", client_fd, now, leftTime)
 				close()
 				break
 			end
@@ -408,7 +408,7 @@ function CMD.disconnect()
 		skynet.send(gameServer, "lua", "offLine", gameid, roomid, userid)
 	end
 	setUserStatus(CONFIG.USER_STATUS.OFFLINE)
-	LOG.info("agent disconnect")
+	log.info("agent disconnect")
 	skynet.exit()
 end
 ------------------------------------------------------------------------------------------------------------

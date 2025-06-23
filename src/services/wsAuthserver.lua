@@ -5,28 +5,28 @@ local websocket = require "http.websocket"
 local socket = require "skynet.socket"
 local crypt = require "skynet.crypt"
 require "skynet.manager"
-
+local log = require "log"
 -- WebSocket认证流程，完成加密握手和token解密
 local function ws_auth(fd)
     -- 生成挑战字符串，防止重放攻击
     local challenge = crypt.randomkey()
     local challenge_b64 = crypt.base64encode(challenge)
-    LOG.info("auth challenge_b64 %s", challenge_b64)
+    log.info("auth challenge_b64 %s", challenge_b64)
     websocket.write(fd, challenge_b64, "binary")
 
     -- 读取客户端密钥
     local client_key = websocket.read(fd)
-    LOG.info("auth client_key_b64 %s", client_key)
+    log.info("auth client_key_b64 %s", client_key)
     client_key = crypt.base64decode(client_key)
     if #client_key ~= 8 then
-        LOG.info("Invalid client key length")
+        log.info("Invalid client key length")
         error("Invalid client key length")
     end
     -- 生成服务端密钥
     local server_key = crypt.randomkey()
     local server_key_dh = crypt.dhexchange(server_key)
     local server_key_b64 = crypt.base64encode(server_key_dh)
-    LOG.info("auth server_key_b64 %s", server_key_b64)
+    log.info("auth server_key_b64 %s", server_key_b64)
     websocket.write(fd, server_key_b64, "binary")
 
     -- 计算共享密钥
@@ -38,12 +38,12 @@ local function ws_auth(fd)
     if hmac ~= client_hmac then
         error("HMAC validation failed")
     end
-    LOG.info("auth handshake success secret %s", crypt.hexencode(secret))
+    log.info("auth handshake success secret %s", crypt.hexencode(secret))
     -- 解密Token，获取用户信息
     local etoken = websocket.read(fd)
-    LOG.info("auth etoken %s", etoken)
+    log.info("auth etoken %s", etoken)
     local token = crypt.desdecode(secret, crypt.base64decode(etoken))
-    LOG.info("auth token %s", token)
+    log.info("auth token %s", token)
     return token, secret
 end
 
@@ -69,7 +69,7 @@ local function handle_ws_connection(fd, addr, ip, conf)
         websocket.close(fd)
         return
     end
-    LOG.info("login subid %s", subid)
+    log.info("login subid %s", subid)
     -- 返回登录成功信息
     websocket.write(fd, "200 "..crypt.base64encode(subid) .. " " .. crypt.base64encode(uid), "binary")
     websocket.close(fd)
@@ -86,19 +86,19 @@ local function auth(conf)
     skynet.start(function()
         -- 添加WebSocket监听
         local id = socket.listen(conf.host, conf.port)
-        LOG.info(string.format("WebSocket login server listening on %s:%d", conf.host, conf.port))
+        log.info(string.format("WebSocket login server listening on %s:%d", conf.host, conf.port))
         
         socket.start(id, function(fd, addr)
-            LOG.info("login websocket add %s", addr)
+            log.info("login websocket add %s", addr)
             local ok, err = websocket.accept(fd, {
                 handshake = function(fd, header, url)
-                    LOG.info("login handshake %s",url)
+                    log.info("login handshake %s",url)
                     local ip = websocket.real_ip(fd)
                     pcall(handle_ws_connection, fd, addr, ip, conf)
                     return true  -- 接受所有连接
                 end,
                 connect = function(fd)
-                    LOG.info("login connect %d",fd)
+                    log.info("login connect %d",fd)
                 end,
                 closed = function(fd)
                     websocket.close(fd)
