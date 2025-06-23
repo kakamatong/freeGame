@@ -18,18 +18,15 @@ skynet.start(function()
 
 	-- 启动数据库服务
 	local dbserver = skynet.newservice("dbserver")
-	--skynet.call(dbserver, "lua", "cmd", "start")
 
 	-- 启动游戏服务
 	skynet.newservice("games/gameManager")
 
 	-- 启动机器人服务
 	local robotManager = skynet.newservice("robot/robotManager")
-	--skynet.call(robotManager, "lua", "start")
 
 	-- 启动匹配服务
 	local match = skynet.newservice("match")
-	--skynet.call(match, "lua", "start")
 
 	-- 启动WebSocket登录服务
 	local loginservice = skynet.newservice("wsAuthd")
