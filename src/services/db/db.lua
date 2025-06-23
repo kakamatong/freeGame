@@ -150,6 +150,56 @@ function db.getUserRiches(mysql,redis,...)
     return res -- 返回所有财富信息
 end
 
+-- 获取用户财富信息，根据类型获取
+function db.getUserRichesByType(mysql,redis,...)
+    local userid,richType =...
+    local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
+    local res, err = mysql:query(sql)
+    LOG.info(UTILS.tableToString(res))
+    if not res then
+        LOG.error("select userRiches error: %s", err)
+        return false
+    end
+    if #res == 0 then
+        return nil
+    end
+    return res[1] -- 返回用户财富信息
+end
+
+-- 增加用户财富，如果财富类型不存在，则创建财富类型
+function db.addUserRiches(mysql,redis,...)
+    local userid,richType,richNums =...
+    local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
+    local res, err = mysql:query(sql)
+    LOG.info(UTILS.tableToString(res))
+    if not res then
+        LOG.error("addUserRiches error: %s", err)
+        return false
+    end
+    return true
+end
+
+-- 减少用户财富,如果不够扣直接扣到0
+function db.reduceUserRiches(mysql,redis,...)
+    local userid,richType,richNums =...
+    local nums = db.getUserRichesByType(mysql,redis,userid,richType)
+    if not nums then
+        LOG.error("reduceUserRiches error: %s", err)
+        return false
+    end
+    if nums.richNums < richNums then
+        richNums = nums.richNums
+    end
+    local sql = string.format("UPDATE userRiches SET richNums = richNums - %d WHERE userid = %d AND richType = %d;",richNums,userid,richType)
+    local res, err = mysql:query(sql)
+    LOG.info(UTILS.tableToString(res))
+    if not res then
+        LOG.error("reduceUserRiches error: %s", err)
+        return false
+    end
+    return true
+end
+
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
 function db.setUserStatus(mysql,redis,...)
     local userid,status,gameid,roomid =...

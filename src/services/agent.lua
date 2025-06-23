@@ -175,19 +175,15 @@ local function getUserData()
 	return userData
 end
 
+-- test
+local function test()
+	local db = getDB()
+	local userRiches = skynet.call(db, "lua", "func", "addUserRiches", userid, 2, 10000)
+	assert(userRiches)
+end
+
 -- region 以下为客户端请求处理函数（REQUEST表）
 ------------------------------------------------------------------------------------------------------------
-function REQUEST:get()
-	print("get", self.what)
-	local r = skynet.call("SIMPLEDB", "lua", "get", self.what)
-	return { result = r }
-end
-
-function REQUEST:set()
-	print("set", self.what, self.value)
-	skynet.call("SIMPLEDB", "lua", "set", self.what, self.value)
-end
-
 -- 心跳包处理，刷新活跃时间
 function REQUEST:heartbeat()
 	leftTime = os.time()
@@ -271,7 +267,8 @@ function REQUEST:login(args)
 	bAuth = true
 	userid = args.userid
 	leftTime = os.time()
-	getUserData()
+	test()
+	--getUserData()
 	checkStatus()
 	return {code = 0, msg = "success"}
 end
