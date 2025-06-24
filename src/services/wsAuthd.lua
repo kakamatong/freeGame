@@ -4,7 +4,7 @@ local auth = require "wsAuthserver"
 local crypt = require "skynet.crypt"
 local skynet = require "skynet"
 local log = require "log"
-
+local md5 =	require	"md5"
 -- 服务器配置信息
 local server = {
 	host = "0.0.0.0",           -- 监听地址
@@ -20,7 +20,7 @@ local login_type = {
 	account = true,           -- 允许的登录类型
 
 }
-local bRegister = true
+local bRegister = false
 local register = "register"
 
 local function pushLog(username, ip, loginType, status, ext)
@@ -38,8 +38,6 @@ local function registerUser(user, password, loginType, server)
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
-	local olduserInfo = skynet.call(dbserver, "lua", "func", "getLoginInfo", user,loginType)
-	assert(not olduserInfo, "user already exists")
 	local userid = skynet.call(dbserver, "lua", "func", "registerUser", user,password,loginType)
 	return server, userid, loginType
 end
@@ -53,32 +51,38 @@ function server.auth_handler(token, ip)
 	password = crypt.base64decode(password)
 	loginType = crypt.base64decode(loginType)
 	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
+
+	local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		log.error("wsgate auth error: dbserver not started")
+		return
+	end
+	local userInfo = skynet.call(dbserver, "lua", "func", "getLoginInfo", user,loginType)
 	-- 注册用户
 	if bRegister and string.find(loginType, register) then
-		log.info("bbbb")
+		assert(not userInfo, "user already exists")
 		local infos = UTILS.string_split(loginType, "|")
-		log.info("aaaa" .. UTILS.tableToString(infos))
 		assert(login_type[infos[2]], "register user error")
 		return registerUser(user, password, infos[2],server)
 	end
 
 	assert(login_type[loginType])
-	local dbserver = skynet.localname(".dbserver")
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
+	if not userInfo then
+		return registerUser(user, password, loginType,server)
+	else
+		local spePassword = string.upper(md5.sumhexa(password))
+		log.info("spePassword is " .. spePassword)
+		local status = 0
+		if spePassword == userInfo.password then
+			status = 1
+		end
+		pushLog(user, ip or "0.0.0.0", loginType, status, token)
+		assert(status == 1, "account or password error")
 	end
+
 	-- 校验用户名和密码
-	local userInfo = skynet.call(dbserver, "lua", "func", "login", user,password,loginType)
+	--local userInfo = skynet.call(dbserver, "lua", "func", "login", user,password,loginType)
 	-- 抛送日志
-	local status = 0
-	if userInfo then
-		status = 1
-	end
-
-	pushLog(user, ip or "0.0.0.0", loginType, status, token)
-
-	assert(userInfo, "account or password error")
 	return server, userInfo.userid, loginType
 end
 
