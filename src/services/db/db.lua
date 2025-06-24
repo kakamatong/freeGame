@@ -118,6 +118,22 @@ function db.login(mysql,redis,...)
     return res[1] -- 返回用户信息
 end
 
+-- 获取用户登录信息
+function db.getLoginInfo(mysql,redis,...)
+    local username,loginType = ...
+    local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType,username)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    if not res then
+        log.error("select auth error: %s", err)
+        return false
+    end
+    if #res == 0 then
+        return nil
+    end
+    return res[1]
+end
+
 -- 获取用户详细数据
 function db.getUserData(mysql,redis,...)
     local userid =...
@@ -251,13 +267,56 @@ function db.getRobots(mysql,redis,...)
     return res
 end
 
+-- 创建用户认证信息
+function db.makeAuth(mysql,redis,...)
+    local loginType =...
+    local sql = string.format("INSERT INTO auth (secret,subid,type) VALUES ('',0,'%s');",loginType)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    if not res then
+        log.error("makeAuth error: %s", err)
+        return false
+    end
+    return res
+end
+
+-- 设置用户数据
+function db.setUserData(mysql,redis,...)
+    local userid,nickname,headurl,sex,province,city,ip,ext =...
+    local sql = string.format("INSERT INTO `userData` (`userid`, `nickname`, `headurl`, `sex`, `province`, `city`, `ip`, `ext`) VALUES (%d,'%s','%s',%d,'%s','%s','%s','%s');",userid,nickname,headurl,sex,province,city,ip,ext)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    if not res then
+        log.error("setUserData error: %s", err)
+        return false
+    end
+    return res
+end
 
 -- 注册用户
 function db.registerUser(mysql,redis,...)
-    local userid,password =...
-    local sql = string.format("INSERT INTO userData (userid,password) VALUES (%d,%s);",userid,password)
+    local username,password,loginType =...
+    local newAuth = db.makeAuth(mysql,redis,loginType)
+    if not newAuth then
+        log.error("makeAuth error: %s", err)
+        return false
+    end
+    if newAuth.badresult then
+        log.error("makeAuth error: %s", newAuth.err)
+        return false
+    end
+    local userid = newAuth.insert_id
+    local sql = string.format("INSERT INTO %s (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",loginType,username,userid,password)
+    log.info(sql)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
+    if not res then
+        log.error("insert %s error: %s", loginType, err)
+        return false
+    end
+    local nickname = string.format("用户%d",userid)
+    db.setUserData(mysql,redis,userid,nickname,"",1,"","","0.0.0.0","")
+    return res.insert_id
 end
 
 -- 返回db表，供外部调用

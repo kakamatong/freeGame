@@ -18,15 +18,30 @@ local user_online = {}    -- 在线用户表
 local user_login = {}     -- 登录中的用户表
 local login_type = {
 	account = true,           -- 允许的登录类型
+
 }
+local bRegister = true
+local register = "register"
 
 local function pushLog(username, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate auth error: dbserver not started")
+		log.error("wsgate auth error: dbserver not started")
 		return
 	end
 	skynet.send(dbserver, "lua", "funcLog", "insertAuthLog", username, ip, loginType, status, ext)
+end
+
+local function registerUser(user, password, loginType, server)
+	local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		log.error("wsgate auth error: dbserver not started")
+		return
+	end
+	local olduserInfo = skynet.call(dbserver, "lua", "func", "getLoginInfo", user,loginType)
+	assert(not olduserInfo, "user already exists")
+	local userid = skynet.call(dbserver, "lua", "func", "registerUser", user,password,loginType)
+	return server, userid, loginType
 end
 
 -- 认证处理函数，校验token并返回用户信息
@@ -37,11 +52,20 @@ function server.auth_handler(token, ip)
 	server = crypt.base64decode(server)
 	password = crypt.base64decode(password)
 	loginType = crypt.base64decode(loginType)
-	assert(login_type[loginType])
 	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
+	-- 注册用户
+	if bRegister and string.find(loginType, register) then
+		log.info("bbbb")
+		local infos = UTILS.string_split(loginType, "|")
+		log.info("aaaa" .. UTILS.tableToString(infos))
+		assert(login_type[infos[2]], "register user error")
+		return registerUser(user, password, infos[2],server)
+	end
+
+	assert(login_type[loginType])
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate login error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	-- 校验用户名和密码
