@@ -74,12 +74,12 @@ skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
         log.info("%s cmd %s %s",name, cmd, subcmd)
         if cmd == "func" then
-            if not mysql_db or not redis_db then
-                log.error("mysql or redis not started")
+            if not mysql_db then
+                log.error("mysql not started")
                 return skynet.ret(skynet.pack(nil))
             end
             local f = assert(FUNC[subcmd])
-            return skynet.ret(skynet.pack(f(mysql_db,redis_db,...)))
+            return skynet.ret(skynet.pack(f(mysql_db,...)))
         elseif cmd == "funcLog" then
             if not mysqlLog_db then
                 log.error("mysqlLog not started")

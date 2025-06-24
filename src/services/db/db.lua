@@ -20,12 +20,12 @@ local function sqlResult(res)
 end
 
 -- 测试函数（预留，暂未实现）
-function db.test(mysql,redis,...)
+function db.test(mysql,...)
     -- 这里可以写测试数据库连接的代码
 end
 
 -- 设置用户认证信息
-function db.setAuth(mysql,redis,...)
+function db.setAuth(mysql,...)
     -- ... 代表可变参数，这里依次取出userid, secret, subid, strType
     local userid, secret, subid, strType = ...
     -- 构造插入或更新auth表的SQL语句
@@ -35,11 +35,11 @@ function db.setAuth(mysql,redis,...)
     log.info(UTILS.tableToString(res)) -- 打印结果
     assert(sqlResult(res))
     -- 返回当前用户的subid
-    return db.getAuthSubid(mysql,redis,userid)
+    return db.getAuthSubid(mysql,userid)
 end
 
 -- 获取用户的subid
-function db.getAuthSubid(mysql,redis,userid)
+function db.getAuthSubid(mysql,userid)
     local sql = string.format("SELECT subid FROM auth WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
@@ -51,7 +51,7 @@ function db.getAuthSubid(mysql,redis,userid)
 end
 
 -- 获取用户认证信息
-function db.getAuth(mysql,redis,...)
+function db.getAuth(mysql,...)
     local userid = ...
     log.info("getAuth:"..userid)
     local sql = string.format("SELECT * FROM auth WHERE userid = %d;",userid)
@@ -65,7 +65,7 @@ function db.getAuth(mysql,redis,...)
 end
 
 -- 更新用户secret
-function db.doAuth(mysql,redis,...)
+function db.doAuth(mysql,...)
     local userid, secret =...
     local sql = string.format("UPDATE auth SET secret = '%s' WHERE userid = %d;",secret,userid)
     local res, err = mysql:query(sql)
@@ -75,7 +75,7 @@ function db.doAuth(mysql,redis,...)
 end
 
 -- 检查用户认证信息是否正确
-function db.checkAuth(mysql,redis,...)
+function db.checkAuth(mysql,...)
     local userid, secret =...
     local sql = string.format("SELECT * FROM auth WHERE userid = %d AND secret = '%s';",userid,secret)
     local res, err = mysql:query(sql)
@@ -88,7 +88,7 @@ function db.checkAuth(mysql,redis,...)
 end
 
 -- 设置用户subid
-function db.addSubid(mysql,redis,...)
+function db.addSubid(mysql,...)
     local userid, newSubid = ...
     local sql = string.format("UPDATE auth SET subid = %d WHERE userid = %d;",newSubid,userid)
     local res, err = mysql:query(sql)
@@ -98,7 +98,7 @@ function db.addSubid(mysql,redis,...)
 end
 
 -- 用户登录校验
-function db.login(mysql,redis,...)
+function db.login(mysql,...)
     local username,password,loginType = ...
     -- loginType决定查哪个表
     local sql = string.format("SELECT * FROM %s WHERE username = '%s' AND password = UPPER(MD5('%s'));",loginType,username,password)
@@ -112,7 +112,7 @@ function db.login(mysql,redis,...)
 end
 
 -- 获取用户登录信息
-function db.getLoginInfo(mysql,redis,...)
+function db.getLoginInfo(mysql,...)
     local username,loginType = ...
     local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType,username)
     local res, err = mysql:query(sql)
@@ -125,7 +125,7 @@ function db.getLoginInfo(mysql,redis,...)
 end
 
 -- 获取用户详细数据
-function db.getUserData(mysql,redis,...)
+function db.getUserData(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userData WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
@@ -138,7 +138,7 @@ function db.getUserData(mysql,redis,...)
 end
 
 -- 获取用户财富信息
-function db.getUserRiches(mysql,redis,...)
+function db.getUserRiches(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
@@ -151,7 +151,7 @@ function db.getUserRiches(mysql,redis,...)
 end
 
 -- 获取用户财富信息，根据类型获取
-function db.getUserRichesByType(mysql,redis,...)
+function db.getUserRichesByType(mysql,...)
     local userid,richType =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
     local res, err = mysql:query(sql)
@@ -164,7 +164,7 @@ function db.getUserRichesByType(mysql,redis,...)
 end
 
 -- 增加用户财富，如果财富类型不存在，则创建财富类型
-function db.addUserRiches(mysql,redis,...)
+function db.addUserRiches(mysql,...)
     local userid,richType,richNums =...
     local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
     local res, err = mysql:query(sql)
@@ -174,9 +174,9 @@ function db.addUserRiches(mysql,redis,...)
 end
 
 -- 减少用户财富,如果不够扣直接扣到0
-function db.reduceUserRiches(mysql,redis,...)
+function db.reduceUserRiches(mysql,...)
     local userid,richType,richNums =...
-    local nums = db.getUserRichesByType(mysql,redis,userid,richType)
+    local nums = db.getUserRichesByType(mysql,userid,richType)
     assert(sqlResult(res))
     if nums.richNums < richNums then
         richNums = nums.richNums
@@ -189,7 +189,7 @@ function db.reduceUserRiches(mysql,redis,...)
 end
 
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
-function db.setUserStatus(mysql,redis,...)
+function db.setUserStatus(mysql,...)
     local userid,status,gameid,roomid =...
     -- 默认gameid为0，如果有传gameid则用传入的
     local sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d;",userid,status,0,0,status)
@@ -203,7 +203,7 @@ function db.setUserStatus(mysql,redis,...)
 end
 
 -- 获取用户状态
-function db.getUserStatus(mysql,redis,...)
+function db.getUserStatus(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userStatus WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
@@ -217,7 +217,7 @@ function db.getUserStatus(mysql,redis,...)
 end
 
 -- 获取机器人列表
-function db.getRobots(mysql,redis,...)
+function db.getRobots(mysql,...)
     local idbegin,idend =...
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
     local res, err = mysql:query(sql)
@@ -231,7 +231,7 @@ function db.getRobots(mysql,redis,...)
 end
 
 -- 创建用户认证信息
-function db.makeAuth(mysql,redis,...)
+function db.makeAuth(mysql,...)
     local loginType =...
     local sql = string.format("INSERT INTO auth (secret,subid,type) VALUES ('',0,'%s');",loginType)
     local res, err = mysql:query(sql)
@@ -241,7 +241,7 @@ function db.makeAuth(mysql,redis,...)
 end
 
 -- 设置用户数据
-function db.setUserData(mysql,redis,...)
+function db.setUserData(mysql,...)
     local userid,nickname,headurl,sex,province,city,ip,ext =...
     local sql = string.format("INSERT INTO `userData` (`userid`, `nickname`, `headurl`, `sex`, `province`, `city`, `ip`, `ext`) VALUES (%d,'%s','%s',%d,'%s','%s','%s','%s');",userid,nickname,headurl,sex,province,city,ip,ext)
     local res, err = mysql:query(sql)
@@ -251,9 +251,9 @@ function db.setUserData(mysql,redis,...)
 end
 
 -- 注册用户
-function db.registerUser(mysql,redis,...)
+function db.registerUser(mysql,...)
     local username,password,loginType =...
-    local newAuth = db.makeAuth(mysql,redis,loginType)
+    local newAuth = db.makeAuth(mysql,loginType)
     if not newAuth then
         log.error("makeAuth error")
         return false
@@ -266,7 +266,7 @@ function db.registerUser(mysql,redis,...)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     local nickname = string.format("用户%d",userid)
-    db.setUserData(mysql,redis,userid,nickname,"",1,"","","0.0.0.0","")
+    db.setUserData(mysql,userid,nickname,"",1,"","","0.0.0.0","")
     return res.insert_id
 end
 
