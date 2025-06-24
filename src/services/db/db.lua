@@ -5,6 +5,19 @@ local log = require "log"
 -- 定义db表，存放所有数据库相关的业务函数
 local db = {}
 
+local function sqlResult(res)
+    if not res then
+        log.error("sql error result is nil")
+        return false
+    end
+    if res.badresult then
+        log.error("sql error: %s", res.err)
+        return false
+    end
+
+    return res
+end
+
 -- 测试函数（预留，暂未实现）
 function db.test(mysql,redis,...)
     -- 这里可以写测试数据库连接的代码
@@ -19,10 +32,7 @@ function db.setAuth(mysql,redis,...)
     log.info(sql) -- 打印SQL语句
     local res = mysql:query(sql) -- 执行SQL
     log.info(UTILS.tableToString(res)) -- 打印结果
-    if res.err then
-        log.error("insert auth error: %s", res.err) -- 插入出错
-        return false
-    end
+    assert(sqlResult(res))
     -- 返回当前用户的subid
     return db.getAuthSubid(mysql,redis,userid)
 end
@@ -32,10 +42,7 @@ function db.getAuthSubid(mysql,redis,userid)
     local sql = string.format("SELECT subid FROM auth WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil -- 没查到
     end
@@ -49,10 +56,7 @@ function db.getAuth(mysql,redis,...)
     local sql = string.format("SELECT * FROM auth WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -65,10 +69,7 @@ function db.doAuth(mysql,redis,...)
     local sql = string.format("UPDATE auth SET secret = '%s' WHERE userid = %d;",secret,userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("update auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -78,10 +79,7 @@ function db.checkAuth(mysql,redis,...)
     local sql = string.format("SELECT * FROM auth WHERE userid = %d AND secret = '%s';",userid,secret)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil -- 没查到
     end
@@ -94,10 +92,7 @@ function db.addSubid(mysql,redis,...)
     local sql = string.format("UPDATE auth SET subid = %d WHERE userid = %d;",newSubid,userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("update auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -108,10 +103,7 @@ function db.login(mysql,redis,...)
     local sql = string.format("SELECT * FROM %s WHERE username = '%s' AND password = UPPER(MD5('%s'));",loginType,username,password)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -124,10 +116,7 @@ function db.getLoginInfo(mysql,redis,...)
     local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType,username)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -140,10 +129,7 @@ function db.getUserData(mysql,redis,...)
     local sql = string.format("SELECT * FROM userData WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -156,10 +142,7 @@ function db.getUserRiches(mysql,redis,...)
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d;",userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -172,10 +155,7 @@ function db.getUserRichesByType(mysql,redis,...)
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select userRiches error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -188,10 +168,7 @@ function db.addUserRiches(mysql,redis,...)
     local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("addUserRiches error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -199,20 +176,14 @@ end
 function db.reduceUserRiches(mysql,redis,...)
     local userid,richType,richNums =...
     local nums = db.getUserRichesByType(mysql,redis,userid,richType)
-    if not nums then
-        log.error("reduceUserRiches error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if nums.richNums < richNums then
         richNums = nums.richNums
     end
     local sql = string.format("UPDATE userRiches SET richNums = richNums - %d WHERE userid = %d AND richType = %d;",richNums,userid,richType)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("reduceUserRiches error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -226,10 +197,7 @@ function db.setUserStatus(mysql,redis,...)
     end
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res or res.badresult then
-        log.error("setUserStatus error: %s", res.err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -240,10 +208,7 @@ function db.getUserStatus(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info('----------------getUserStatus: %s',sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     if #res == 0 then
         return nil
     end
@@ -256,10 +221,7 @@ function db.getRobots(mysql,redis,...)
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
     local res, err = mysql:query(sql)
     --log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("select auth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     
     if #res == 0 then
         return nil
@@ -273,10 +235,7 @@ function db.makeAuth(mysql,redis,...)
     local sql = string.format("INSERT INTO auth (secret,subid,type) VALUES ('',0,'%s');",loginType)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("makeAuth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return res
 end
 
@@ -286,10 +245,7 @@ function db.setUserData(mysql,redis,...)
     local sql = string.format("INSERT INTO `userData` (`userid`, `nickname`, `headurl`, `sex`, `province`, `city`, `ip`, `ext`) VALUES (%d,'%s','%s',%d,'%s','%s','%s','%s');",userid,nickname,headurl,sex,province,city,ip,ext)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("setUserData error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return res
 end
 
@@ -298,22 +254,16 @@ function db.registerUser(mysql,redis,...)
     local username,password,loginType =...
     local newAuth = db.makeAuth(mysql,redis,loginType)
     if not newAuth then
-        log.error("makeAuth error: %s", err)
+        log.error("makeAuth error")
         return false
     end
-    if newAuth.badresult then
-        log.error("makeAuth error: %s", newAuth.err)
-        return false
-    end
+
     local userid = newAuth.insert_id
     local sql = string.format("INSERT INTO %s (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",loginType,username,userid,password)
     log.info(sql)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("insert %s error: %s", loginType, err)
-        return false
-    end
+    assert(sqlResult(res))
     local nickname = string.format("用户%d",userid)
     db.setUserData(mysql,redis,userid,nickname,"",1,"","","0.0.0.0","")
     return res.insert_id
