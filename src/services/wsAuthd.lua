@@ -32,13 +32,14 @@ local function pushLog(username, ip, loginType, status, ext)
 	skynet.send(dbserver, "lua", "funcLog", "insertAuthLog", username, ip, loginType, status, ext)
 end
 
-local function registerUser(user, password, loginType, server)
+local function registerUser(user, password, loginType, server, ip)
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
 	local userid = skynet.call(dbserver, "lua", "func", "registerUser", user,password,loginType)
+	pushLog(userid, ip or "0.0.0.0", loginType, 2, '')
 	return server, userid, loginType
 end
 
@@ -63,12 +64,12 @@ function server.auth_handler(token, ip)
 		assert(not userInfo, "user already exists")
 		local infos = UTILS.string_split(loginType, "|")
 		assert(login_type[infos[2]], "register user error")
-		return registerUser(user, password, infos[2],server)
+		return registerUser(user, password, infos[2],server, ip)
 	end
 
 	assert(login_type[loginType])
 	if not userInfo then
-		return registerUser(user, password, loginType,server)
+		return registerUser(user, password, loginType,server, ip)
 	else
 		local spePassword = string.upper(md5.sumhexa(password))
 		log.info("spePassword is " .. spePassword)
