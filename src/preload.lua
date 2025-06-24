@@ -6,36 +6,6 @@ local skynet = require "skynet"
 local config = require "gameConfig" or {}
 _G.CONFIG = config
 
--- 全局常量定义
-_G.GAME_CONST = {
-    -- 玩家状态
-    PLAYER_STATE = {
-        OFFLINE = 0,    -- 离线
-        ONLINE = 1,     -- 在线
-        GAMING = 2,     -- 游戏中
-        AFK = 3,        -- 暂离
-    },
-    
-    -- 错误码
-    ERROR_CODE = {
-        SUCCESS = 0,            -- 成功
-        FAILED = 1,            -- 失败
-        INVALID_PARAM = 2,     -- 无效参数
-        NOT_FOUND = 3,         -- 未找到
-        NO_PERMISSION = 4,     -- 无权限
-        TIMEOUT = 5,           -- 超时
-        SERVER_ERROR = 6,      -- 服务器错误
-    },
-    
-    -- 聊天频道
-    CHAT_CHANNEL = {
-        WORLD = 1,     -- 世界频道
-        PRIVATE = 2,   -- 私聊频道
-        TEAM = 3,      -- 队伍频道
-        SYSTEM = 4,    -- 系统频道
-    },
-}
-
 -- 全局工具函数
 _G.UTILS = {
     -- 深拷贝一个表，防止数据被意外修改
@@ -129,22 +99,3 @@ _G.STAT = {
         _G.STAT.counters[key] = (_G.STAT.counters[key] or 0) + (value or 1)
     end,
 }
-
--- 错误处理相关工具
-_G.ERROR = {
-    -- 创建一个错误对象
-    new = function(code, msg)
-        return {
-            code = code,
-            msg = msg,
-        }
-    end,
-    
-    -- 抛出错误，终止程序
-    throw = function(code, msg)
-        error(string.format("ERROR[%d]: %s", code, msg))
-    end,
-}
-
--- 在这里可以添加更多的全局初始化内容
---log.info("Preload completed") 
