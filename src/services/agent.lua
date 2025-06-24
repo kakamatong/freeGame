@@ -177,9 +177,11 @@ end
 
 -- test
 local function test()
+	-- local db = getDB()
+	-- local userRiches = skynet.call(db, "lua", "func", "addUserRiches", userid, 2, 10000)
+	-- assert(userRiches)
 	local db = getDB()
-	local userRiches = skynet.call(db, "lua", "func", "addUserRiches", userid, 2, 10000)
-	assert(userRiches)
+	local userData = skynet.call(db, "lua", "funcRedis", "test")
 end
 
 -- region 以下为客户端请求处理函数（REQUEST表）
@@ -257,6 +259,7 @@ function REQUEST:login(args)
 		return {code = 2, msg = "pass failed"}
 	end
 
+	log.info("authInfo.subid %s, args.subid %s", authInfo.subid, args.subid)
 	if authInfo.subid ~= args.subid then
 		pushLog(args.userid, '', ip, args.channel, 0, 'subid failed')
 		return {code = 3, msg = "subid failed"}
@@ -268,7 +271,7 @@ function REQUEST:login(args)
 	userid = args.userid
 	leftTime = os.time()
 	test()
-	--getUserData()
+	getUserData()
 	checkStatus()
 	return {code = 0, msg = "success"}
 end

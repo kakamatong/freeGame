@@ -6,6 +6,7 @@ require "skynet.manager"
 local CMD = {}
 local FUNC = require "db" or {}
 local FUNC_LOG = require "dbLog" or {}
+local FUNC_REDIS = require "dbRedis" or {}
 local name = "dbserver"
 local mysql_db = nil
 local redis_db = nil
@@ -87,6 +88,13 @@ skynet.start(function()
             end
             local f = assert(FUNC_LOG[subcmd])
             return skynet.ret(skynet.pack(f(mysqlLog_db, ...)))
+        elseif cmd == "funcRedis" then
+            if not redis_db then
+                log.error("redis not started")
+                return skynet.ret(skynet.pack(nil))
+            end
+            local f = assert(FUNC_REDIS[subcmd])
+            return skynet.ret(skynet.pack(f(redis_db,...)))
         elseif cmd == "cmd" then
             local f = assert(CMD[subcmd])
             return skynet.ret(skynet.pack(f(...)))
