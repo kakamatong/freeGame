@@ -16,7 +16,7 @@ local function register_handler(name)
 	if loginservice then
 		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
 	else
-		LOG.error("wsgate register_handler error")
+		log.error("wsgate register_handler error")
 	end
 end
 
@@ -146,7 +146,7 @@ function CMD.login(source, userid, secret,loginType)
 	-- todo: 将uid和secret写入数据库
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate login error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	-- 踢掉之前的链接

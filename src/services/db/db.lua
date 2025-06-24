@@ -20,7 +20,7 @@ function db.setAuth(mysql,redis,...)
     local res = mysql:query(sql) -- 执行SQL
     log.info(UTILS.tableToString(res)) -- 打印结果
     if res.err then
-        LOG.error("insert auth error: %s", res.err) -- 插入出错
+        log.error("insert auth error: %s", res.err) -- 插入出错
         return false
     end
     -- 返回当前用户的subid
@@ -33,7 +33,7 @@ function db.getAuthSubid(mysql,redis,userid)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -50,7 +50,7 @@ function db.getAuth(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -66,7 +66,7 @@ function db.doAuth(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("update auth error: %s", err)
+        log.error("update auth error: %s", err)
         return false
     end
     return true
@@ -79,7 +79,7 @@ function db.checkAuth(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -95,7 +95,7 @@ function db.addSubid(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("update auth error: %s", err)
+        log.error("update auth error: %s", err)
         return false
     end
     return true
@@ -109,7 +109,7 @@ function db.login(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -125,7 +125,7 @@ function db.getUserData(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -141,7 +141,7 @@ function db.getUserRiches(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -157,7 +157,7 @@ function db.getUserRichesByType(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select userRiches error: %s", err)
+        log.error("select userRiches error: %s", err)
         return false
     end
     if #res == 0 then
@@ -173,7 +173,7 @@ function db.addUserRiches(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("addUserRiches error: %s", err)
+        log.error("addUserRiches error: %s", err)
         return false
     end
     return true
@@ -184,7 +184,7 @@ function db.reduceUserRiches(mysql,redis,...)
     local userid,richType,richNums =...
     local nums = db.getUserRichesByType(mysql,redis,userid,richType)
     if not nums then
-        LOG.error("reduceUserRiches error: %s", err)
+        log.error("reduceUserRiches error: %s", err)
         return false
     end
     if nums.richNums < richNums then
@@ -194,7 +194,7 @@ function db.reduceUserRiches(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("reduceUserRiches error: %s", err)
+        log.error("reduceUserRiches error: %s", err)
         return false
     end
     return true
@@ -211,7 +211,7 @@ function db.setUserStatus(mysql,redis,...)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     if not res or res.badresult then
-        LOG.error("setUserStatus error: %s", res.err)
+        log.error("setUserStatus error: %s", res.err)
         return false
     end
     return true
@@ -225,7 +225,7 @@ function db.getUserStatus(mysql,redis,...)
     log.info('----------------getUserStatus: %s',sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     if #res == 0 then
@@ -241,7 +241,7 @@ function db.getRobots(mysql,redis,...)
     local res, err = mysql:query(sql)
     --log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("select auth error: %s", err)
+        log.error("select auth error: %s", err)
         return false
     end
     
@@ -249,6 +249,15 @@ function db.getRobots(mysql,redis,...)
         return nil
     end
     return res
+end
+
+
+-- 注册用户
+function db.registerUser(mysql,redis,...)
+    local userid,password =...
+    local sql = string.format("INSERT INTO userData (userid,password) VALUES (%d,%s);",userid,password)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
 end
 
 -- 返回db表，供外部调用

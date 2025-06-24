@@ -106,7 +106,7 @@ local function auth(conf)
             })
             
             if not ok then
-                LOG.error("WebSocket connection failed: "..tostring(err))
+                log.error("WebSocket connection failed: "..tostring(err))
             end
         end)
 

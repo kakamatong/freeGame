@@ -65,13 +65,13 @@ end
 function CMD.robotEnter(gameid, roomid, userid)
     local robot = robotDatas[userid]
     if not robot then
-        LOG.error("robotEnter robot not found %d", userid)
+        log.error("robotEnter robot not found %d", userid)
         return
     end
     
     local gameManager = skynet.localname(".gameManager")
     if not gameManager then
-        LOG.error("robotEnter gameManager not found")
+        log.error("robotEnter gameManager not found")
         return
     end
     skynet.send(gameManager, "lua", "playerEnter", gameid, roomid, robot)
@@ -85,7 +85,7 @@ skynet.start(function()
             skynet.ret(skynet.pack(f(...)))
         else
             skynet.ignoreret()
-            LOG.error("robotManager cmd not found %s", cmd)
+            log.error("robotManager cmd not found %s", cmd)
         end
     end)
     skynet.register("." .. name)

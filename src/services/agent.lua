@@ -28,7 +28,7 @@ local ip ="0.0.0.0"
 local function pushLog(userid, nickname, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate login error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	skynet.send(dbserver, "lua", "funcLog", "insertLoginLog", userid, nickname, ip, loginType, status, ext)
@@ -57,7 +57,7 @@ end
 local function getDB()
 	local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate login error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	return dbserver
@@ -74,13 +74,13 @@ end
 local function checkInGame(tmpGameid, tmpRoomid)
 	local gameServer = skynet.localname(".gameManager")
 	if not gameServer then
-		LOG.error("gameManager not started")
+		log.error("gameManager not started")
 		return
 	end
 
 	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
 	if not b then
-		LOG.error("game not found %d %d", tmpGameid, tmpRoomid)
+		log.error("game not found %d %d", tmpGameid, tmpRoomid)
 		return
 	end
 
@@ -114,12 +114,12 @@ end
 -- 发送请求到游戏服务
 local function sendToGame(name, args, response)
 	if args.gameid ~=gameid or args.roomid ~=roomid then
-		LOG.error("游戏id或房间id不匹配 %d %d %d %d", args.gameid, gameid, args.roomid, roomid)
+		log.error("游戏id或房间id不匹配 %d %d %d %d", args.gameid, gameid, args.roomid, roomid)
 		return
 	end
 	local gameServer = skynet.localname(".gameManager")
 	if not gameServer then
-		LOG.error("gameManager not started")
+		log.error("gameManager not started")
 		return
 	else
 		skynet.send(gameServer, "lua", "onClinetMsg", userid, name, args)
@@ -277,7 +277,7 @@ end
 function REQUEST:connectGame(args)
 	local gameServer = skynet.localname(".gameManager")
 	if not gameServer then
-		LOG.error("gameManager not started")
+		log.error("gameManager not started")
 		return
 	else
 		local ret = skynet.call(gameServer, "lua", "connectGame", gameid, roomid, userid, client_fd, skynet.self())
@@ -326,7 +326,7 @@ skynet.register_protocol {
 					send_package(result)
 				end
 			else
-				LOG.error(result)
+				log.error(result)
 			end
 		else
 			assert(type == "RESPONSE")
@@ -344,7 +344,7 @@ function CMD.enterGame(gamedata)
 	roomid = gamedata.roomid
 	local gameServer = skynet.localname(".gameManager")
 	if not gameServer then
-		LOG.error("gameManager not started")
+		log.error("gameManager not started")
 		return
 	else
 		skynet.call(gameServer, "lua", "playerEnter", gameid, roomid, userData)

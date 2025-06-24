@@ -49,7 +49,7 @@ function wsGateserver.start(handler)
             log.info(string.format("accept client wssocket_id: %s addr:%s", id, addr))
             local ok, err = websocket.accept(id, handler, protocol, addr)
             if not ok then
-                LOG.error(err)
+                log.error(err)
             end
         end)
 		if handler.open then

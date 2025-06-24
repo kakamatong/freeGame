@@ -51,7 +51,7 @@ end
 function CMD.playerEnter(gameid, roomid, userData)
     local game = allGames[gameid][roomid]
     if not game then
-        LOG.error("game not found %s %s", gameid, roomid)
+        log.error("game not found %s %s", gameid, roomid)
         return false
     end
     local ret = skynet.call(game, "lua", "playerEnter", userData)
@@ -64,7 +64,7 @@ function CMD.onClinetMsg(userid, name, args)
     log.info("onClinetMsg %s %s %s", userid, name, args)
     local game = allGames[args.gameid][args.roomid]
     if not game then
-        LOG.error("game not found %s %s", args.gameid, args.roomid)
+        log.error("game not found %s %s", args.gameid, args.roomid)
         return false
     end
     local ret = skynet.send(game, "lua", "onClinetMsg", userid, name, args)
@@ -75,7 +75,7 @@ end
 function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
     local game = allGames[gameid][roomid]
     if not game then
-        LOG.error("game not found %s %s", gameid, roomid)
+        log.error("game not found %s %s", gameid, roomid)
         return false
     end
     local ret = skynet.call(game, "lua", "connectGame", userid, client_fd, agent)
@@ -86,7 +86,7 @@ end
 function CMD.offLine(gameid, roomid, userid)
     local game = allGames[gameid][roomid]
     if not game then
-        LOG.error("game not found %s %s", gameid, roomid)
+        log.error("game not found %s %s", gameid, roomid)
         return false
     end
     skynet.send(game, "lua", "offLine", userid)
@@ -99,7 +99,7 @@ skynet.start(function()
             skynet.ret(skynet.pack(f(...)))
         else
             skynet.ignoreret()
-            LOG.error("gameManager cmd not found %s", cmd)
+            log.error("gameManager cmd not found %s", cmd)
         end
     end)
     skynet.register("." .. name)

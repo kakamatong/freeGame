@@ -27,7 +27,7 @@ function dbLog.insertLoginLog(mysqlLog, ...)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("insert logLogin error: %s", err)
+        log.error("insert logLogin error: %s", err)
         return false
     end
     return true
@@ -54,7 +54,7 @@ function dbLog.insertAuthLog(mysqlLog, ...)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("insert logAuth error: %s", err)
+        log.error("insert logAuth error: %s", err)
         return false
     end
     return true
@@ -80,7 +80,7 @@ function dbLog.insertRoomLog(mysqlLog, ...)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
     if not res then
-        LOG.error("insert logRoom10001 error: %s", err)
+        log.error("insert logRoom10001 error: %s", err)
         return false
     end
     return true

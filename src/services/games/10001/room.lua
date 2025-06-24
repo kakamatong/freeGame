@@ -37,7 +37,7 @@ local dTime = 100
 local function pushLog(logtype, userid, gameid, roomid, ext)
     local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
-		LOG.error("wsgate login error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 
