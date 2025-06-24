@@ -5,6 +5,20 @@ local log = require "log"
 -- 定义db表，存放所有数据库相关的业务函数
 local dbLog = {}
 
+-- 检查sql结果
+local function sqlResult(res)
+    if not res then
+        log.error("sql error result is nil")
+        return false
+    end
+    if res.badresult then
+        log.error("sql error: %s", res.err)
+        return false
+    end
+
+    return res
+end
+
 -- CREATE TABLE `logLogin` (
 --   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
 --   `userid` bigint NOT NULL,
@@ -26,10 +40,7 @@ function dbLog.insertLoginLog(mysqlLog, ...)
     local sql = string.format("INSERT INTO logLogin (userid, nickname, ip, loginType, status, ext) VALUES (%d, '%s', '%s', '%s', %d, '%s');", userid, nickname, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("insert logLogin error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -53,10 +64,7 @@ function dbLog.insertAuthLog(mysqlLog, ...)
     local sql = string.format("INSERT INTO logAuth (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("insert logAuth error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 
@@ -79,10 +87,7 @@ function dbLog.insertRoomLog(mysqlLog, ...)
     local sql = string.format("INSERT INTO logRoom10001 (type, userid, gameid, roomid, time, ext) VALUES (%d, %d, %d, %d, '%s', '%s');", logtype, userid, gameid, roomid, time, ext)
     local res, err = mysqlLog:query(sql)
     log.info(UTILS.tableToString(res))
-    if not res then
-        log.error("insert logRoom10001 error: %s", err)
-        return false
-    end
+    assert(sqlResult(res))
     return true
 end
 

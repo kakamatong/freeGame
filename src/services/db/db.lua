@@ -5,6 +5,7 @@ local log = require "log"
 -- 定义db表，存放所有数据库相关的业务函数
 local db = {}
 
+-- 检查sql结果
 local function sqlResult(res)
     if not res then
         log.error("sql error result is nil")
