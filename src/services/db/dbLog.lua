@@ -39,7 +39,7 @@ function dbLog.insertLoginLog(mysqlLog, ...)
     local userid, nickname, ip, loginType, status, ext = ...
     local sql = string.format("INSERT INTO logLogin (userid, nickname, ip, loginType, status, ext) VALUES (%d, '%s', '%s', '%s', %d, '%s');", userid, nickname, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
-    log.info(UTILS.tableToString(res))
+    --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
@@ -63,7 +63,7 @@ function dbLog.insertAuthLog(mysqlLog, ...)
     local username, ip, loginType, status, ext = ...
     local sql = string.format("INSERT INTO logAuth (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
-    log.info(UTILS.tableToString(res))
+    --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
@@ -86,7 +86,7 @@ function dbLog.insertRoomLog(mysqlLog, ...)
     local logtype, userid, gameid, roomid, time, ext = ...
     local sql = string.format("INSERT INTO logRoom10001 (type, userid, gameid, roomid, time, ext) VALUES (%d, %d, %d, %d, '%s', '%s');", logtype, userid, gameid, roomid, time, ext)
     local res, err = mysqlLog:query(sql)
-    log.info(UTILS.tableToString(res))
+    --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
