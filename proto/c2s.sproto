@@ -107,8 +107,9 @@ connectGame 8 {
     }
 }
 
+#######################################################游戏公共
 # 游戏准备
-gameReady 9 {
+gameReady 10001 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -119,11 +120,13 @@ gameReady 9 {
     }
 }
 
+#######################################################10001游戏相关
 # 出手
-gameOutHand 10 {
+gameOutHand 10101 {
     request {
         gameid 0 : integer
         roomid 1 : integer
         flag 2 : integer
     }
 }
+############################################################

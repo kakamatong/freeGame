@@ -53,7 +53,7 @@ freeGame 是一个基于 Skynet 的多人在线游戏服务端，支持多种游
 
 ## 配置和协议文件说明
 - ~~~config/config~~~：主配置，决定入口、线程数、日志等。
-- ~~~proto/c2s.sproto~~~、~~~proto/s2c.sproto~~~：定义客户端与服务端通信协议。
+- ~~~proto/c2s.sproto~~~、~~~proto/s2c.sproto~~~：定义客户端与服务端通信协议，协议使用sproto。
 - ~~~protoloader.lua~~~：负责注册和加载协议。
 
 ## 画图示意（服务关系）
