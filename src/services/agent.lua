@@ -5,11 +5,11 @@ local websocket = require "http.websocket"
 local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
 local log = require "log"
+local cjson = require "cjson"
 local WATCHDOG
 local gate
 local host
 local send_request
-
 local CMD = {}
 local REQUEST = {}
 local client_fd
@@ -24,6 +24,7 @@ local roomid = 0
 local userData = nil
 local addr = ''
 local ip ="0.0.0.0"
+local loginChannel = ""
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".dbserver")
@@ -235,6 +236,26 @@ function REQUEST:userStatus(args)
 	end
 end
 
+-- 调用活动接口
+function REQUEST:callActivityFunc(args)
+	local activity = skynet.localname(".activity")
+	if not activity then
+		return {code = 0, result = "活动服务异常"}
+	end
+	local activityModule, funcName, reqArgs = args.moduleName, args.funcName, args.args
+	local newArgs = {}
+	if reqArgs and reqArgs ~= "" then
+		newArgs = cjson.decode(reqArgs)
+	else
+		newArgs = {}
+	end
+	newArgs.userid = userid
+	newArgs.channel = loginChannel
+
+	local result = skynet.call(activity, "lua", "callFunc", activityModule, funcName, newArgs)
+	return result
+end
+
 -- 匹配请求处理
 function REQUEST:match(args)
 	if args.type == 0 then
@@ -269,6 +290,7 @@ function REQUEST:login(args)
 	skynet.call(db, "lua", "func", "addSubid", args.userid, authInfo.subid + 1)
 	bAuth = true
 	userid = args.userid
+	loginChannel = args.channel or ""
 	leftTime = os.time()
 	test()
 	getUserData()

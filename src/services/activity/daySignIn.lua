@@ -1,17 +1,13 @@
-local skynet = require "skynet"
-require "skynet.manager"
-local name = "daySignIn"
-local CMD = {}
-
-local function start()
-    
+local daySignIn = {}
+local log = require "log"
+local cjson = require "cjson"
+function daySignIn.test(args)
+    log.info("daySignIn.test %s", UTILS.tableToString(args))
+    local msg = {}
+    msg.code = 1
+    msg.info = "daySignIn1"
+    local result = {code = 1, result = cjson.encode(msg)}
+    return result
 end
 
-skynet.start(function()
-    skynet.dispatch("lua", function(session, source, cmd, ...)
-        local f = assert(commands[cmd])
-        skynet.ret(skynet.pack(f(...)))
-    end)
-
-    skynet.register("." .. name)
-end)
+return daySignIn

@@ -20,7 +20,7 @@ skynet.start(function()
 	local dbserver = skynet.newservice("dbserver")
 
 	-- 签到服务
-	skynet.newservice("activity/daySignIn")
+	skynet.newservice("activity/activity")
 
 	-- 启动游戏服务
 	skynet.newservice("games/gameManager")
