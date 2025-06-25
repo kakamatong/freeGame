@@ -12,4 +12,12 @@ function dbRedis.test(redis)
     log.info(res2)
 end
 
+function dbRedis.hget(redis, key, field)
+    return redis:hget(key, field)
+end
+
+function dbRedis.hset(redis, key, field, value)
+    return redis:hset(key, field, value)
+end
+
 return dbRedis
