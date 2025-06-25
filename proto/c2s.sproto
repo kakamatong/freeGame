@@ -107,6 +107,19 @@ connectGame 8 {
     }
 }
 
+# 调用活动接口
+callActivityFunc 9 {
+    request {
+        moduleName 0 : string
+        funcName 1 : string
+        args 2 : string
+    }
+    response {
+        code 0 : integer
+        result 1 : string
+    }
+}
+
 #######################################################游戏公共
 # 游戏准备
 gameReady 10001 {
