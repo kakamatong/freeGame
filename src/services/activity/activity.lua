@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 require "skynet.manager"
 local name = "activity"
+local log = require "log"
 local CMD = {}
 
 local function start()
@@ -9,6 +10,7 @@ end
 
 function CMD.callFunc(moduleName, funcName, args)
     local modulePath = "activity." .. moduleName
+    log.info("modulePath %s", modulePath)
     -- require异常处理
     local activityModule = nil
     local ok, err = pcall(function()

@@ -176,6 +176,33 @@ local function getUserData()
 	return userData
 end
 
+-- 获取用户财富信息
+local function getUserRiches()
+	local db = getDB()
+	local userRiches = skynet.call(db, "lua", "func", "getUserRiches", userid)
+	if not userRiches then
+		return {}, {}
+	end
+	local richType = {}
+	local richNums = {}
+	for k,v in pairs(userRiches) do
+		table.insert(richType, v.richType)
+		table.insert(richNums, v.richNums)
+	end
+	return richType, richNums
+end
+
+-- 获取用户财富信息，根据类型获取
+local function getUserRichesByType(richType)
+	local db = getDB()
+	local userRiches = skynet.call(db, "lua", "func", "getUserRichesByType", userid, richType)
+	if not userRiches then
+		return 0
+	end
+
+	return userRiches.richNums
+end
+
 -- test
 local function test()
 	-- local db = getDB()
@@ -211,15 +238,7 @@ end
 
 -- 获取用户财富信息
 function REQUEST:userRiches(args)
-	local db = getDB()
-	local userRiches = skynet.call(db, "lua", "func", "getUserRiches", userid)
-	assert(userRiches)
-	local richType = {}
-	local richNums = {}
-	for k,v in pairs(userRiches) do
-		table.insert(richType, v.richType)
-		table.insert(richNums, v.richNums)
-	end
+	local richType, richNums = getUserRiches()
 	log.info("richType %s", UTILS.tableToString(richType))
 	log.info("richNums %s", UTILS.tableToString(richNums))
 	return {richType = richType, richNums = richNums}
@@ -381,6 +400,22 @@ function CMD.enterGame(gamedata)
 	
 	setUserStatus(CONFIG.USER_STATUS.GAMEING, gameid, roomid)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
+end
+
+function CMD.report(data)
+	-- 财富变更信息
+	if data.type == 1 then
+		local richTypes = data.richTypes
+		local richNums = data.richNums
+		local allRichNums = {}
+		for i = 1, #richTypes do
+			local richType = richTypes[i]
+			local richNum = getUserRichesByType(richType)
+			table.insert(allRichNums, richNum)
+		end
+
+		-- todo: 下发财富变更信息
+	end
 end
 
 function CMD.leaveGame()

@@ -144,15 +144,18 @@ function daySignIn.signIn(args)
         signInData.status[signInIndex] = 1
         setSignInData(userid, signInData, oneDay * (8 - signInIndex))
         -- 发奖
-        local richType = signInConfig[signInIndex].richTypes[1]
-        local richNum = signInConfig[signInIndex].richNums[1]
-        local res = tools.callMysql("addUserRiches", userid, richType, richNum)
-        if not res then
-            return tools.result({error = "发奖失败"})
+        local richTypes = signInConfig[signInIndex].richTypes
+        local richNums = signInConfig[signInIndex].richNums
+        for i = 1, #richTypes do
+            local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
+            if not res then
+                return tools.result({error = "发奖失败"})
+            end
         end
         tools.callRedis("unlock", lockKey)
-        return tools.result(signInConfig[signInIndex])
         -- 更新财富通知
+        tools.reportAward(userid, richTypes, richNums)
+        return tools.result(signInConfig[signInIndex])
     end
 end
 

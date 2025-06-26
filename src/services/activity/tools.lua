@@ -30,4 +30,11 @@ function tools.callMysql(func,...)
     return skynet.call(db, "lua", "func", func, ...)
 end
 
+-- 下发财富变更信息
+function tools.reportAward(userid, richTypes, richNums)
+    local gate = skynet.localname(".wsGateserver")
+    assert(gate, "gate not started")
+    skynet.send(gate, "lua", "reportToAgent", userid, richTypes, richNums)
+end 
+
 return tools
