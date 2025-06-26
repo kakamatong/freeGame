@@ -287,12 +287,14 @@ function REQUEST:login(args)
 	end
 	pushLog(args.userid, '', ip, args.channel, 1, 'success')
 
+	-- 通知gate登录成功
+	skynet.call(gate, "lua", "loginSuccess", args.userid, client_fd)
 	skynet.call(db, "lua", "func", "addSubid", args.userid, authInfo.subid + 1)
 	bAuth = true
 	userid = args.userid
 	loginChannel = args.channel or ""
 	leftTime = os.time()
-	test()
+	--test()
 	getUserData()
 	checkStatus()
 	return {code = 0, msg = "success"}

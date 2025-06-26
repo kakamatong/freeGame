@@ -80,9 +80,9 @@ local function clearLogin(c)
 end
 
 local function kickByUserid(userid)
-	local c = logins[userid]
-	if c then
-		wsGateserver.closeclient(c.fd)
+	local fd = logins[userid]
+	if fd then
+		wsGateserver.closeclient(fd)
 	end
 end
 
@@ -137,9 +137,12 @@ function CMD.kick(source, fd)
 	wsGateserver.closeclient(fd)
 end
 
-function CMD.authSuccess(source,userid, fd)
+function CMD.loginSuccess(source,userid, fd)
 	local c = assert(connection[fd])
 	c.userid = userid
+	-- 踢掉之前的链接
+	kickByUserid(userid)
+	logins[userid] = fd
 end
 
 function CMD.login(source, userid, secret,loginType)
@@ -155,6 +158,24 @@ function CMD.login(source, userid, secret,loginType)
 	local subid = skynet.call(dbserver, "lua", "func", "setAuth", userid, secret, 0, loginType)
 
 	return subid or -1
+end
+
+function CMD.showLogins()
+	for k,v in pairs(logins) do
+		log.info("wsgate showLogins: %d %d", k, v)
+	end
+
+	for k,v in pairs(connection) do
+		log.info("wsgate connection: %d %d", k, v.userid or 0)
+	end
+end
+
+function CMD.reportToAgent(source, userid, data)
+	local fd = logins[userid]
+	local c = assert(connection[fd])
+	if c.agent then
+		skynet.send(c.agent, "lua", "report", data)
+	end
 end
 
 function handler.command(cmd, source, ...)
