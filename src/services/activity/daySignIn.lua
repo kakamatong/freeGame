@@ -5,6 +5,7 @@ local cjson = require "cjson"
 local oneHour = 3600
 local oneDay = oneHour * 24
 local maxSignInIndex = 7
+local name = "daySignIn"
 
 local signInConfig = {
     -- 第一天
@@ -66,6 +67,11 @@ local function callRedis(func,...)
     return skynet.call(db, "lua", "funcRedis", func, ...)
 end
 
+local function callMysql(func,...)
+    local db = getDB()
+    return skynet.call(db, "lua", "func", func, ...)
+end
+
 -- 获取当日0点的时间戳
 local function getTimeNow()
     local time = os.time()
@@ -78,17 +84,17 @@ end
 local function getSignInData(userid)
     local db = getDB()
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
-    local data = callRedis("hget", REIDS_KEY_FIRST_DAY, field)
+    local data = callRedis("get", field)
     if not data then
         return nil
     end
     return cjson.decode(data)
 end
 
-local function setSignInData(userid, data)
+local function setSignInData(userid, data, expire)
     local db = getDB()
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
-    callRedis("hset", REIDS_KEY_FIRST_DAY, field, cjson.encode(data))
+    callRedis("set", field, cjson.encode(data), expire)
 end
 
 local function getSignInIndex(timeFirst, timeNow)
@@ -97,11 +103,9 @@ local function getSignInIndex(timeFirst, timeNow)
     return index
 end
 
-function daySignIn.getSignInInfo(args)
-    local userid = args.userid
-    local resp = {}
-    local timeNow = getTimeNow()
+local function getUserSignInData(userid)
     local signInData = getSignInData(userid)
+    local timeNow = getTimeNow()
     local signInIndex = 1
     if not signInData then
         local data = {
@@ -109,7 +113,7 @@ function daySignIn.getSignInInfo(args)
             status = {0,0,0,0,0,0,0}
         }
         signInData = data
-        setSignInData(userid, data)
+        setSignInData(userid, data, oneDay * 8)
     else
         local firstDay = signInData.timeFirst
         signInIndex = getSignInIndex(firstDay, timeNow)
@@ -122,9 +126,17 @@ function daySignIn.getSignInInfo(args)
             status = {0,0,0,0,0,0,0}
         }
         signInData = data
-        setSignInData(userid, data)
+        setSignInData(userid, data, oneDay * 8)
     end
 
+    return signInIndex, signInData
+end
+
+function daySignIn.getSignInInfo(args)
+    local userid = args.userid
+    local resp = {}
+    local signInIndex, signInData = getUserSignInData(userid)
+    
     resp.signInIndex = signInIndex
     resp.signInConfig = signInConfig
     resp.signStatus = signInData.status
@@ -134,10 +146,32 @@ end
 function daySignIn.signIn(args)
     local userid = args.userid
     local resp = {}
+    local signInIndex, signInData = getUserSignInData(userid)
+    if signInData.status[signInIndex] > 0 then
+        return result({error = "已经签到过了"})
+    else
+        -- redis 锁
+        local lockKey = string.format("signInLock:%d", userid)
+        local lockValue = os.time()
+        local lockExpire = 2000
+        local lock = callRedis("lock", lockKey, lockValue, lockExpire)
+        if not lock then
+            return result({error = "签到失败"})
+        end
 
-    local firstDay = redis.call("HGET", REIDS_KEY_FIRST_DAY, userid)
-    if not firstDay then
-        firstDay = 0
+        -- 更新签到状态
+        signInData.status[signInIndex] = 1
+        setSignInData(userid, signInData, oneDay * (8 - signInIndex))
+        -- 发奖
+        local richType = signInConfig[signInIndex].richTypes[1]
+        local richNum = signInConfig[signInIndex].richNums[1]
+        local res = callMysql("addUserRiches", userid, richType, richNum)
+        if not res then
+            return result({error = "发奖失败"})
+        end
+        callRedis("unlock", lockKey)
+        return result(signInConfig[signInIndex])
+        -- 更新财富通知
     end
 end
 

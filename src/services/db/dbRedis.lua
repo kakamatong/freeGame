@@ -21,4 +21,28 @@ function dbRedis.hset(redis, key, field, value)
     return redis:hset(key, field, value)
 end
 
+function dbRedis.set(redis, key, value, expire)
+    if expire then
+        return redis:set(key, value, "EX", expire)
+    else
+        return redis:set(key, value)
+    end
+end
+
+function dbRedis.get(redis, key)
+    return redis:get(key)
+end
+
+function dbRedis.del(redis, key)
+    return redis:del(key)
+end
+
+function dbRedis.lock(redis, key, value, expire)
+    return redis:set(key, value, "NX", "PX", expire)
+end
+
+function dbRedis.unlock(redis, key)
+    return redis:del(key)
+end
+
 return dbRedis
