@@ -36,8 +36,18 @@ reportMatch 4 {
     }
 }
 
+# 下发更新财富
+reportUpdateRich 5 {
+    request {
+        richTypes 0 : *integer
+        richNums 1 : *integer
+        richAllNums 2 : *integer
+        ext 3 : string
+    }
+}
+
 # 下发玩家准备
-reportGamePlayerStatus 5 {
+reportGamePlayerStatus 10001 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -46,8 +56,9 @@ reportGamePlayerStatus 5 {
     }
 }
 
+#############################################################游戏10001
 # 下发游戏阶段
-reportGameStep 6 {
+reportGameStep 10101 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -56,7 +67,7 @@ reportGameStep 6 {
 }
 
 # 下发游戏结果
-reportGameResult 7 {
+reportGameResult 10102 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -69,7 +80,7 @@ reportGameResult 7 {
 }
 
 # 下发游戏逻辑数据
-reportGameLogicData 8 {
+reportGameLogicData 10103 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -79,7 +90,7 @@ reportGameLogicData 8 {
 }
 
 # 下发游戏轮数
-reportGameRound 9 {
+reportGameRound 10104 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -96,7 +107,7 @@ reportGameRound 9 {
 }
 
 # 下发这一轮游戏结果
-reportGameRoundResult 10 {
+reportGameRoundResult 10105 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -108,7 +119,7 @@ reportGameRoundResult 10 {
 }
 
 # 下发玩家出招
-reportGameOutHand 11 {
+reportGameOutHand 10106 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -118,7 +129,7 @@ reportGameOutHand 11 {
 }
 
 # 下发玩家游戏姿态
-reportGamePlayerAttitude 12 {
+reportGamePlayerAttitude 10107 {
     request {
         gameid 0 : integer
         roomid 1 : integer
@@ -128,7 +139,7 @@ reportGamePlayerAttitude 12 {
 }
 
 # 下发对局玩家信息
-reportGamePlayerInfo 13 {
+reportGamePlayerInfo 10108 {
     request {
         gameid 0 : integer
         roomid 1 : integer

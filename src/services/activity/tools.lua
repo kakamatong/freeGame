@@ -34,7 +34,12 @@ end
 function tools.reportAward(userid, richTypes, richNums)
     local gate = skynet.localname(".wsGateserver")
     assert(gate, "gate not started")
-    skynet.send(gate, "lua", "reportToAgent", userid, richTypes, richNums)
+    local data = {
+        type = 1,
+        richTypes = richTypes,
+        richNums = richNums
+    }
+    skynet.send(gate, "lua", "reportToAgent", userid, data)
 end 
 
 return tools

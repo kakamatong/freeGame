@@ -3,7 +3,7 @@ local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
-local logins = {}	-- uid -> login : { uid, login } 登入池子
+local logins = {}	-- uid -> fd 登入池子
 local log = require "log"
 skynet.register_protocol {
 	name = "client",
@@ -171,10 +171,11 @@ function CMD.showLogins()
 end
 
 function CMD.reportToAgent(source, userid, data)
+	log.info("reportToAgent %d" ,userid)
 	local fd = logins[userid]
 	local c = assert(connection[fd])
 	if c.agent then
-		skynet.send(c.agent, "lua", "report", data)
+		skynet.send(c.agent, "lua", "onReport", data)
 	end
 end
 

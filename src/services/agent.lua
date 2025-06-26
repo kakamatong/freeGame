@@ -402,7 +402,7 @@ function CMD.enterGame(gamedata)
 	report("reportUserStatus", {status = CONFIG.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
 end
 
-function CMD.report(data)
+function CMD.onReport(data)
 	-- 财富变更信息
 	if data.type == 1 then
 		local richTypes = data.richTypes
@@ -415,6 +415,7 @@ function CMD.report(data)
 		end
 
 		-- todo: 下发财富变更信息
+		report("reportUpdateRich", {richTypes = richTypes, richNums = richNums, richAllNums = allRichNums, ext = ""})
 	end
 end
 
