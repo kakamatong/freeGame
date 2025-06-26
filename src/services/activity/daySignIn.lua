@@ -58,6 +58,7 @@ local function getTimeNow()
     return os.time({year = year, month = month, day = day, hour = 0, minute = 0, second = 0})
 end
 
+-- 获取签到数据
 local function getSignInData(userid)
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
     local data = tools.callRedis("get", field)
@@ -67,17 +68,20 @@ local function getSignInData(userid)
     return cjson.decode(data)
 end
 
+-- 设置签到数据
 local function setSignInData(userid, data, expire)
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
     tools.callRedis("set", field, cjson.encode(data), expire)
 end
 
+-- 获取签到索引
 local function getSignInIndex(timeFirst, timeNow)
     local timeDiff = timeNow - timeFirst
     local index = math.floor(timeDiff / oneDay) + 1
     return index
 end
 
+-- 获取用户签到数据
 local function getUserSignInData(userid)
     local signInData = getSignInData(userid)
     local timeNow = getTimeNow()
@@ -107,6 +111,7 @@ local function getUserSignInData(userid)
     return signInIndex, signInData
 end
 
+-- 获取签到信息
 function daySignIn.getSignInInfo(args)
     local userid = args.userid
     local resp = {}
@@ -118,6 +123,7 @@ function daySignIn.getSignInInfo(args)
     return tools.result(resp)
 end
 
+-- 签到
 function daySignIn.signIn(args)
     local userid = args.userid
     local resp = {}
