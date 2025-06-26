@@ -6,6 +6,7 @@ local oneHour = 3600
 local oneDay = oneHour * 24
 local maxSignInIndex = 7
 local name = "daySignIn"
+local tools = require "activity.tools"
 
 local signInConfig = {
     -- 第一天
@@ -48,30 +49,6 @@ local signInConfig = {
 local REIDS_KEY_FIRST_DAY = "signInFirstDay"
 local REIDS_FIELD_FIRST_DAY = "firstDay:%d"
 
-local function result(info)
-    local msg = {}
-    if info then
-        msg = info
-    end
-    return {code = 1, result = cjson.encode(msg)}
-end
-
-local function getDB()
-    local dbserver = skynet.localname(".dbserver")
-	assert(dbserver, "dbserver not started")
-	return dbserver
-end
-
-local function callRedis(func,...)
-    local db = getDB()
-    return skynet.call(db, "lua", "funcRedis", func, ...)
-end
-
-local function callMysql(func,...)
-    local db = getDB()
-    return skynet.call(db, "lua", "func", func, ...)
-end
-
 -- 获取当日0点的时间戳
 local function getTimeNow()
     local time = os.time()
@@ -82,9 +59,8 @@ local function getTimeNow()
 end
 
 local function getSignInData(userid)
-    local db = getDB()
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
-    local data = callRedis("get", field)
+    local data = tools.callRedis("get", field)
     if not data then
         return nil
     end
@@ -92,9 +68,8 @@ local function getSignInData(userid)
 end
 
 local function setSignInData(userid, data, expire)
-    local db = getDB()
     local field = string.format(REIDS_FIELD_FIRST_DAY, userid)
-    callRedis("set", field, cjson.encode(data), expire)
+    tools.callRedis("set", field, cjson.encode(data), expire)
 end
 
 local function getSignInIndex(timeFirst, timeNow)
@@ -140,7 +115,7 @@ function daySignIn.getSignInInfo(args)
     resp.signInIndex = signInIndex
     resp.signInConfig = signInConfig
     resp.signStatus = signInData.status
-    return result(resp)
+    return tools.result(resp)
 end
 
 function daySignIn.signIn(args)
@@ -154,7 +129,7 @@ function daySignIn.signIn(args)
         local lockKey = string.format("signInLock:%d", userid)
         local lockValue = os.time()
         local lockExpire = 2000
-        local lock = callRedis("lock", lockKey, lockValue, lockExpire)
+        local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
         if not lock then
             return result({error = "签到失败"})
         end
@@ -165,12 +140,12 @@ function daySignIn.signIn(args)
         -- 发奖
         local richType = signInConfig[signInIndex].richTypes[1]
         local richNum = signInConfig[signInIndex].richNums[1]
-        local res = callMysql("addUserRiches", userid, richType, richNum)
+        local res = tools.callMysql("addUserRiches", userid, richType, richNum)
         if not res then
             return result({error = "发奖失败"})
         end
-        callRedis("unlock", lockKey)
-        return result(signInConfig[signInIndex])
+        tools.callRedis("unlock", lockKey)
+        return tools.result(signInConfig[signInIndex])
         -- 更新财富通知
     end
 end
