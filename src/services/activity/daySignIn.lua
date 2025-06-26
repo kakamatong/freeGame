@@ -123,7 +123,7 @@ function daySignIn.signIn(args)
     local resp = {}
     local signInIndex, signInData = getUserSignInData(userid)
     if signInData.status[signInIndex] > 0 then
-        return result({error = "已经签到过了"})
+        return tools.result({error = "已经签到过了"})
     else
         -- redis 锁
         local lockKey = string.format("signInLock:%d", userid)
@@ -131,7 +131,7 @@ function daySignIn.signIn(args)
         local lockExpire = 2000
         local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
         if not lock then
-            return result({error = "签到失败"})
+            return tools.result({error = "签到失败"})
         end
 
         -- 更新签到状态
@@ -142,7 +142,7 @@ function daySignIn.signIn(args)
         local richNum = signInConfig[signInIndex].richNums[1]
         local res = tools.callMysql("addUserRiches", userid, richType, richNum)
         if not res then
-            return result({error = "发奖失败"})
+            return tools.result({error = "发奖失败"})
         end
         tools.callRedis("unlock", lockKey)
         return tools.result(signInConfig[signInIndex])
