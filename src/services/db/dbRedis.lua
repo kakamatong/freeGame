@@ -17,6 +17,7 @@ function dbRedis.hget(redis, key, field)
 end
 
 function dbRedis.hset(redis, key, field, value)
+    log.info("hset %s %s %s", key, field, value)
     return redis:hset(key, field, value)
 end
 
