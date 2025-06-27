@@ -3,8 +3,7 @@
 local skynet = require "skynet"
 local sprotoloader = require "sprotoloader"
 local log = require "log"
-local max_client = 64 -- 最大客户端连接数
-
+local gConfig = CONFIG
 skynet.start(function()
 	-- 启动协议加载服务（用于sproto协议）
 	skynet.uniqueservice("protoloader")
@@ -14,7 +13,7 @@ skynet.start(function()
 	end
 	-- 启动调试控制台，监听8000端口
 	--skynet.newservice("debug_console","0.0.0.0",8000)
-	skynet.newservice("debug_console",8000)
+	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动数据库服务
 	local dbserver = skynet.newservice("dbserver")
@@ -36,14 +35,7 @@ skynet.start(function()
 
 	-- 启动WebSocket网关服务器
 	local wswatchdog = skynet.newservice("wsWatchdog")
-	local addr,port = skynet.call(wswatchdog, "lua", "start", {
-		address = "0.0.0.0",
-		port = 9002,
-		maxclient = max_client,
-		-- onOpen = function(source) -- 向登入认证服务注册网关
-		-- 	skynet.call(loginservice, "lua", "register_gate", "lobbyGate", source)
-		-- end,
-	})
+	local addr,port = skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
 	log.info("Wswatchdog listen on " .. addr .. ":" .. port)
 	-- 启动完成后退出主服务
 	skynet.exit()

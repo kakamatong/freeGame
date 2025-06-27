@@ -5,11 +5,12 @@ local crypt = require "skynet.crypt"
 local skynet = require "skynet"
 local log = require "log"
 local md5 =	require	"md5"
+local gConfig = CONFIG
 -- 服务器配置信息
 local server = {
-	host = "0.0.0.0",           -- 监听地址
-	port = 8002,                -- 监听端口
-	multilogin = false,         -- 是否允许多端登录
+	host = gConfig.WS_ATTH_LISTEN.host,           -- 监听地址
+	port = gConfig.WS_ATTH_LISTEN.port,                -- 监听端口
+	multilogin = gConfig.WS_ATTH_LISTEN.multilogin,         -- 是否允许多端登录
 	name = "ws_auth_master",  -- 服务名
 }
 
@@ -18,7 +19,6 @@ local user_online = {}    -- 在线用户表
 local user_login = {}     -- 登录中的用户表
 local login_type = {
 	account = true,           -- 允许的登录类型
-
 }
 local bRegister = false
 local register = "register"

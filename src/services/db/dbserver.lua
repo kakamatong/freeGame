@@ -11,6 +11,7 @@ local name = "dbserver"
 local mysql_db = nil
 local redis_db = nil
 local mysqlLog_db = nil
+local gConfig = CONFIG
 local function startMysql()
     if mysql_db or mysqlLog_db then
         log.info("mysql already started")
@@ -21,11 +22,11 @@ local function startMysql()
     end
 
     mysql_db = mysql.connect({
-        host = CONFIG.mysql.host,
-        port = CONFIG.mysql.port,
-        user = CONFIG.mysql.user,
-        password = CONFIG.mysql.password,
-        database = CONFIG.mysql.database,
+        host = gConfig.mysql.host,
+        port = gConfig.mysql.port,
+        user = gConfig.mysql.user,
+        password = gConfig.mysql.password,
+        database = gConfig.mysql.database,
         on_connect = onConnect,
     })
 
@@ -34,11 +35,11 @@ local function startMysql()
     end
 
     mysqlLog_db = mysql.connect({
-        host = CONFIG.mysqlLog.host,
-        port = CONFIG.mysqlLog.port,
-        user = CONFIG.mysqlLog.user,
-        password = CONFIG.mysqlLog.password,
-        database = CONFIG.mysqlLog.database,
+        host = gConfig.mysqlLog.host,
+        port = gConfig.mysqlLog.port,
+        user = gConfig.mysqlLog.user,
+        password = gConfig.mysqlLog.password,
+        database = gConfig.mysqlLog.database,
         on_connect = onConnectLog,
     })
 end
@@ -49,9 +50,9 @@ local function startRedis()
         return
     end
     redis_db = redis.connect({
-        host = CONFIG.redis.host,
-        port = CONFIG.redis.port,
-        auth = CONFIG.redis.auth,
+        host = gConfig.redis.host,
+        port = gConfig.redis.port,
+        auth = gConfig.redis.auth,
     })
 end
 

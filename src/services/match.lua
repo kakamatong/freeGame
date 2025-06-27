@@ -10,9 +10,9 @@ local queueNum = 4       -- 匹配队列数量
 local queueUserids = {}  -- queueUserids[gameid][queueid] = {userid1, ...}
 local dTime = 1          -- 匹配检查间隔（秒）
 local CHECK_MAX_NUM = 5       -- 匹配检查次数
-
+local gConfig = CONFIG
 local function checkGame(gameid, queueid)
-    local gameConfig = CONFIG.MATCH_GAMES[gameid]
+    local gameConfig = gConfig.MATCH_GAMES[gameid]
     if not gameConfig then
         return false
     end

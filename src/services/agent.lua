@@ -25,6 +25,7 @@ local userData = nil
 local addr = ''
 local ip ="0.0.0.0"
 local loginChannel = ""
+local gConfig = CONFIG
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".dbserver")
@@ -93,21 +94,21 @@ local function checkStatus()
 	local db = getDB()
 	local status = skynet.call(db, "lua", "func", "getUserStatus", userid)
 	if not status or status.gameid == 0 then
-		setUserStatus(CONFIG.USER_STATUS.ONLINE)
+		setUserStatus(gConfig.USER_STATUS.ONLINE)
 		return
 	elseif status.gameid > 0 then
 		-- 检查房间是否存在,不存在则直接设置为在线
 		
 		local b = checkInGame(status.gameid, status.roomid)
 		if not b then
-			setUserStatus(CONFIG.USER_STATUS.ONLINE)
+			setUserStatus(gConfig.USER_STATUS.ONLINE)
 			return
 		end
 
 		gameid = status.gameid
 		roomid = status.roomid
 
-		setUserStatus(CONFIG.USER_STATUS.GAMEING)
+		setUserStatus(gConfig.USER_STATUS.GAMEING)
 		return
 	end
 end
@@ -129,11 +130,11 @@ end
 
 -- 进入匹配队列
 local function enterMatch(args)
-	-- if userStatus == CONFIG.USER_STATUS.MATCHING then
+	-- if userStatus == gConfig.USER_STATUS.MATCHING then
 	-- 	return {code = 2, msg ="已经在匹配队列中"}
 	-- end
 
-	if userStatus == CONFIG.USER_STATUS.GAMEING and checkInGame(gameid, roomid) then
+	if userStatus == gConfig.USER_STATUS.GAMEING and checkInGame(gameid, roomid) then
 		return {code = 3, msg ="已经在游戏中", gameid = gameid, roomid = roomid}
 	end
 
@@ -143,8 +144,8 @@ local function enterMatch(args)
 	else
 		local b = skynet.call(matchServer, "lua", "enterQueue", skynet.self(), userid, args.gameid, args.gameSubid, 0)
 		if b then
-			setUserStatus(CONFIG.USER_STATUS.MATCHING)
-			report("reportUserStatus", {status = CONFIG.USER_STATUS.MATCHING})
+			setUserStatus(gConfig.USER_STATUS.MATCHING)
+			report("reportUserStatus", {status = gConfig.USER_STATUS.MATCHING})
 			return {code = 0, msg ="进入匹配列队成功"}
 		else
 			return {code = 2, msg ="进入匹配列队失败"}
@@ -160,8 +161,8 @@ local function leaveMatch()
 	else
 		local b = skynet.call(matchServer, "lua", "leaveQueue", userid)
 		if b then
-			setUserStatus(CONFIG.USER_STATUS.ONLINE)
-			report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE})
+			setUserStatus(gConfig.USER_STATUS.ONLINE)
+			report("reportUserStatus", {status = gConfig.USER_STATUS.ONLINE})
 			return {code = 0, msg ="离开匹配列队成功"}
 		else
 			return {code = 2, msg ="离开匹配列队失败"}
@@ -398,8 +399,8 @@ function CMD.enterGame(gamedata)
 
 	report("reportMatch", {code = 0, msg = "匹配成功", gameid = gameid, roomid = roomid})
 	
-	setUserStatus(CONFIG.USER_STATUS.GAMEING, gameid, roomid)
-	report("reportUserStatus", {status = CONFIG.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
+	setUserStatus(gConfig.USER_STATUS.GAMEING, gameid, roomid)
+	report("reportUserStatus", {status = gConfig.USER_STATUS.GAMEING, gameid = gameid, roomid = roomid})
 end
 
 function CMD.onReport(data)
@@ -423,8 +424,8 @@ function CMD.leaveGame()
 	log.info("leaveGame")
 	gameid = 0
 	roomid = 0
-	setUserStatus(CONFIG.USER_STATUS.ONLINE, gameid, roomid)
-	report("reportUserStatus", {status = CONFIG.USER_STATUS.ONLINE, gameid = gameid, roomid = roomid})
+	setUserStatus(gConfig.USER_STATUS.ONLINE, gameid, roomid)
+	report("reportUserStatus", {status = gConfig.USER_STATUS.ONLINE, gameid = gameid, roomid = roomid})
 end
 
 -- 内容推送
@@ -463,14 +464,14 @@ end
 
 -- 断开连接，清理状态
 function CMD.disconnect()
-	if userStatus == CONFIG.USER_STATUS.MATCHING then
+	if userStatus == gConfig.USER_STATUS.MATCHING then
 		local matchServer = skynet.localname(".match")
 		skynet.send(matchServer, "lua", "leaveQueue", userid)
-	elseif userStatus == CONFIG.USER_STATUS.GAMEING then
+	elseif userStatus == gConfig.USER_STATUS.GAMEING then
 		local gameServer = skynet.localname(".gameManager")
 		skynet.send(gameServer, "lua", "offLine", gameid, roomid, userid)
 	end
-	setUserStatus(CONFIG.USER_STATUS.OFFLINE)
+	setUserStatus(gConfig.USER_STATUS.OFFLINE)
 	log.info("agent disconnect")
 	skynet.exit()
 end
