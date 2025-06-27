@@ -46,6 +46,12 @@ local signInConfig = {
     },
 }
 
+local STATUS_SIGN = {
+    NOT_SIGNIN = 0,
+    SIGNIN = 1,
+    FILL_SIGNIN = 2
+}
+
 local REIDS_KEY_FIRST_DAY = "signInFirstDay"
 local REIDS_FIELD_FIRST_DAY = "firstDay:%d"
 
@@ -128,7 +134,7 @@ function daySignIn.signIn(args)
     local userid = args.userid
     local resp = {}
     local signInIndex, signInData = getUserSignInData(userid)
-    if signInData.status[signInIndex] > 0 then
+    if signInData.status[signInIndex] > STATUS_SIGN.NOT_SIGNIN then
         return tools.result({error = "已经签到过了"})
     else
         -- redis 锁
@@ -141,7 +147,7 @@ function daySignIn.signIn(args)
         end
 
         -- 更新签到状态
-        signInData.status[signInIndex] = 1
+        signInData.status[signInIndex] = STATUS_SIGN.SIGNIN
         setSignInData(userid, signInData, oneDay * (8 - signInIndex))
         -- 发奖
         local richTypes = signInConfig[signInIndex].richTypes
@@ -156,6 +162,46 @@ function daySignIn.signIn(args)
         -- 更新财富通知
         tools.reportAward(userid, richTypes, richNums)
         return tools.result(signInConfig[signInIndex])
+    end
+end
+
+-- 补签
+function daySignIn.fillSignIn(args)
+    local userid = args.userid
+    local resp = {}
+    local fillIndex = args.index
+    local signInIndex, signInData = getUserSignInData(userid)
+    if fillIndex and fillIndex >= signInIndex then
+        return tools.result({error = "参数错误"})
+    end
+    if signInData.status[fillIndex] > STATUS_SIGN.NOT_SIGNIN then
+        return tools.result({error = "已经签到过了"})
+    else
+         -- redis 锁
+         local lockKey = string.format("signInLock:%d", userid)
+         local lockValue = os.time()
+         local lockExpire = 2000
+         local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
+         if not lock then
+             return tools.result({error = "签到失败"})
+         end
+ 
+         -- 更新签到状态
+         signInData.status[fillIndex] = STATUS_SIGN.FILL_SIGNIN
+         setSignInData(userid, signInData, oneDay * (8 - fillIndex))
+         -- 发奖
+         local richTypes = signInConfig[fillIndex].richTypes
+         local richNums = signInConfig[fillIndex].richNums
+         for i = 1, #richTypes do
+             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
+             if not res then
+                 return tools.result({error = "发奖失败"})
+             end
+         end
+         tools.callRedis("unlock", lockKey)
+         -- 更新财富通知
+         tools.reportAward(userid, richTypes, richNums)
+         return tools.result(signInConfig[fillIndex])
     end
 end
 
