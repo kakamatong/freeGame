@@ -1,0 +1,63 @@
+local config = {}
+
+-- MySQL数据库配置
+config.mysql = {
+    host = "",      -- 数据库地址
+    port = 0,                  -- 端口号
+    user = "",           -- 用户名
+    password = "", -- 密码
+    database = "",           -- 数据库名
+}
+
+config.mysqlLog = {
+    host = "",      -- 数据库地址
+    port = 0,                  -- 端口号
+    user = "",           -- 用户名
+    password = "", -- 密码
+    database = "",           -- 数据库名
+}
+
+-- Redis数据库配置
+config.redis = {
+    host = "",      -- Redis地址
+    port = 0,                   -- 端口号
+    auth = "",       -- 认证密码
+}
+
+-- 用户状态常量
+-- 0:离线,1:大厅,2:匹配中,3:准备中,4:游戏中,5:观战,6:组队中,7:断线,8:进入游戏
+config.USER_STATUS = {
+    OFFLINE = 0,    -- 离线
+    ONLINE = 1,     -- 在大厅
+    MATCHING = 2,   -- 匹配中
+    READY = 3,      -- 准备中
+    GAMEING = 4,    -- 游戏中
+    WATCH = 5,      -- 观战
+    TEAMING = 6,    -- 组队中
+    DISCONNECT = 7, -- 断线
+    ENTERGAME = 8,  -- 进入游戏
+}
+
+-- 匹配游戏配置
+config.MATCH_GAMES = {
+    [10001] = {
+        queueNum = 4, -- 匹配队列数量
+    },
+}
+
+-- websocket 网关配置
+config.WS_GATE_LISTEN = {
+    address = "0.0.0.0",
+    port = 9002,
+    maxclient = 4096, -- 最大连接数
+}
+
+-- websocket Auth 配置
+config.WS_ATTH_LISTEN = {
+	host = "0.0.0.0",           -- 监听地址
+	port = 8002,                -- 监听端口
+	multilogin = false,         -- 是否允许多端登录
+}
+
+config.DEBUG_CONSOLE_PORT = 8000
+return config
