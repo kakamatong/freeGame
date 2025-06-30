@@ -34,6 +34,7 @@ local dTime = 100
 -- 销毁逻辑
 -- 未开局销毁逻辑
 
+-- 房间日志，创建，销毁，开始，结束
 local function pushLog(logtype, userid, gameid, roomid, ext)
     local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
@@ -46,6 +47,7 @@ local function pushLog(logtype, userid, gameid, roomid, ext)
     skynet.send(dbserver, "lua", "funcLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
 end
 
+-- 游戏结果日志
 local function pushLogResult(type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, ext)
     local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
@@ -58,6 +60,7 @@ local function pushLogResult(type, userid, gameid, roomid, result, score1, score
     skynet.send(dbserver, "lua", "funcLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
 end
 
+-- 用户游戏记录
 local function pushUserGameRecords(userid, gameid, addType, addNums)
     local dbserver = skynet.localname(".dbserver")
 	if not dbserver then
