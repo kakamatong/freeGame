@@ -18,6 +18,19 @@ local config = {
         DESTROY_ROOM = 1,
         GAME_START = 2,
         GAME_END = 3,
+        GAME_RESULT = 4,
+    },
+
+    LOG_RESULT_TYPE = {
+        GAME_END = 1,
+    },
+
+    RESULT_TYPE = {
+        NONE = 0,
+        WIN = 1,
+        LOSE = 2,
+        DRAW = 3,
+        ESCAPE = 4,
     },
 }
 

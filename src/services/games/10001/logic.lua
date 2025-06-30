@@ -106,6 +106,7 @@ function logic.sendResult(result)
         tmp.endResult = endflag
         table.insert(playerResult, tmp)
     end
+    logic.roomHandler.gameResult(playerResult)
     local info = {
         roundNum = logic.roundNum,
         outHandNum = logic.outHandNum,

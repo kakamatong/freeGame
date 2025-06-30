@@ -46,6 +46,18 @@ local function pushLog(logtype, userid, gameid, roomid, ext)
     skynet.send(dbserver, "lua", "funcLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
 end
 
+local function pushLogResult(type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, ext)
+    local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		log.error("wsgate login error: dbserver not started")
+		return
+	end
+
+    local time = os.time()
+    local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
+    skynet.send(dbserver, "lua", "funcLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
+end
+
 -- 开始游戏
 local function startGame()
     gameStatus = config.GAME_STATUS.START
@@ -260,6 +272,26 @@ end
 -- room接口,发送消息给所有玩家
 function roomHandler.sendToAllClient(name, data)
     sendToAllClient(name, data)
+end
+
+-- room接口,游戏结果
+function roomHandler.gameResult(data)
+    for k, v in pairs(data) do
+        local userid = seats[v.seat]
+        local flag = config.RESULT_TYPE.NONE
+        if v.endResult == 1 then
+            flag = config.RESULT_TYPE.WIN
+        elseif v.endResult == 2 then
+            flag = config.RESULT_TYPE.DRAW
+        else 
+            flag = config.RESULT_TYPE.LOSE
+        end
+        local tmp = {
+            seats = seats,
+            data = data,
+        }
+        pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, gameid, roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
+    end
 end
 
 -- room接口,游戏结束
