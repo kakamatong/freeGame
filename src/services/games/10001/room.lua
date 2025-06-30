@@ -58,6 +58,15 @@ local function pushLogResult(type, userid, gameid, roomid, result, score1, score
     skynet.send(dbserver, "lua", "funcLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
 end
 
+local function pushUserGameRecords(userid, gameid, addType, addNums)
+    local dbserver = skynet.localname(".dbserver")
+	if not dbserver then
+		log.error("wsgate login error: dbserver not started")
+		return
+	end
+    skynet.send(dbserver, "lua", "func", "insertUserGameRecords", userid, gameid, addType, addNums)
+end
+
 -- 开始游戏
 local function startGame()
     gameStatus = config.GAME_STATUS.START
@@ -279,18 +288,24 @@ function roomHandler.gameResult(data)
     for k, v in pairs(data) do
         local userid = seats[v.seat]
         local flag = config.RESULT_TYPE.NONE
+        local addType = "other"
         if v.endResult == 1 then
             flag = config.RESULT_TYPE.WIN
+            addType = "win"
         elseif v.endResult == 2 then
             flag = config.RESULT_TYPE.DRAW
+            addType = "draw"
         else 
             flag = config.RESULT_TYPE.LOSE
+            addType = "lose"
         end
         local tmp = {
             seats = seats,
             data = data,
         }
         pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, gameid, roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
+
+        pushUserGameRecords(userid, gameid, addType, 1)
     end
 end
 

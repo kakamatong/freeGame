@@ -270,5 +270,27 @@ function db.registerUser(mysql,...)
     return res.insert_id
 end
 
+-- CREATE TABLE userGameRecords (
+--     userid BIGINT NOT NULL,
+--     gameid BIGINT NOT NULL,
+--     win BIGINT DEFAULT 0,
+--     lose BIGINT DEFAULT 0,
+--     draw BIGINT DEFAULT 0,
+--     escape BIGINT DEFAULT 0,
+--     other BIGINT DEFAULT 0,
+--     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+--     PRIMARY KEY (userid, gameid),
+--     INDEX idx_userid (userid)
+-- );
+function db.insertUserGameRecords(mysql,...)
+    local userid,gameid,addType,addNums =...
+    local sql = string.format("INSERT INTO userGameRecords (userid,gameid,%s) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE %s = %s + %d;",addType,userid,gameid,addNums,addType,addType,addNums)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 返回db表，供外部调用
 return db
