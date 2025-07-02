@@ -8,7 +8,7 @@ local function start()
     
 end
 
-function CMD.callFunc(moduleName, funcName, args)
+function CMD.clientCall(moduleName, funcName, userid, args)
     local modulePath = "activity." .. moduleName
     log.info("modulePath %s", modulePath)
     -- require异常处理
@@ -24,7 +24,7 @@ function CMD.callFunc(moduleName, funcName, args)
     if not func then
         return {code = 0, result = "活动函数不存在"}
     end
-    return func(args)
+    return func(userid, args)
 end
 
 skynet.start(function()

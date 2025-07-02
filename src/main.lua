@@ -19,7 +19,7 @@ skynet.start(function()
 	local dbserver = skynet.newservice("db/server")
 
 	-- 签到服务
-	skynet.newservice("activity/activity")
+	skynet.newservice("activity/server")
 
 	-- 大厅服务
 	skynet.newservice("lobby/server")

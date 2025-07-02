@@ -118,24 +118,22 @@ local function getUserSignInData(userid)
 end
 
 -- 获取签到信息
-function daySignIn.getSignInInfo(args)
-    local userid = args.userid
+function daySignIn.getSignInInfo(userid, args)
     local resp = {}
     local signInIndex, signInData = getUserSignInData(userid)
     
     resp.signInIndex = signInIndex
     resp.signInConfig = signInConfig
     resp.signStatus = signInData.status
-    return tools.result(resp)
+    return UTILS.result(resp)
 end
 
 -- 签到
-function daySignIn.signIn(args)
-    local userid = args.userid
+function daySignIn.signIn(userid, args)
     local resp = {}
     local signInIndex, signInData = getUserSignInData(userid)
     if signInData.status[signInIndex] > STATUS_SIGN.NOT_SIGNIN then
-        return tools.result({error = "已经签到过了"})
+        return UTILS.result({error = "已经签到过了"})
     else
         -- redis 锁
         local lockKey = string.format("signInLock:%d", userid)
@@ -143,7 +141,7 @@ function daySignIn.signIn(args)
         local lockExpire = 2000
         local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
         if not lock then
-            return tools.result({error = "签到失败"})
+            return UTILS.result({error = "签到失败"})
         end
 
         -- 更新签到状态
@@ -155,27 +153,26 @@ function daySignIn.signIn(args)
         for i = 1, #richTypes do
             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
-                return tools.result({error = "发奖失败"})
+                return UTILS.result({error = "发奖失败"})
             end
         end
         tools.callRedis("unlock", lockKey)
         -- 更新财富通知
         tools.reportAward(userid, richTypes, richNums)
-        return tools.result(signInConfig[signInIndex])
+        return UTILS.result(signInConfig[signInIndex])
     end
 end
 
 -- 补签
-function daySignIn.fillSignIn(args)
-    local userid = args.userid
+function daySignIn.fillSignIn(userid, args)
     local resp = {}
     local fillIndex = args.index
     local signInIndex, signInData = getUserSignInData(userid)
     if fillIndex and fillIndex >= signInIndex then
-        return tools.result({error = "参数错误"})
+        return UTILS.result({error = "参数错误"})
     end
     if signInData.status[fillIndex] > STATUS_SIGN.NOT_SIGNIN then
-        return tools.result({error = "已经签到过了"})
+        return UTILS.result({error = "已经签到过了"})
     else
          -- redis 锁
          local lockKey = string.format("signInLock:%d", userid)
@@ -183,7 +180,7 @@ function daySignIn.fillSignIn(args)
          local lockExpire = 2000
          local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
          if not lock then
-             return tools.result({error = "签到失败"})
+             return UTILS.result({error = "签到失败"})
          end
  
          -- 更新签到状态
@@ -195,13 +192,13 @@ function daySignIn.fillSignIn(args)
          for i = 1, #richTypes do
              local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
              if not res then
-                 return tools.result({error = "发奖失败"})
+                 return UTILS.result({error = "发奖失败"})
              end
          end
          tools.callRedis("unlock", lockKey)
          -- 更新财富通知
          tools.reportAward(userid, richTypes, richNums)
-         return tools.result(signInConfig[fillIndex])
+         return UTILS.result(signInConfig[fillIndex])
     end
 end
 
