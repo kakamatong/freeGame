@@ -44,7 +44,7 @@ local function pushLog(logtype, userid, gameid, roomid, ext)
 
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(dbserver, "lua", "funcLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
+    skynet.send(dbserver, "lua", "dbLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
 end
 
 -- 游戏结果日志
@@ -57,7 +57,7 @@ local function pushLogResult(type, userid, gameid, roomid, result, score1, score
 
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(dbserver, "lua", "funcLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
+    skynet.send(dbserver, "lua", "dbLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
 end
 
 -- 用户游戏记录
@@ -67,7 +67,7 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
 		log.error("wsgate login error: dbserver not started")
 		return
 	end
-    skynet.send(dbserver, "lua", "func", "insertUserGameRecords", userid, gameid, addType, addNums)
+    skynet.send(dbserver, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
 -- 开始游戏

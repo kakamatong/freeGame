@@ -4,20 +4,17 @@
     session 1 : integer
 }
 
-# 客户端请求结构
-login 1 {
+# 调用接口
+call 1 {
     request {
-        username 0 : string
-        userid 1 : integer
-        password 2 : string
-        device 3 : string
-        version 4 : string
-        channel 5 : string
-        subid 6 : integer
+        server 0 : string
+        moduleName 1 : string
+        funcName 2 : string
+        args 3 : string
     }
     response {
         code 0 : integer
-        msg 1 : string
+        result 1 : string
     }
 }
 
@@ -30,116 +27,3 @@ heartbeat 2 {
         timestamp 0 : integer
     }
 }
-
-logout 3 {
-    request {
-        uid 0 : integer
-        token 1 : string
-    }
-    response {
-        code 0 : integer
-        msg 1 : string
-    }
-} 
-
-# 用户数据
-userData 4 {
-    request {
-        uid 0 : integer
-    }
-    response {
-        nickname 0 : string
-        headurl 1 : string
-        sex 2 : integer
-        province 3 : string
-        city 4 : string
-        ip 5 : string
-        ext 6 : string
-    }
-}
-
-# 用户财富
-userRiches 5 {
-    request {
-        
-    }
-    response {
-        richType 0 : *integer
-        richNums 1 : *integer
-    }
-}
-
-# 用户状态
-userStatus 6 {
-    request {
-        uid 0 : integer
-    }
-    response {
-        status 0 : integer
-        gameid 1 : integer
-        roomid 2 : integer
-    }
-}
-
-# 匹配 type 0 进入匹配， 1 离开匹配
-match 7 {
-    request {
-        type 0 : integer
-        gameid 1 : integer
-        gameSubid 2 : integer
-    }
-    response {
-        code 0 : integer
-        msg 1 : string
-        gameid 2 : integer
-        roomid 3 : integer
-    }
-}
-
-# 链接游戏
-connectGame 8 {
-    request {
-        code 0 : integer
-    }
-    response {
-        code 0 : integer
-        msg 1 : string
-    }
-}
-
-# 调用活动接口
-callActivityFunc 9 {
-    request {
-        moduleName 0 : string
-        funcName 1 : string
-        args 2 : string
-    }
-    response {
-        code 0 : integer
-        result 1 : string
-    }
-}
-
-#######################################################游戏公共
-# 游戏准备
-gameReady 10001 {
-    request {
-        gameid 0 : integer
-        roomid 1 : integer
-    }
-    response {
-        code 0 : integer
-        msg 1 : string
-    }
-}
-
-#######################################################10001游戏相关
-# 出手
-gameOutHand 10101 {
-    request {
-        gameid 0 : integer
-        roomid 1 : integer
-        flag 2 : integer
-    }
-}
-############################################################

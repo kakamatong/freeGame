@@ -18,7 +18,7 @@ end
 
 function start()
     local dbSvr = skynet.localname(".dbserver")
-    local robots = skynet.call(dbSvr, "lua", "func","getRobots", config.idbegin, config.idend)
+    local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
     if robots then
         for _,robot in pairs(robots) do
             robotDatas[robot.userid] = robot

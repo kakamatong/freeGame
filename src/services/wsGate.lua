@@ -155,7 +155,7 @@ function CMD.login(source, userid, secret,loginType)
 	-- 踢掉之前的链接
 	kickByUserid(userid)
 	
-	local subid = skynet.call(dbserver, "lua", "func", "setAuth", userid, secret, 0, loginType)
+	local subid = skynet.call(dbserver, "lua", "db", "setAuth", userid, secret, 0, loginType)
 
 	return subid or -1
 end

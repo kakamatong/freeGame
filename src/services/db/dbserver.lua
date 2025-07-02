@@ -4,24 +4,22 @@ local redis = require "skynet.db.redis"
 local log = require "log"
 require "skynet.manager"
 local CMD = {}
-local FUNC = require "db" or {}
-local FUNC_LOG = require "dbLog" or {}
-local FUNC_REDIS = require "dbRedis" or {}
 local name = "dbserver"
-local mysql_db = nil
-local redis_db = nil
-local mysqlLog_db = nil
 local gConfig = CONFIG
+local dbs = {
+
+}
 local function startMysql()
-    if mysql_db or mysqlLog_db then
+    if dbs.db or dbs.dbLog then
         log.info("mysql already started")
         return
     end
     local onConnect = function(db)
+        dbs.db = db
         log.info("**mysql connected**")
     end
 
-    mysql_db = mysql.connect({
+    local mysql_db = mysql.connect({
         host = gConfig.mysql.host,
         port = gConfig.mysql.port,
         user = gConfig.mysql.user,
@@ -30,11 +28,13 @@ local function startMysql()
         on_connect = onConnect,
     })
 
+    
+
     local onConnectLog = function(db)
-        log.info("**mysqlLog connected**")
+        dbs.dbLog = db
     end
 
-    mysqlLog_db = mysql.connect({
+    local mysqlLog_db = mysql.connect({
         host = gConfig.mysqlLog.host,
         port = gConfig.mysqlLog.port,
         user = gConfig.mysqlLog.user,
@@ -45,7 +45,7 @@ local function startMysql()
 end
 
 local function startRedis()
-    if redis_db then
+    if dbs.dbRedis then
         log.info("redis already started")
         return
     end
@@ -54,11 +54,24 @@ local function startRedis()
         port = gConfig.redis.port,
         auth = gConfig.redis.auth,
     })
+
+    dbs.dbRedis = redis_db
 end
 
 function start()
     startMysql()
     startRedis()
+end
+
+function requireModule(moduleName)
+    local dbmodule = nil
+    local ok, err = pcall(function()
+        dbmodule = require(moduleName)
+    end)
+    if not ok then
+        log.error("requireModule %s error %s", moduleName, err)
+    end
+    return dbmodule
 end
 
 function CMD.stop()
@@ -75,32 +88,14 @@ end
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
         log.info("%s cmd %s %s",name, cmd, subcmd)
-        if cmd == "func" then
-            if not mysql_db then
-                log.error("mysql not started")
-                return skynet.ret(skynet.pack(nil))
-            end
-            local f = assert(FUNC[subcmd])
-            return skynet.ret(skynet.pack(f(mysql_db,...)))
-        elseif cmd == "funcLog" then
-            if not mysqlLog_db then
-                log.error("mysqlLog not started")
-                return skynet.ret(skynet.pack(nil))
-            end
-            local f = assert(FUNC_LOG[subcmd])
-            return skynet.ret(skynet.pack(f(mysqlLog_db, ...)))
-        elseif cmd == "funcRedis" then
-            if not redis_db then
-                log.error("redis not started")
-                return skynet.ret(skynet.pack(nil))
-            end
-            local f = assert(FUNC_REDIS[subcmd])
-            return skynet.ret(skynet.pack(f(redis_db,...)))
-        elseif cmd == "cmd" then
+        if cmd == "cmd" then
             local f = assert(CMD[subcmd])
             return skynet.ret(skynet.pack(f(...)))
         else
-            return skynet.ret(skynet.pack(nil))
+            local db = assert(dbs[cmd])
+            local dbmodule = assert(requireModule(cmd))
+            local f = assert(dbmodule[subcmd])
+            return skynet.ret(skynet.pack(f(db,...)))
         end
     end)
 

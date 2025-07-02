@@ -21,7 +21,7 @@ end
 -- 调用redis
 function tools.callRedis(func,...)
     local db = tools.getDB()
-    return skynet.call(db, "lua", "funcRedis", func, ...)
+    return skynet.call(db, "lua", "dbRedis", func, ...)
 end
 
 -- 调用mysql

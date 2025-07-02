@@ -29,7 +29,7 @@ local function pushLog(username, ip, loginType, status, ext)
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
-	skynet.send(dbserver, "lua", "funcLog", "insertAuthLog", username, ip, loginType, status, ext)
+	skynet.send(dbserver, "lua", "dbLog", "insertAuthLog", username, ip, loginType, status, ext)
 end
 
 local function registerUser(user, password, loginType, server, ip)
@@ -38,7 +38,7 @@ local function registerUser(user, password, loginType, server, ip)
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
-	local userid = skynet.call(dbserver, "lua", "func", "registerUser", user,password,loginType)
+	local userid = skynet.call(dbserver, "lua", "db", "registerUser", user,password,loginType)
 	pushLog(userid, ip or "0.0.0.0", loginType, 2, '')
 	return server, userid, loginType
 end
@@ -58,7 +58,7 @@ function server.auth_handler(token, ip)
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
-	local userInfo = skynet.call(dbserver, "lua", "func", "getLoginInfo", user,loginType)
+	local userInfo = skynet.call(dbserver, "lua", "db", "getLoginInfo", user,loginType)
 	-- 注册用户
 	if bRegister and string.find(loginType, register) then
 		assert(not userInfo, "user already exists")

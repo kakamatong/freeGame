@@ -33,7 +33,7 @@ local function pushLog(userid, nickname, ip, loginType, status, ext)
 		log.error("wsgate login error: dbserver not started")
 		return
 	end
-	skynet.send(dbserver, "lua", "funcLog", "insertLoginLog", userid, nickname, ip, loginType, status, ext)
+	skynet.send(dbserver, "lua", "dbLog", "insertLoginLog", userid, nickname, ip, loginType, status, ext)
 end
 
 -- 发送数据包给客户端
@@ -70,7 +70,7 @@ local function setUserStatus(status, gameid, roomid)
 	if not status then return end
 	userStatus = status
 	local db = getDB()
-	skynet.call(db, "lua", "func", "setUserStatus", userid, status, gameid, roomid)
+	skynet.call(db, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
@@ -92,7 +92,7 @@ end
 -- 检查并同步用户状态
 local function checkStatus()
 	local db = getDB()
-	local status = skynet.call(db, "lua", "func", "getUserStatus", userid)
+	local status = skynet.call(db, "lua", "db", "getUserStatus", userid)
 	if not status or status.gameid == 0 then
 		setUserStatus(gConfig.USER_STATUS.ONLINE)
 		return
@@ -173,14 +173,14 @@ end
 -- 获取用户数据
 local function getUserData()
 	local db = getDB()
-	userData = skynet.call(db, "lua", "func", "getUserData", userid)
+	userData = skynet.call(db, "lua", "db", "getUserData", userid)
 	return userData
 end
 
 -- 获取用户财富信息
 local function getUserRiches()
 	local db = getDB()
-	local userRiches = skynet.call(db, "lua", "func", "getUserRiches", userid)
+	local userRiches = skynet.call(db, "lua", "db", "getUserRiches", userid)
 	if not userRiches then
 		return {}, {}
 	end
@@ -196,7 +196,7 @@ end
 -- 获取用户财富信息，根据类型获取
 local function getUserRichesByType(richType)
 	local db = getDB()
-	local userRiches = skynet.call(db, "lua", "func", "getUserRichesByType", userid, richType)
+	local userRiches = skynet.call(db, "lua", "db", "getUserRichesByType", userid, richType)
 	if not userRiches then
 		return 0
 	end
@@ -207,10 +207,10 @@ end
 -- test
 local function test()
 	-- local db = getDB()
-	-- local userRiches = skynet.call(db, "lua", "func", "addUserRiches", userid, 2, 10000)
+	-- local userRiches = skynet.call(db, "lua", "db", "addUserRiches", userid, 2, 10000)
 	-- assert(userRiches)
 	local db = getDB()
-	local userData = skynet.call(db, "lua", "funcRedis", "test")
+	local userData = skynet.call(db, "lua", "dbRedis", "test")
 end
 
 -- region 以下为客户端请求处理函数（REQUEST表）
@@ -230,7 +230,7 @@ end
 function REQUEST:userData(args)
 	if not userData then
 		local db = getDB()
-		userData = skynet.call(db, "lua", "func", "getUserData", userid)
+		userData = skynet.call(db, "lua", "db", "getUserData", userid)
 		assert(userData)
 		return userData
 	end
@@ -248,7 +248,7 @@ end
 -- 获取用户状态
 function REQUEST:userStatus(args)
 	local db = getDB()
-	local status = skynet.call(db, "lua", "func", "getUserStatus", userid)
+	local status = skynet.call(db, "lua", "db", "getUserStatus", userid)
 	if not status then
 		return {gameid = 0 , status = -1}
 	else
@@ -289,7 +289,7 @@ end
 function REQUEST:login(args)
 	log.info("login username %s, password %s", args.userid, args.password)
 	local db =getDB()
-	local authInfo = skynet.call(db, "lua", "func", "getAuth", args.userid)
+	local authInfo = skynet.call(db, "lua", "db", "getAuth", args.userid)
 	if not authInfo then
 		pushLog(args.userid, '', ip, args.channel, 0, 'acc failed')
 		return {code = 1, msg = "acc failed"}
@@ -309,7 +309,7 @@ function REQUEST:login(args)
 
 	-- 通知gate登录成功
 	skynet.call(gate, "lua", "loginSuccess", args.userid, client_fd)
-	skynet.call(db, "lua", "func", "addSubid", args.userid, authInfo.subid + 1)
+	skynet.call(db, "lua", "db", "addSubid", args.userid, authInfo.subid + 1)
 	bAuth = true
 	userid = args.userid
 	loginChannel = args.channel or ""
