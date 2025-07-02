@@ -1,35 +1,35 @@
 local skynet = require "skynet"
 require "skynet.manager"
-local name = "lobby"
+local name = "user"
 local log = require "log"
 local CMD = {}
-local defaultModule = "lobby"
+local defaultModule = "user"
 
 local function start()
     
 end
 
-function CMD.callFunc(moduleName, funcName,userid, args)
+function CMD.callFunc(moduleName, funcName, userid, args)
     if not moduleName or moduleName == "" then
         moduleName = defaultModule
     end
 
-    local modulePath = "lobby." .. moduleName
+    local modulePath = "user." .. moduleName
     log.info("modulePath %s", modulePath)
     -- require异常处理
-    local lobbyModule = nil
+    local userModule = nil
     local ok, err = pcall(function()
-        lobbyModule = require(modulePath)
+        userModule = require(modulePath)
     end)
     if not ok then
         return {code = 0, result = "模块不存在"}
     end
 
-    local func = lobbyModule[funcName]
+    local func = userModule[funcName]
     if not func then
         return {code = 0, result = "函数不存在"}
     end
-    return func(userid,args)
+    return func(userid, args)
 end
 
 skynet.start(function()

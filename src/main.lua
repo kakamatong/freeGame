@@ -24,6 +24,9 @@ skynet.start(function()
 	-- 大厅服务
 	skynet.newservice("lobby/server")
 
+	-- 用户服务
+	skynet.newservice("user/server")
+
 	-- 启动游戏服务
 	skynet.newservice("games/gameManager")
 

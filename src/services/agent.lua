@@ -242,18 +242,18 @@ function REQUEST:login(args)
 	local authInfo = skynet.call(db, "lua", "db", "getAuth", args.userid)
 	if not authInfo then
 		pushLog(args.userid, '', ip, args.channel, 0, 'acc failed')
-		return {code = 1, msg = "acc failed"}
+		return {code = 0, msg = "acc failed"}
 	end
 
 	if authInfo.secret ~= args.password then
 		pushLog(args.userid, '', ip, args.channel, 0, 'pass failed')
-		return {code = 2, msg = "pass failed"}
+		return {code = 0, msg = "pass failed"}
 	end
 
 	log.info("authInfo.subid %s, args.subid %s", authInfo.subid, args.subid)
 	if authInfo.subid ~= args.subid then
 		pushLog(args.userid, '', ip, args.channel, 0, 'subid failed')
-		return {code = 3, msg = "subid failed"}
+		return {code = 0, msg = "subid failed"}
 	end
 	pushLog(args.userid, '', ip, args.channel, 1, 'success')
 
@@ -266,7 +266,10 @@ function REQUEST:login(args)
 	leftTime = os.time()
 
 	checkStatus()
-	return {code = 0, msg = "success"}
+	local data = {
+		code = 1
+	}
+	return {code = 1, result = cjson.encode(data)}
 end
 
 -- 连接游戏
@@ -296,7 +299,7 @@ local function call(serverName, moduleName, funcName, args)
 			log.error(msg .. serverName)
 			return {code = 0, result = msg}
 		end
-		skynet.call(server, "lua", "callFunc", moduleName, funcName, args)
+		return skynet.call(server, "lua", "callFunc", moduleName, funcName, userid, args)
 	end
 end
 

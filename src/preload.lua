@@ -1,7 +1,7 @@
 -- game/preload.lua
 -- 全局预加载脚本，初始化全局配置、常量、工具函数、日志、性能统计和错误处理
 local skynet = require "skynet"
-
+local cjson = require "cjson"
 -- 全局配置
 local config = require "gameConfig" or {}
 _G.CONFIG = config
@@ -69,6 +69,15 @@ _G.UTILS = {
         
         return str
     end,
+
+    result=function(info)
+        local msg = {}
+        if info then
+            msg = info
+        end
+        return {code = 1, result = cjson.encode(msg)}
+    end
+
 }
 
 -- 性能统计相关工具
