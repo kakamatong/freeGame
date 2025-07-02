@@ -71,11 +71,11 @@ _G.UTILS = {
     end,
 
     result=function(info)
-        local msg = {}
         if info then
-            msg = info
+            return {code = 1, result = cjson.encode(info)}
+        else
+            return {code = 0, result = "调用接口失败"}
         end
-        return {code = 1, result = cjson.encode(msg)}
     end
 
 }
