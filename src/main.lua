@@ -22,7 +22,7 @@ skynet.start(function()
 	skynet.newservice("activity/activity")
 
 	-- 大厅服务
-	skynet.newservice("lobby/lobby")
+	skynet.newservice("lobby/server")
 
 	-- 启动游戏服务
 	skynet.newservice("games/gameManager")
@@ -31,7 +31,7 @@ skynet.start(function()
 	local robotManager = skynet.newservice("robot/robotManager")
 
 	-- 启动匹配服务
-	local match = skynet.newservice("match/match")
+	local match = skynet.newservice("match/server")
 
 	-- 启动WebSocket登录服务
 	local loginservice = skynet.newservice("wsAuthd")
