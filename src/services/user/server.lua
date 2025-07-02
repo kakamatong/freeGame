@@ -9,7 +9,7 @@ local function start()
     
 end
 
-function CMD.callFunc(moduleName, funcName, userid, args)
+function CMD.clientCall(moduleName, funcName, userid, args)
     if not moduleName or moduleName == "" then
         moduleName = defaultModule
     end

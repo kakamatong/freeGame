@@ -292,7 +292,7 @@ function REQUEST:connectGame(args)
 	end
 end
 
-local function call(serverName, moduleName, funcName, args)
+local function clientCall(serverName, moduleName, funcName, args)
 	if serverName == "agent" then
 		local f = assert(REQUEST[funcName])
 		return f(REQUEST, args)
@@ -303,7 +303,7 @@ local function call(serverName, moduleName, funcName, args)
 			log.error(msg .. serverName)
 			return {code = 0, result = msg}
 		end
-		return skynet.call(server, "lua", "callFunc", moduleName, funcName, userid, args)
+		return skynet.call(server, "lua", "clientCall", moduleName, funcName, userid, args)
 	end
 end
 
@@ -314,7 +314,7 @@ local function request(name, args, response)
 		return 
 	end
 
-	local r = call(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
+	local r = clientCall(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
 	if response then
 		return response(r)
 	end
