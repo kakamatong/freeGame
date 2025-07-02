@@ -226,56 +226,6 @@ function REQUEST:quit()
 	skynet.call(WATCHDOG, "lua", "close", client_fd)
 end
 
--- 获取用户详细数据
-function REQUEST:userData(args)
-	if not userData then
-		local db = getDB()
-		userData = skynet.call(db, "lua", "db", "getUserData", userid)
-		assert(userData)
-		return userData
-	end
-	return userData
-end
-
--- 获取用户财富信息
-function REQUEST:userRiches(args)
-	local richType, richNums = getUserRiches()
-	log.info("richType %s", UTILS.tableToString(richType))
-	log.info("richNums %s", UTILS.tableToString(richNums))
-	return {richType = richType, richNums = richNums}
-end
-
--- 获取用户状态
-function REQUEST:userStatus(args)
-	local db = getDB()
-	local status = skynet.call(db, "lua", "db", "getUserStatus", userid)
-	if not status then
-		return {gameid = 0 , status = -1}
-	else
-		return {gameid = status.gameid , status=status.status, roomid = status.roomid}
-	end
-end
-
--- 调用活动接口
-function REQUEST:callActivityFunc(args)
-	local activity = skynet.localname(".activity")
-	if not activity then
-		return {code = 0, result = "活动服务异常"}
-	end
-	local activityModule, funcName, reqArgs = args.moduleName, args.funcName, args.args
-	local newArgs = {}
-	if reqArgs and reqArgs ~= "" then
-		newArgs = cjson.decode(reqArgs)
-	else
-		newArgs = {}
-	end
-	newArgs.userid = userid
-	newArgs.channel = loginChannel
-
-	local result = skynet.call(activity, "lua", "callFunc", activityModule, funcName, newArgs)
-	return result
-end
-
 -- 匹配请求处理
 function REQUEST:match(args)
 	if args.type == 0 then
@@ -314,8 +264,7 @@ function REQUEST:login(args)
 	userid = args.userid
 	loginChannel = args.channel or ""
 	leftTime = os.time()
-	--test()
-	getUserData()
+
 	checkStatus()
 	return {code = 0, msg = "success"}
 end
@@ -336,18 +285,29 @@ function REQUEST:connectGame(args)
 	end
 end
 
+local function call(serverName, moduleName, funcName, args)
+	if serverName == "agent" then
+		local f = assert(REQUEST[funcName])
+		return f(REQUEST, args)
+	else
+		local server = skynet.localname("." .. serverName)
+		if not server then
+			local msg = "找不到服务"
+			log.error(msg .. serverName)
+			return {code = 0, result = msg}
+		end
+		skynet.call(server, "lua", "callFunc", moduleName, funcName, args)
+	end
+end
+
 -- 客户端请求分发
 local function request(name, args, response)
 	--log.info("request %s", name)
-	if not bAuth and name ~= "login" then
+	if not bAuth and not (args.funcName == "login" and args.serverName == "agent") then
 		return 
 	end
-	if args.roomid  and args.roomid > 0 then
-		sendToGame(name, args, response)
-		return
-	end
-	local f = assert(REQUEST[name])
-	local r = f(REQUEST, args)
+
+	local r = call(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
 	if response then
 		return response(r)
 	end

@@ -3,7 +3,7 @@ require "skynet.manager"
 local name = "lobby"
 local log = require "log"
 local CMD = {}
-local defaultModule = "mainLobby"
+local defaultModule = "lobby"
 
 local function start()
     
