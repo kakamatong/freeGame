@@ -28,7 +28,7 @@ local loginChannel = ""
 local gConfig = CONFIG
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -57,7 +57,7 @@ end
 
 -- 获取数据库服务句柄
 local function getDB()
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return

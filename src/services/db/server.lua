@@ -4,7 +4,7 @@ local redis = require "skynet.db.redis"
 local log = require "log"
 require "skynet.manager"
 local CMD = {}
-local name = "dbserver"
+local name = "db"
 local gConfig = CONFIG
 local dbs = {
 

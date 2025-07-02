@@ -24,7 +24,7 @@ local bRegister = false
 local register = "register"
 
 local function pushLog(username, ip, loginType, status, ext)
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate auth error: dbserver not started")
 		return
@@ -33,7 +33,7 @@ local function pushLog(username, ip, loginType, status, ext)
 end
 
 local function registerUser(user, password, loginType, server, ip)
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate auth error: dbserver not started")
 		return
@@ -53,7 +53,7 @@ function server.auth_handler(token, ip)
 	loginType = crypt.base64decode(loginType)
 	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
 
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate auth error: dbserver not started")
 		return

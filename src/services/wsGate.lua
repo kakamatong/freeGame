@@ -147,7 +147,7 @@ end
 
 function CMD.login(source, userid, secret,loginType)
 	-- todo: 将uid和secret写入数据库
-	local dbserver = skynet.localname(".dbserver")
+	local dbserver = skynet.localname(".db")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return

@@ -16,7 +16,7 @@ skynet.start(function()
 	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动数据库服务
-	local dbserver = skynet.newservice("dbserver")
+	local dbserver = skynet.newservice("db/server")
 
 	-- 签到服务
 	skynet.newservice("activity/activity")

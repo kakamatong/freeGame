@@ -13,7 +13,7 @@ end
 
 -- 获取dbserver
 function tools.getDB()
-    local dbserver = skynet.localname(".dbserver")
+    local dbserver = skynet.localname(".db")
 	assert(dbserver, "dbserver not started")
 	return dbserver
 end

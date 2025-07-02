@@ -17,7 +17,7 @@ local function getFreeRobotid()
 end
 
 function start()
-    local dbSvr = skynet.localname(".dbserver")
+    local dbSvr = skynet.localname(".db")
     local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
     if robots then
         for _,robot in pairs(robots) do
