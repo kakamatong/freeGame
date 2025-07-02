@@ -218,7 +218,11 @@ end
 -- 心跳包处理，刷新活跃时间
 function REQUEST:heartbeat()
 	leftTime = os.time()
-	return { timestamp = leftTime }
+	local data = {
+		timestamp = leftTime
+	}
+	
+	return { code =1, result = cjson.encode(data) }
 end
 
 -- 客户端主动退出
