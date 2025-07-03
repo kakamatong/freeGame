@@ -11,6 +11,29 @@ local queueUserids = {}  -- queueUserids[gameid][queueid] = {userid1, ...}
 local dTime = 1          -- 匹配检查间隔（秒）
 local CHECK_MAX_NUM = 5       -- 匹配检查次数
 local gConfig = CONFIG
+local defaultModule = "match"
+local path = "match."
+
+local function getUserStatus(userid)
+    
+end
+
+local function checkInGame(tmpGameid, tmpRoomid)
+	local gameServer = skynet.localname(".gameManager")
+	if not gameServer then
+		log.error("gameManager not started")
+		return
+	end
+
+	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
+	if not b then
+		log.error("game not found %d %d", tmpGameid, tmpRoomid)
+		return
+	end
+
+	return true
+end
+
 local function checkGame(gameid, queueid)
     local gameConfig = gConfig.MATCH_GAMES[gameid]
     if not gameConfig then
@@ -35,15 +58,18 @@ end
 -- 离开队列
 local function leaveQueue(userid)
     log.info("leaveQueue %d", userid)
+    local data = {
+        code = 0
+    }
     if not users[userid] then
-        return false
+        return data
     end
     local gameid = users[userid].gameid
     local queueid = users[userid].queueid
     local queue = queueUserids[gameid][queueid]
     log.info("queueUserids start %s", UTILS.tableToString(queue))
     if not queueUserids[gameid] or not queue then
-        return false
+        return data
     end 
     for i, v in ipairs(queue) do
         if v == userid then
@@ -53,7 +79,8 @@ local function leaveQueue(userid)
     end
     users[userid] = nil
     log.info("queueUserids end %s", UTILS.tableToString(queue))
-    return true
+    data.code = 1
+    return data
 end
 
 -- 创建游戏
@@ -183,20 +210,18 @@ function start()
     end)
 end
 
--- 停止匹配服务
-function CMD.stop()
-    log.info("match stop")
-end
-
 -- 玩家进入匹配队列
-function CMD.enterQueue(agent, userid, gameid, queueid, rate)
+function enterQueue(userid, gameid, queueid, rate)
     log.info("enterQueue %d %d %d", userid, gameid, queueid)
+    local data = {
+        code = 0
+    }
     if not gameid or not queueid or queueid == 0 then
-        return false
+        return data
     end
     
     if not checkGame(gameid, queueid) then
-        return false
+        return data
     end
 
     if not users[userid] then
@@ -205,13 +230,12 @@ function CMD.enterQueue(agent, userid, gameid, queueid, rate)
             gameid = gameid,
             queueid = queueid or 0,
             rate = rate or 0,
-            agent = agent,
             checkNum = 0,
             matchSuccess = false,
             time = os.time(),
         }
     else
-        return false
+        return data
     end
 
     if not queueUserids[gameid] then
@@ -229,12 +253,66 @@ function CMD.enterQueue(agent, userid, gameid, queueid, rate)
         end
     end
     table.insert(queueUserids[gameid][queueid], index, userid)
-    return true
+    data.code = 1
+    return data
 end
 
+local function join(userid, gameid, queueid)
+    local data = {
+        code = 0
+    }
+
+    
+    return data
+end
+
+-----------------------------------------------------------------------------------------
+local FUNCS = {}
+
+function FUNCS.join(userid, args)
+    return enterQueue(userid, args.gameid, args.queueid)
+end
+
+function FUNCS.leave(userid)
+    return leaveQueue(userid)
+end
+-----------------------------------------------------------------------------------------
 -- 玩家离开匹配队列
 function CMD.leaveQueue(userid)
     return leaveQueue(userid)
+end
+
+local function callFunc(moduleName, funcName, userid, args)
+    local serModule = nil
+    local ok, err = pcall(function()
+        serModule = require(path .. moduleName)
+    end)
+    if not ok then
+        return 
+    end
+    local func = serModule[funcName]
+    if not func then
+        return 
+    end
+
+    return func(userid, args)
+end
+
+function CMD.svrCall(moduleName, funcName, userid, args)
+    return callFunc(moduleName, funcName, userid, args)
+end
+
+function CMD.clientCall(moduleName, funcName, userid, args)
+    if not moduleName or moduleName == "" then
+        moduleName = defaultModule
+    end
+
+    local clientInterfaces = require(path .. "clientInterfaces")
+    if not clientInterfaces[moduleName][funcName] then
+        return UTILS.result()
+    end
+
+    return UTILS.result(callFunc(moduleName, funcName, userid, args))
 end
 
 skynet.start(function()
