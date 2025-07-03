@@ -36,7 +36,7 @@ function CMD.clientCall(moduleName, funcName, userid, args)
     end
 
     local clientInterfaces = require(path .. "clientInterfaces")
-    if not clientInterfaces[moduleName][funcName] then
+    if not clientInterfaces or not clientInterfaces[moduleName] or not clientInterfaces[moduleName][funcName] then
         return UTILS.result()
     end
 

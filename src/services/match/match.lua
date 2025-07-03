@@ -1,11 +1,214 @@
 local skynet = require "skynet"
 local log = require "log"
+local gConfig = CONFIG
 local match = {}
+local queueUserids = {}
+local CHECK_MAX_NUM = 5
+-- 获取数据库服务句柄
+local function getDB()
+	local dbserver = skynet.localname(".db")
+	if not dbserver then
+		log.error("wsgate login error: dbserver not started")
+		return
+	end
+	return dbserver
+end
 
-function match.join(userid, gameid, queueid)
-    local data = {
-        code = 0
-    }
+local function setUserStatus(userid, status, gameid, roomid)
+    local svrUser = skynet.localname(".user")
+    if not svrUser then
+        return
+    end
+    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, status, gameid, roomid)
+end
+
+local function getUserStatus(userid)
+    local svrUser = skynet.localname(".user")
+    if not svrUser then
+        return
+    end
+    local status = skynet.call(svrUser, "lua", "svrCall", "user", "userStatus", userid)
+    return status
+end
+
+local function checkInGame(tmpGameid, tmpRoomid)
+	local gameServer = skynet.localname(".gameManager")
+	if not gameServer then
+		log.error("gameManager not started")
+		return
+	end
+
+	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
+	if not b then
+		log.error("game not found %d %d", tmpGameid, tmpRoomid)
+		return
+	end
+
+	return true
+end
+
+local function checkGame(gameid, queueid)
+    local gameConfig = gConfig.MATCH_GAMES[gameid]
+    if not gameConfig then
+        return false
+    end
+
+    if queueid > gameConfig.queueNum then
+        return false
+    end
+
+    return true
+end
+
+-- 创建游戏
+local function createGame(gameid, playerids, gameData)
+    local gameManager = skynet.localname(".gameManager")
+    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
+    return roomid
+end
+
+-- 玩家进入匹配队列
+local function enterQueue(userid, gameid, queueid, rate)
+    log.info("enterQueue %d %d %d", userid, gameid, queueid)
+    if not gameid or not queueid or queueid == 0 then
+        return false
+    end
+    
+    if not checkGame(gameid, queueid) then
+        return false
+    end
+
+    if not queueUserids[gameid] then
+        queueUserids[gameid] = {}
+    end
+    if not queueUserids[gameid][queueid] then
+        queueUserids[gameid][queueid] = {}
+    end
+    --根据rate的大小插入队列
+    rate = rate or 0
+    local index = 1
+    for i, v in ipairs(queueUserids[gameid][queueid]) do
+        if rate > v.rate then
+            index = i
+            break
+        end
+    end
+    table.insert(queueUserids[gameid][queueid], index, {userid = userid, rate = rate, checkNum = 0})
+    setUserStatus(userid, gConfig.USER_STATUS.MATCHING, 0, 0)
+    return true
+end
+
+-- 匹配成功
+local function matchSuccess(userid1, userid2)
+    log.info("matchSuccess %d %d", userid1, userid2)
+    local playerids = {userid1, userid2}
+    local gameid = users[userid1].gameid
+    local roomid = createGame(gameid, playerids, {rule = ""})
+end
+
+local function matchWithRobot(gameid, userid, robotData)
+    log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
+    local playerids = {userid, robotData.userid}
+    local roomid = createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
+    local gameData = {gameid = gameid, roomid = roomid}
+    -- 通知机器人进入游戏
+    local robotManager = skynet.localname(".robotManager")
+    if not robotManager then
+        return nil
+    end
+    skynet.send(robotManager, "lua", "robotEnter", gameid, roomid, robotData.userid)
+end
+
+local function getRobots(gameid, num)
+    local robotManager = skynet.localname(".robotManager")
+    if not robotManager then
+        return nil
+    end
+    local robot = skynet.call(robotManager, "lua", "getRobots", gameid, num)
+    return robot
+end
+
+-- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
+local function checkMatchNum(gameid,userid, checkNum)
+    --log.info("checkMatchNum %d", userid)
+    if checkNum >= CHECK_MAX_NUM then
+        --log.info("checkMatchNum %d %d", userid, checkNum)
+        local robot = getRobots(gameid, 1)
+        if robot and #robot > 0 then
+            matchWithRobot(gameid, userid, robot[1])
+            return true
+        end
+    end
+end
+
+-- 检查队列，尝试匹配
+local function checkQueue(gameid, queueid)
+    --log.info("checkQueue %d %d", gameid, queueid)
+    local que = queueUserids[gameid][queueid]
+    --log.info("que %s", UTILS.tableToString(que))
+    local queLen = #que
+    for i = 1, queLen do
+        if i < queLen then
+            local user1 = que[i]
+            local user2 = que[i+1]
+            if math.abs(user1.rate - user2.rate) < 0.05 then
+                log.info("match success %d %d", user1.userid, user2.userid)
+                table.remove(que, i)
+                table.remove(que, i + 1)
+                i = i - 1
+                queLen = queLen - 2
+                matchSuccess(user1.userid, user2.userid)
+            else
+                user1.checkNum = user1.checkNum + 1
+                -- 如果用户匹配失败次数过多，则直接与机器人匹配
+                if checkMatchNum(gameid, user1.userid, user1.checkNum) then
+                    table.remove(que, i)
+                    i = i - 1
+                    queLen = queLen - 1
+                end
+            end
+        else
+            local user = que[i]
+            user.checkNum = user.checkNum + 1
+            if checkMatchNum(gameid, user.userid, user.checkNum) then
+                table.remove(que, i)
+            end
+        end
+    end
+end
+
+local function join(userid, gameid, queueid)
+    -- todo: 检查用户是否在游戏中
+    local status = getUserStatus(userid)
+    if status.gameid > 0 and status.roomid > 0 then
+        if checkInGame(status.gameid, status.roomid) then
+            return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid}
+        end
+    end
+
+    -- 检查用户是否在匹配队列中
+    if not enterQueue(userid, gameid, queueid) then
+        return {code = 0, msg = "加入匹配队列失败"}
+    end
+    return {code = 1, msg = "加入匹配队列成功"}
+end
+
+local function matching()
+    for gameid, queues in pairs(queueUserids) do
+        for queueid, que in pairs(queues) do
+            checkQueue(gameid, queueid)
+        end
+    end
+end
+
+function match.join(userid, args)
+    local gameid = args.gameid
+    local queueid = args.queueid
+    return join(userid, gameid, queueid)
+end
+
+function match.tick()
+    matching()
 end
 
 return match

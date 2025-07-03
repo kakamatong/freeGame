@@ -5,282 +5,23 @@ require "skynet.manager"
 local log = require "log"
 local CMD = {}
 local name = "match"
-local users = {}         -- 记录所有正在匹配的用户信息
-local queueNum = 4       -- 匹配队列数量
-local queueUserids = {}  -- queueUserids[gameid][queueid] = {userid1, ...}
 local dTime = 1          -- 匹配检查间隔（秒）
-local CHECK_MAX_NUM = 5       -- 匹配检查次数
-local gConfig = CONFIG
 local defaultModule = "match"
 local path = "match."
-
-local function getUserStatus(userid)
-    
-end
-
-local function checkInGame(tmpGameid, tmpRoomid)
-	local gameServer = skynet.localname(".gameManager")
-	if not gameServer then
-		log.error("gameManager not started")
-		return
-	end
-
-	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
-	if not b then
-		log.error("game not found %d %d", tmpGameid, tmpRoomid)
-		return
-	end
-
-	return true
-end
-
-local function checkGame(gameid, queueid)
-    local gameConfig = gConfig.MATCH_GAMES[gameid]
-    if not gameConfig then
-        return false
-    end
-
-    if queueid > gameConfig.queueNum then
-        return false
-    end
-
-    return true
-end
-
--- 匹配成功后通知agent
-local function reportToAgent(userid,gamedata)
-    local user = users[userid]
-    local agent = user.agent
-    -- 通知agent进入游戏
-    skynet.send(agent, "lua", "enterGame", gamedata)
-end
-
--- 离开队列
-local function leaveQueue(userid)
-    log.info("leaveQueue %d", userid)
-    local data = {
-        code = 0
-    }
-    if not users[userid] then
-        return data
-    end
-    local gameid = users[userid].gameid
-    local queueid = users[userid].queueid
-    local queue = queueUserids[gameid][queueid]
-    log.info("queueUserids start %s", UTILS.tableToString(queue))
-    if not queueUserids[gameid] or not queue then
-        return data
-    end 
-    for i, v in ipairs(queue) do
-        if v == userid then
-            table.remove(queue, i)
-            break
-        end
-    end
-    users[userid] = nil
-    log.info("queueUserids end %s", UTILS.tableToString(queue))
-    data.code = 1
-    return data
-end
-
--- 创建游戏
-local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.localname(".gameManager")
-    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
-    return roomid
-end
-
--- 匹配成功
-local function matchSuccess(userid1, userid2)
-    -- 1.创建游戏
-    -- 2.通知agent
-    -- 3.删除queue里的用户
-    local playerids = {userid1, userid2}
-    local gameid = users[userid1].gameid
-    local roomid = createGame(gameid, playerids, {rule = ""})
-    local gameData = {gameid = gameid, roomid = roomid}
-    reportToAgent(userid1, gameData)
-    reportToAgent(userid2, gameData)
-    
-    leaveQueue(userid1)
-    leaveQueue(userid2)
-end
-
-local function matchWithRobot(userid, robotData)
-    log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
-    local playerids = {userid, robotData.userid}
-    local gameid = users[userid].gameid
-    local roomid = createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
-    local gameData = {gameid = gameid, roomid = roomid}
-    -- 通知机器人进入游戏
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
-        return nil
-    end
-    skynet.send(robotManager, "lua", "robotEnter", gameid, roomid, robotData.userid)
-
-    reportToAgent(userid, gameData)
-    
-    leaveQueue(userid)
-end
-
-local function getRobots(gameid, num)
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
-        return nil
-    end
-    local robot = skynet.call(robotManager, "lua", "getRobots", gameid, num)
-    return robot
-end
-
--- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
-local function checkMatchNum(gameid,userid)
-    log.info("checkMatchNum %d", userid)
-    local user = users[userid]
-    if user and user.checkNum >= CHECK_MAX_NUM then
-        log.info("checkMatchNum %d %d", userid, user.checkNum)
-        local robot = getRobots(gameid, 1)
-        if robot and #robot > 0 then
-            user.matchSuccess = true
-            matchWithRobot(userid, robot[1])
-        end
-    end
-end
-
--- 检查队列，尝试匹配
-local function checkQueue(gameid, queueid)
-    --log.info("checkQueue %d %d", gameid, queueid)
-    local que = queueUserids[gameid][queueid]
-    --log.info("que %s", UTILS.tableToString(que))
-    for i = 1, #que do
-        if i < #que then
-            local userid1 = que[i]
-            local userid2 = que[i+1]
-            local user1 = users[userid1]
-            local user2 = users[userid2]
-            if not user1 or not user2 then
-                break
-            end
-            if user1.matchSuccess or user2.matchSuccess then
-                break
-            end
-            if math.abs(user1.rate - user2.rate) < 0.05 then
-                log.info("match success %d %d", userid1, userid2)
-                user1.matchSuccess = true
-                user2.matchSuccess = true
-                matchSuccess(userid1, userid2)
-            else
-                user1.checkNum = user1.checkNum + 1
-                if i == #que - 1 then
-                    user2.checkNum = user2.checkNum + 1
-                end
-
-                -- 如果用户匹配失败次数过多，则直接与机器人匹配
-                checkMatchNum(gameid, userid1)
-                checkMatchNum(gameid, userid2)
-                
-            end
-        else
-            local userid1 = que[i]
-            local user1 = users[userid1]
-            if not user1 then
-                break
-            end
-            if user1.matchSuccess then
-                break
-            end
-            user1.checkNum = user1.checkNum + 1
-            checkMatchNum(gameid, userid1)
-        end
-    end
-end
 
 -- 启动匹配服务，定时检查所有队列
 function start()
     log.info("match start")
     skynet.fork(function()
         while true do
-            for gameid, queues in pairs(queueUserids) do
-                for queueid, que in pairs(queues) do
-                    checkQueue(gameid, queueid)
-                end
-            end
+            local match = require(path .. "match")
+            match.tick()
             skynet.sleep(dTime * 100)
         end
     end)
 end
 
--- 玩家进入匹配队列
-function enterQueue(userid, gameid, queueid, rate)
-    log.info("enterQueue %d %d %d", userid, gameid, queueid)
-    local data = {
-        code = 0
-    }
-    if not gameid or not queueid or queueid == 0 then
-        return data
-    end
-    
-    if not checkGame(gameid, queueid) then
-        return data
-    end
-
-    if not users[userid] then
-        users[userid] = {
-            userid = userid,
-            gameid = gameid,
-            queueid = queueid or 0,
-            rate = rate or 0,
-            checkNum = 0,
-            matchSuccess = false,
-            time = os.time(),
-        }
-    else
-        return data
-    end
-
-    if not queueUserids[gameid] then
-        queueUserids[gameid] = {}
-    end
-    if not queueUserids[gameid][queueid] then
-        queueUserids[gameid][queueid] = {}
-    end
-    --根据rate的大小插入队列
-    local index = 1
-    for i, v in ipairs(queueUserids[gameid][queueid]) do
-        if rate > users[v].rate then
-            index = i
-            break
-        end
-    end
-    table.insert(queueUserids[gameid][queueid], index, userid)
-    data.code = 1
-    return data
-end
-
-local function join(userid, gameid, queueid)
-    local data = {
-        code = 0
-    }
-
-    
-    return data
-end
-
 -----------------------------------------------------------------------------------------
-local FUNCS = {}
-
-function FUNCS.join(userid, args)
-    return enterQueue(userid, args.gameid, args.queueid)
-end
-
-function FUNCS.leave(userid)
-    return leaveQueue(userid)
-end
------------------------------------------------------------------------------------------
--- 玩家离开匹配队列
-function CMD.leaveQueue(userid)
-    return leaveQueue(userid)
-end
 
 local function callFunc(moduleName, funcName, userid, args)
     local serModule = nil
@@ -308,7 +49,7 @@ function CMD.clientCall(moduleName, funcName, userid, args)
     end
 
     local clientInterfaces = require(path .. "clientInterfaces")
-    if not clientInterfaces[moduleName][funcName] then
+    if not clientInterfaces or not clientInterfaces[moduleName] or not clientInterfaces[moduleName][funcName] then
         return UTILS.result()
     end
 
