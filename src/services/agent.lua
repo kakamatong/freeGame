@@ -48,6 +48,10 @@ local function report(name, data)
 	send_package(send_request(name,data, reportsessionid))
 end
 
+local function sendSvrMsg(typeName, data)
+	report("svrMsg", {type = typeName, data = data})
+end
+
 -- 关闭连接
 local function close()
 	log.info("agent close")
@@ -383,7 +387,7 @@ function CMD.onReport(data)
 		end
 
 		-- todo: 下发财富变更信息
-		report("reportUpdateRich", {richTypes = richTypes, richNums = richNums, richAllNums = allRichNums, ext = ""})
+		sendSvrMsg("updateRich", {richTypes = richTypes, richNums = richNums, richAllNums = allRichNums, ext = ""})
 	end
 end
 

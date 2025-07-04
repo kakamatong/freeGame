@@ -4,6 +4,7 @@ local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
 local CHECK_MAX_NUM = 5
+local waitingSurpass = {}
 -- 获取数据库服务句柄
 local function getDB()
 	local dbserver = skynet.localname(".db")
@@ -98,25 +99,37 @@ local function enterQueue(userid, gameid, queueid, rate)
     return true
 end
 
--- 匹配成功
-local function matchSuccess(userid1, userid2)
-    log.info("matchSuccess %d %d", userid1, userid2)
-    local playerids = {userid1, userid2}
-    local gameid = users[userid1].gameid
-    local roomid = createGame(gameid, playerids, {rule = ""})
+local function createSurpassItem(gameid, queueid, playerids, data)
+    local item = {
+        gameid = gameid,
+        queueid = queueid,
+        playerids = playerids,
+        data = data,
+        readys = {}
+        createTime = os.time()
+    }
+    table.insert(waitingSurpass, item)
+    return item
 end
 
-local function matchWithRobot(gameid, userid, robotData)
+local function startSurpass(gameid, queueid, playerids, data)
+    local item = createSurpassItem(gameid, queueid, playerids, data)
+end
+
+-- 匹配成功
+local function matchSuccess(gameid, queueid, userid1, userid2)
+    log.info("matchSuccess %d %d", userid1, userid2)
+    local playerids = {userid1, userid2}
+    startSurpass(gameid, queueid, playerids, {rule = ""})
+    --createGame(gameid, playerids, {rule = ""})
+end
+
+-- 匹配成功，与机器人匹配
+local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
     log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
-    local roomid = createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
-    local gameData = {gameid = gameid, roomid = roomid}
-    -- 通知机器人进入游戏
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
-        return nil
-    end
-    skynet.send(robotManager, "lua", "robotEnter", gameid, roomid, robotData.userid)
+    startSurpass(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
+    --createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
 end
 
 local function getRobots(gameid, num)
@@ -129,13 +142,13 @@ local function getRobots(gameid, num)
 end
 
 -- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
-local function checkMatchNum(gameid,userid, checkNum)
+local function checkMatchNum(gameid, queueid, userid, checkNum)
     --log.info("checkMatchNum %d", userid)
     if checkNum >= CHECK_MAX_NUM then
         --log.info("checkMatchNum %d %d", userid, checkNum)
         local robot = getRobots(gameid, 1)
         if robot and #robot > 0 then
-            matchWithRobot(gameid, userid, robot[1])
+            matchSuccessWithRobot(gameid, queueid, userid, robot[1])
             return true
         end
     end
@@ -157,11 +170,11 @@ local function checkQueue(gameid, queueid)
                 table.remove(que, i + 1)
                 i = i - 1
                 queLen = queLen - 2
-                matchSuccess(user1.userid, user2.userid)
+                matchSuccess(gameid, queueid, user1.userid, user2.userid)
             else
                 user1.checkNum = user1.checkNum + 1
                 -- 如果用户匹配失败次数过多，则直接与机器人匹配
-                if checkMatchNum(gameid, user1.userid, user1.checkNum) then
+                if checkMatchNum(gameid, queueid, user1.userid, user1.checkNum) then
                     table.remove(que, i)
                     i = i - 1
                     queLen = queLen - 1
@@ -170,7 +183,7 @@ local function checkQueue(gameid, queueid)
         else
             local user = que[i]
             user.checkNum = user.checkNum + 1
-            if checkMatchNum(gameid, user.userid, user.checkNum) then
+            if checkMatchNum(gameid, queueid, user.userid, user.checkNum) then
                 table.remove(que, i)
             end
         end

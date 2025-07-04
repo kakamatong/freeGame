@@ -3,11 +3,10 @@
     session 1 : integer
 }
 
-reportMsg 1 {
+svrMsg 1 {
     request {
-        msg 0 : string
-        time 1 : integer
-
+        type 0 : string
+        data 1 : integer
     }
 }
 
@@ -33,16 +32,6 @@ reportMatch 4 {
         roomid 1 : integer
         code 2 : integer
         msg 3 : string
-    }
-}
-
-# 下发更新财富
-reportUpdateRich 5 {
-    request {
-        richTypes 0 : *integer
-        richNums 1 : *integer
-        richAllNums 2 : *integer
-        ext 3 : string
     }
 }
 
