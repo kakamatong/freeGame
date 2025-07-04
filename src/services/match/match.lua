@@ -129,6 +129,10 @@ end
 
 local function startSurpass(gameid, queueid, playerids, data)
     local item = createSurpassItem(gameid, queueid, playerids, data)
+    for i, v in ipairs(playerids) do
+        -- todo: 机器人
+        sendSvrMsg(v, "surpass", item)
+    end
 end
 
 -- 匹配成功

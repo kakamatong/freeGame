@@ -25,16 +25,6 @@ reportUserStatus 3 {
     }
 }
 
-# 下发匹配状态
-reportMatch 4 {
-    request {
-        gameid 0 : integer
-        roomid 1 : integer
-        code 2 : integer
-        msg 3 : string
-    }
-}
-
 # 下发玩家准备
 reportGamePlayerStatus 10001 {
     request {
