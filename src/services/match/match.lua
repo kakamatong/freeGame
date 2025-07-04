@@ -1,26 +1,9 @@
 local skynet = require "skynet"
 local log = require "log"
-local cjson = require "cjson"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
 local CHECK_MAX_NUM = 5
-local waitingOnSure = {}
-local onSureIndex = 1
-local onSureLimitTime = 5
-
-local sprotoloader = require "sprotoloader"
-local host = sprotoloader.load(1):host "package"
-local send_request = host:attach(sprotoloader.load(2))
-
-local function sendSvrMsg(userid, typeName, data)
-	local pack = send_request('svrMsg', {type = typeName, data = cjson.encode(data)}, 1)
-    local gate = skynet.localname(".wsGateserver")
-    if not gate then
-        return
-    end
-    skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
-end
 
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.localname(".user")
@@ -68,13 +51,6 @@ local function checkGame(gameid, queueid)
     return true
 end
 
--- 创建游戏
-local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.localname(".gameManager")
-    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
-    return roomid
-end
-
 -- 玩家进入匹配队列
 local function enterQueue(userid, gameid, queueid, rate)
     log.info("enterQueue %d %d %d", userid, gameid, queueid)
@@ -106,146 +82,21 @@ local function enterQueue(userid, gameid, queueid, rate)
     return true
 end
 
-local function returnRobot( userids)
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
-        return nil
-    end
-    skynet.send(robotManager, "lua", "returnRobots", userids)
-end
-
-local function isRobot(userid, robots)
-    for i, v in ipairs(robots) do
-        if v == userid then
-            return true
-        end
-    end
-    return false
-end
-
-local function createOnSureItem(gameid, queueid, playerids, data)
-    local readys = {}
-    if data.robots then
-        readys = data.robots
-    end
-    local timeNow = os.time()
-    onSureIndex = onSureIndex + 1
-    local item = {
-        gameid = gameid,
-        queueid = queueid,
-        playerids = playerids,
-        data = data,
-        readys = readys,
-        cancels = {},
-        createTime = timeNow,
-        endTime = timeNow + onSureLimitTime,
-        id = onSureIndex
-    }
-    table.insert(waitingOnSure, item)
-    return item
-end
-
-local function destroyOnSureItem(index, msg)
-    local item = waitingOnSure[index]
-    table.remove(waitingOnSure, index)
-
-    for x, y in ipairs(item.playerids) do
-        --setUserStatus(v, gConfig.USER_STATUS.MATCHING, 0, 0)
-        if item.data.robots and isRobot(y, item.data.robots) then
-            --setUserStatus(y, gConfig.USER_STATUS.MATCHING, 0, 0)
-        else
-            sendSvrMsg(y, "matchOnSureFail", {code = 0, msg = msg})
-        end
-    end
-    if item.data.robots then
-        returnRobot(item.data.robots)
-    end
-end
-
--- 开始超时
-local function startOnSure(gameid, queueid, playerids, data)
-    local item = createOnSureItem(gameid, queueid, playerids, data)
-    for i, v in ipairs(playerids) do
-        -- todo: 机器人
-        if data.robots and isRobot(v, data.robots) then
-            
-        else
-            sendSvrMsg(v, "matchOnSure", item)
-        end
-    end
-end
-
-local function onSureSuccess(item)
-    local roomid = createGame(item.gameid, item.playerids, item.data)
-    if roomid then
-        for i, v in ipairs(item.playerids) do
-            setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
-            if v.data.robots and isRobot(v, v.data.robots) then
-            else
-                sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
-            end
-        end
-    end
-end
-
-local function getOnSureItem(id)
-    for i, v in ipairs(waitingOnSure) do
-        if v.id == id then
-            return i,v
-        end
-    end
-end
-
-local function checkOnSure()
-    local timeNow = os.time()
-    for i, v in ipairs(waitingOnSure) do
-        if timeNow > v.endTime then
-            destroyOnSureItem(i, "游戏等待确认超时")
-            i = i - 1
-        end
-    end
-end
-
-local function onSure(userid, id, sure)
-    local index,item = getOnSureItem(id)
-    if not item then
-        return {code = 0, msg = "游戏不存在"}
-    end
-    if item.playerids[1] ~= userid then
-        return {code = 0, msg = "游戏不匹配"}
-    end
-    if sure then
-        --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-        table.insert(item.readys, userid)
-        for i, v in ipairs(item.playerids) do
-            sendSvrMsg(v, "matchOnSure", item)
-        end
-        if #item.readys == #item.playerids then
-            --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            table.remove(waitingOnSure, index)
-            onSureSuccess(item)
-        end
-    else
-        log.info("match fail %d", userid)
-        destroyOnSureItem(index, "玩家拒绝")
-        return {code = 1, msg = "拒绝成功"}
-    end
-end
-
 -- 匹配成功
 local function matchSuccess(gameid, queueid, userid1, userid2)
     log.info("matchSuccess %d %d", userid1, userid2)
     local playerids = {userid1, userid2}
-    startOnSure(gameid, queueid, playerids, {rule = ""})
-    --createGame(gameid, playerids, {rule = ""})
+
+    local matchOnSure = require("match.matchOnSure")
+    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = ""})
 end
 
 -- 匹配成功，与机器人匹配
 local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
     log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
-    startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
-    --createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
+    local matchOnSure = require("match.matchOnSure")
+    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
 end
 
 local function getRobots(gameid, num)
@@ -370,12 +221,14 @@ end
 function match.onSure(userid, args)
     local id = args.id
     local sure = args.sure
-    return onSure(userid, id, sure)
+    local matchOnSure = require("match.matchOnSure")
+    return matchOnSure.onSure(userid, id, sure)
 end
 
 function match.tick()
     matching()
-    checkOnSure()
+    local matchOnSure = require("match.matchOnSure")
+    matchOnSure.checkOnSure()
 end
 
 return match
