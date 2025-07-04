@@ -5,7 +5,7 @@ local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
 local CHECK_MAX_NUM = 5
-local waitingSurpass = {}
+local waitingOnSure = {}
 
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
@@ -114,7 +114,7 @@ local function enterQueue(userid, gameid, queueid, rate)
     return true
 end
 
-local function createSurpassItem(gameid, queueid, playerids, data)
+local function createOnSureItem(gameid, queueid, playerids, data)
     local readys = {}
     if data.robots then
         for i, v in ipairs(data.robots) do
@@ -134,7 +134,7 @@ local function createSurpassItem(gameid, queueid, playerids, data)
         readys = readys,
         createTime = os.time()
     }
-    table.insert(waitingSurpass, item)
+    table.insert(waitingOnSure, item)
     return item
 end
 
@@ -147,14 +147,15 @@ local function isRobot(userid, robots)
     return false
 end
 
-local function startSurpass(gameid, queueid, playerids, data)
-    local item = createSurpassItem(gameid, queueid, playerids, data)
+-- 开始超时
+local function startOnSure(gameid, queueid, playerids, data)
+    local item = createOnSureItem(gameid, queueid, playerids, data)
     for i, v in ipairs(playerids) do
         -- todo: 机器人
         if data.robots and isRobot(v, data.robots) then
             
         else
-            sendSvrMsg(v, "surpass", item)
+            sendSvrMsg(v, "matchOnSure", item)
         end
     end
 end
@@ -163,7 +164,7 @@ end
 local function matchSuccess(gameid, queueid, userid1, userid2)
     log.info("matchSuccess %d %d", userid1, userid2)
     local playerids = {userid1, userid2}
-    startSurpass(gameid, queueid, playerids, {rule = ""})
+    startOnSure(gameid, queueid, playerids, {rule = ""})
     --createGame(gameid, playerids, {rule = ""})
 end
 
@@ -171,7 +172,7 @@ end
 local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
     log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
-    startSurpass(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
+    startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
     --createGame(gameid, playerids, {rule = "", robots = {robotData.userid}})
 end
 
