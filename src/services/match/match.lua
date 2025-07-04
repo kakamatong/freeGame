@@ -6,6 +6,7 @@ local match = {}
 local queueUserids = {}
 local CHECK_MAX_NUM = 5
 local waitingOnSure = {}
+local onSureIndex = 1
 
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
@@ -18,16 +19,6 @@ local function sendSvrMsg(userid, typeName, data)
         return
     end
     skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
-end
-
--- 获取数据库服务句柄
-local function getDB()
-	local dbserver = skynet.localname(".db")
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-	return dbserver
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
@@ -117,24 +108,20 @@ end
 local function createOnSureItem(gameid, queueid, playerids, data)
     local readys = {}
     if data.robots then
-        for i, v in ipairs(data.robots) do
-            for j, w in ipairs(playerids) do
-                if w == v then
-                    readys[j] = true
-                    break
-                end
-            end
-        end
+        readys = data.robots
     end
+    onSureIndex = onSureIndex + 1
     local item = {
         gameid = gameid,
         queueid = queueid,
         playerids = playerids,
         data = data,
         readys = readys,
-        createTime = os.time()
+        cancels = {},
+        createTime = os.time(),
+        id = onSureIndex
     }
-    table.insert(waitingOnSure, item)
+    waitingOnSure[onSureIndex] = item
     return item
 end
 
@@ -157,6 +144,49 @@ local function startOnSure(gameid, queueid, playerids, data)
         else
             sendSvrMsg(v, "matchOnSure", item)
         end
+    end
+end
+
+local function onSureSuccess(item)
+    local roomid = createGame(item.gameid, item.playerids, item.data)
+    if roomid then
+        for i, v in ipairs(item.playerids) do
+            setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
+            sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
+        end
+    end
+end
+
+local function onSure(userid, id, sure)
+    local item = waitingOnSure[id]
+    if not item then
+        return {code = 0, msg = "游戏不存在"}
+    end
+    if item.playerids[1] ~= userid then
+        return {code = 0, msg = "游戏不匹配"}
+    end
+    if sure then
+        --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
+        table.insert(item.readys, userid)
+        for i, v in ipairs(item.playerids) do
+            sendSvrMsg(v, "matchOnSure", item)
+        end
+        if #item.readys == #item.playerids then
+            --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
+            waitingOnSure[id] = nil
+            onSureSuccess(item)
+        end
+    else
+        log.info("match fail %d", userid)
+        waitingOnSure[id] = nil
+        --sendSvrMsg(v, "matchOnSure", item)
+        table.insert(item.cancels, userid)
+        for i, v in ipairs(item.playerids) do
+            if v ~= userid then
+                sendSvrMsg(v, "matchOnSure", item)
+            end
+        end
+        return {code = 1, msg = "拒绝成功"}
     end
 end
 
@@ -234,6 +264,24 @@ local function checkQueue(gameid, queueid)
     end
 end
 
+local function leaveQueue(userid, gameid, queueid)
+    if not queueUserids[gameid] then
+        return false
+    end
+
+    local que = queueUserids[gameid][queueid]
+    if not que then
+        return false
+    end
+    for i, v in ipairs(que) do
+        if v.userid == userid then
+            table.remove(que, i)
+            return true
+        end
+    end
+    return false
+end
+
 local function join(userid, gameid, queueid)
     -- todo: 检查用户是否在游戏中
     local status = getUserStatus(userid)
@@ -258,10 +306,29 @@ local function matching()
     end
 end
 
+local function leave(userid, gameid, queueid)
+    if not leaveQueue(userid, gameid, queueid) then
+        return {code = 0, msg = "离开匹配队列失败"}
+    end
+    return {code = 1, msg = "离开匹配队列成功"}
+end
+
 function match.join(userid, args)
     local gameid = args.gameid
     local queueid = args.queueid
     return join(userid, gameid, queueid)
+end
+
+function match.leave(userid, args)
+    local gameid = args.gameid
+    local queueid = args.queueid
+    return leave(userid, gameid, queueid)
+end
+
+function match.onSure(userid, args)
+    local id = args.id
+    local sure = args.sure
+    return onSure(userid, id, sure)
 end
 
 function match.tick()
