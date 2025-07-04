@@ -150,15 +150,23 @@ function daySignIn.signIn(userid, args)
         -- 发奖
         local richTypes = signInConfig[signInIndex].richTypes
         local richNums = signInConfig[signInIndex].richNums
+        local allRichNums = {}
         for i = 1, #richTypes do
             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
                 return UTILS.result({error = "发奖失败"})
             end
+
+            local all = tools.callMysql("getUserRichesByType", userid, richTypes[i])
+            if not res then
+                table.insert(allRichNums, 0)
+            else
+                table.insert(allRichNums, all.richNums)
+            end
         end
         tools.callRedis("unlock", lockKey)
         -- 更新财富通知
-        tools.reportAward(userid, richTypes, richNums)
+        tools.reportAward(userid, richTypes, richNums, allRichNums)
         return UTILS.result(signInConfig[signInIndex])
     end
 end
@@ -189,15 +197,24 @@ function daySignIn.fillSignIn(userid, args)
          -- 发奖
          local richTypes = signInConfig[fillIndex].richTypes
          local richNums = signInConfig[fillIndex].richNums
+         local allRichNums = {}
          for i = 1, #richTypes do
              local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
              if not res then
                  return UTILS.result({error = "发奖失败"})
              end
+
+             
+            local all = tools.callMysql("getUserRichesByType", userid, richTypes[i])
+            if not res then
+                table.insert(allRichNums, 0)
+            else
+                table.insert(allRichNums, all.richNums)
+            end
          end
          tools.callRedis("unlock", lockKey)
          -- 更新财富通知
-         tools.reportAward(userid, richTypes, richNums)
+         tools.reportAward(userid, richTypes, richNums, allRichNums)
          return UTILS.result(signInConfig[fillIndex])
     end
 end

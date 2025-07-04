@@ -170,13 +170,10 @@ function CMD.showLogins()
 	end
 end
 
-function CMD.reportToAgent(source, userid, data)
-	log.info("reportToAgent %d" ,userid)
+function CMD.sendSvrMsg(source, userid, data)
+	log.info("sendSvrMsg %d" ,userid)
 	local fd = logins[userid]
-	local c = assert(connection[fd])
-	if c.agent then
-		skynet.send(c.agent, "lua", "onReport", data)
-	end
+	CMD.send(source, fd, data)
 end
 
 function handler.command(cmd, source, ...)

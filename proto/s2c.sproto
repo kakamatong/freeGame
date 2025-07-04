@@ -6,7 +6,7 @@
 svrMsg 1 {
     request {
         type 0 : string
-        data 1 : integer
+        data 1 : string
     }
 }
 

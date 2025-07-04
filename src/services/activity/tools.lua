@@ -1,6 +1,20 @@
 local tools = {}
 local skynet = require "skynet"
 local cjson = require "cjson"
+local log = require "log"
+local sprotoloader = require "sprotoloader"
+local host = sprotoloader.load(1):host "package"
+local send_request = host:attach(sprotoloader.load(2))
+
+local function sendSvrMsg(userid, typeName, data)
+    log.info("sendSvrMsg %d %s %s", userid, typeName, cjson.encode(data))
+	local pack = send_request('svrMsg', {type = typeName, data = cjson.encode(data)}, 1)
+    local gate = skynet.localname(".wsGateserver")
+    if not gate then
+        return
+    end
+    skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
+end
 
 -- 获取dbserver
 function tools.getDB()
@@ -22,15 +36,13 @@ function tools.callMysql(func,...)
 end
 
 -- 下发财富变更信息
-function tools.reportAward(userid, richTypes, richNums)
-    local gate = skynet.localname(".wsGateserver")
-    assert(gate, "gate not started")
+function tools.reportAward(userid, richTypes, richNums, allRichNums)
     local data = {
-        type = 1,
         richTypes = richTypes,
-        richNums = richNums
+        richNums = richNums,
+        allRichNums = allRichNums
     }
-    skynet.send(gate, "lua", "reportToAgent", userid, data)
+    sendSvrMsg(userid, "updateRich", data)
 end 
 
 return tools

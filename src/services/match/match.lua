@@ -1,10 +1,25 @@
 local skynet = require "skynet"
 local log = require "log"
+local cjson = require "cjson"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
 local CHECK_MAX_NUM = 5
 local waitingSurpass = {}
+
+local sprotoloader = require "sprotoloader"
+local host = sprotoloader.load(1):host "package"
+local send_request = host:attach(sprotoloader.load(2))
+
+local function sendSvrMsg(userid, typeName, data)
+	local pack = send_request('svrMsg', {type = typeName, data = cjson.encode(data)}, 1)
+    local gate = skynet.localname(".wsGateserver")
+    if not gate then
+        return
+    end
+    skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
+end
+
 -- 获取数据库服务句柄
 local function getDB()
 	local dbserver = skynet.localname(".db")
@@ -105,7 +120,7 @@ local function createSurpassItem(gameid, queueid, playerids, data)
         queueid = queueid,
         playerids = playerids,
         data = data,
-        readys = {}
+        readys = {},
         createTime = os.time()
     }
     table.insert(waitingSurpass, item)
