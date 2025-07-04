@@ -115,23 +115,47 @@ local function enterQueue(userid, gameid, queueid, rate)
 end
 
 local function createSurpassItem(gameid, queueid, playerids, data)
+    local readys = {}
+    if data.robots then
+        for i, v in ipairs(data.robots) do
+            for j, w in ipairs(playerids) do
+                if w == v then
+                    readys[j] = true
+                    break
+                end
+            end
+        end
+    end
     local item = {
         gameid = gameid,
         queueid = queueid,
         playerids = playerids,
         data = data,
-        readys = {},
+        readys = readys,
         createTime = os.time()
     }
     table.insert(waitingSurpass, item)
     return item
 end
 
+local function isRobot(userid, robots)
+    for i, v in ipairs(robots) do
+        if v == userid then
+            return true
+        end
+    end
+    return false
+end
+
 local function startSurpass(gameid, queueid, playerids, data)
     local item = createSurpassItem(gameid, queueid, playerids, data)
     for i, v in ipairs(playerids) do
         -- todo: 机器人
-        sendSvrMsg(v, "surpass", item)
+        if data.robots and isRobot(v, data.robots) then
+            
+        else
+            sendSvrMsg(v, "surpass", item)
+        end
     end
 end
 
