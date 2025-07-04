@@ -7,6 +7,7 @@ local queueUserids = {}
 local CHECK_MAX_NUM = 5
 local waitingOnSure = {}
 local onSureIndex = 1
+local onSureLimitTime = 5
 
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
@@ -105,24 +106,12 @@ local function enterQueue(userid, gameid, queueid, rate)
     return true
 end
 
-local function createOnSureItem(gameid, queueid, playerids, data)
-    local readys = {}
-    if data.robots then
-        readys = data.robots
+local function returnRobot( userids)
+    local robotManager = skynet.localname(".robotManager")
+    if not robotManager then
+        return nil
     end
-    onSureIndex = onSureIndex + 1
-    local item = {
-        gameid = gameid,
-        queueid = queueid,
-        playerids = playerids,
-        data = data,
-        readys = readys,
-        cancels = {},
-        createTime = os.time(),
-        id = onSureIndex
-    }
-    waitingOnSure[onSureIndex] = item
-    return item
+    skynet.send(robotManager, "lua", "returnRobots", userids)
 end
 
 local function isRobot(userid, robots)
@@ -132,6 +121,45 @@ local function isRobot(userid, robots)
         end
     end
     return false
+end
+
+local function createOnSureItem(gameid, queueid, playerids, data)
+    local readys = {}
+    if data.robots then
+        readys = data.robots
+    end
+    local timeNow = os.time()
+    onSureIndex = onSureIndex + 1
+    local item = {
+        gameid = gameid,
+        queueid = queueid,
+        playerids = playerids,
+        data = data,
+        readys = readys,
+        cancels = {},
+        createTime = timeNow,
+        endTime = timeNow + onSureLimitTime,
+        id = onSureIndex
+    }
+    table.insert(waitingOnSure, item)
+    return item
+end
+
+local function destroyOnSureItem(index, msg)
+    local item = waitingOnSure[index]
+    table.remove(waitingOnSure, index)
+
+    for x, y in ipairs(item.playerids) do
+        --setUserStatus(v, gConfig.USER_STATUS.MATCHING, 0, 0)
+        if item.data.robots and isRobot(y, item.data.robots) then
+            --setUserStatus(y, gConfig.USER_STATUS.MATCHING, 0, 0)
+        else
+            sendSvrMsg(y, "matchOnSureFail", {code = 0, msg = msg})
+        end
+    end
+    if item.data.robots then
+        returnRobot(item.data.robots)
+    end
 end
 
 -- 开始超时
@@ -152,13 +180,34 @@ local function onSureSuccess(item)
     if roomid then
         for i, v in ipairs(item.playerids) do
             setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
-            sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
+            if v.data.robots and isRobot(v, v.data.robots) then
+            else
+                sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
+            end
+        end
+    end
+end
+
+local function getOnSureItem(id)
+    for i, v in ipairs(waitingOnSure) do
+        if v.id == id then
+            return i,v
+        end
+    end
+end
+
+local function checkOnSure()
+    local timeNow = os.time()
+    for i, v in ipairs(waitingOnSure) do
+        if timeNow > v.endTime then
+            destroyOnSureItem(i, "游戏等待确认超时")
+            i = i - 1
         end
     end
 end
 
 local function onSure(userid, id, sure)
-    local item = waitingOnSure[id]
+    local index,item = getOnSureItem(id)
     if not item then
         return {code = 0, msg = "游戏不存在"}
     end
@@ -173,19 +222,12 @@ local function onSure(userid, id, sure)
         end
         if #item.readys == #item.playerids then
             --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            waitingOnSure[id] = nil
+            table.remove(waitingOnSure, index)
             onSureSuccess(item)
         end
     else
         log.info("match fail %d", userid)
-        waitingOnSure[id] = nil
-        --sendSvrMsg(v, "matchOnSure", item)
-        table.insert(item.cancels, userid)
-        for i, v in ipairs(item.playerids) do
-            if v ~= userid then
-                sendSvrMsg(v, "matchOnSure", item)
-            end
-        end
+        destroyOnSureItem(index, "玩家拒绝")
         return {code = 1, msg = "拒绝成功"}
     end
 end
@@ -333,6 +375,7 @@ end
 
 function match.tick()
     matching()
+    checkOnSure()
 end
 
 return match

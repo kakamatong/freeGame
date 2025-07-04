@@ -16,7 +16,7 @@ local function getFreeRobotid()
     return nil
 end
 
-function start()
+local function start()
     local dbSvr = skynet.localname(".db")
     local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
     if robots then
