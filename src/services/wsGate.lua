@@ -73,7 +73,7 @@ function handler.handshake(fd, header, uri)
 	local addr = websocket.addrinfo(fd)
 	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
-	data.ip = ip
+	data.ip = ip or "0.0.0.0"
 	data.uri = uri
 	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
 	if auth(data) then

@@ -49,12 +49,14 @@ function auth.auth(data)
     if check(userid, token, clientSubid) then
         status = 1
         addSubid(userid, clientSubid)
+        pushLog(userid, "", ip, loginType, status, uri)
         return true
     else
         log.warn("auth fail, userid %d, token %s, clientSubid %s", userid, token, clientSubid)
+        pushLog(userid, "", ip, loginType, status, uri)
+        return false
     end
-    pushLog(userid, "", ip, loginType, status, uri)
-    return false
+    
 end
 
 return auth
