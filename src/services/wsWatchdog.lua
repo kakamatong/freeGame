@@ -8,10 +8,10 @@ local gate
 local agent = {}
 
 -- 新客户端连接时调用，创建新的agent服务
-function SOCKET.open(fd, addr, ip)
+function SOCKET.open(fd, addr, ip, userid)
 	log.info("New client from : " .. addr)
 	agent[fd] = skynet.newservice("agent")
-	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self(), addr = addr, ip = ip })
+	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self(), addr = addr, ip = ip, userid = userid })
 end
 
 -- 关闭指定fd的agent服务

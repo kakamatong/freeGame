@@ -220,7 +220,7 @@ end
 ------------------------------------------------------------------------------------------------------------
 -- 心跳包处理，刷新活跃时间
 function REQUEST:heartbeat()
-	log.info("heartbeat")
+	--log.info("heartbeat")
 	leftTime = os.time()
 	local data = {
 		timestamp = leftTime
@@ -276,7 +276,7 @@ end
 
 -- 客户端请求分发
 local function request(name, args, response)
-	log.info("request %s", name)
+	--log.info("request %s", name)
 	local r = clientCall(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
 	if response then
 		return response(r)
@@ -366,6 +366,7 @@ function CMD.start(conf)
 	if conf.ip then
 		ip = conf.ip
 	end
+	userid =conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
 	leftTime = os.time()

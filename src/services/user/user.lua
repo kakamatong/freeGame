@@ -15,12 +15,11 @@ end
 
 -- 获取用户详细数据
 function user.userData(userid, args)
-	if not userData then
-		local db = getDB()
-		userData = skynet.call(db, "lua", "db", "getUserData", userid)
-		assert(userData)
-		return userData
-	end
+	log.info("userData userid %d", userid)
+	local db = getDB()
+	local userData = skynet.call(db, "lua", "db", "getUserData", userid)
+	assert(userData)
+
 	return userData
 end
 

@@ -85,7 +85,7 @@ function handler.handshake(fd, header, uri)
 			ip = ip,
 		}
 		connection[fd] = c
-		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip)
+		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, data.userid)
 		wsGateserver.openclient(fd)
 	else
 		wsGateserver.closeclient(fd)
