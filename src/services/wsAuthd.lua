@@ -15,8 +15,6 @@ local server = {
 }
 
 local server_list = {}    -- 注册的网关服务器列表
-local user_online = {}    -- 在线用户表
-local user_login = {}     -- 登录中的用户表
 local login_type = {
 	account = true,           -- 允许的登录类型
 }

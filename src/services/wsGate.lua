@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
+local urlTools = require "http.url"
 local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
@@ -18,6 +19,26 @@ local function register_handler(name)
 	else
 		log.error("wsgate register_handler error")
 	end
+end
+
+-- 登入认证
+local function auth(data)
+	if data.userid and data.token and data.subid then
+		local userid = data.userid
+		local token = data.token
+		local clientSubid = data.subid
+		local dbserver = skynet.localname(".db")
+		if not dbserver then
+			return false
+		end
+		local key = string.format("user:%d", userid)
+		local info = skynet.call(dbserver, "lua", "dbRedis", "hgetall", key)
+		log.info(UTILS.tableToString(info))
+		if info and info[2] == token and info[4] == clientSubid then
+			return true
+		end
+	end
+	return false
 end
 
 local handler = {}
@@ -50,20 +71,25 @@ function handler.connect(fd)
 	log.info("wsgate connect")
 end
 
-function handler.handshake(fd, header, url)
+function handler.handshake(fd, header, uri)
 	local addr = websocket.addrinfo(fd)
-	log.info("wsgate handshake from: %s, url %s, addr %s" ,tostring(fd), url, addr)
-	local ip = websocket.real_ip(fd)
-	local c = {
-		fd = fd,
-		addr = addr,
-		url = url,
-		header = header,
-		ip = ip,
-	}
-	connection[fd] = c
-	skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip)
-	wsGateserver.openclient(fd)
+	local data = urlTools.parse_query(uri)
+	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
+	if auth(data) then
+		local ip = websocket.real_ip(fd)
+		local c = {
+			fd = fd,
+			addr = addr,
+			uri = uri,
+			header = header,
+			ip = ip,
+		}
+		connection[fd] = c
+		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip)
+		wsGateserver.openclient(fd)
+	else
+		wsGateserver.closeclient(fd)
+	end
 end
 
 local function unforward(c)
@@ -115,7 +141,6 @@ function CMD.forward(source, fd, client, address)
 	unforward(c)
 	c.client = client or 0
 	c.agent = address or source
-	skynet.call(c.agent, "lua", "content")
 end
 
 function CMD.send(source, fd, msg)
@@ -155,9 +180,15 @@ function CMD.login(source, userid, secret,loginType)
 	-- 踢掉之前的链接
 	kickByUserid(userid)
 	
-	local subid = skynet.call(dbserver, "lua", "db", "setAuth", userid, secret, 0, loginType)
-
-	return subid or -1
+	--local subid = skynet.call(dbserver, "lua", "db", "setAuth", userid, secret, 0, loginType)
+	local key = string.format("user:%d", userid)
+	local subid = math.random(1,999999)
+	local res = skynet.call(dbserver, "lua", "dbRedis", "hset", key, "token", secret, "subid", subid)
+	if res then
+		return subid
+	else
+		return -1
+	end
 end
 
 function CMD.showLogins()

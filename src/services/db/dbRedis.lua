@@ -16,9 +16,13 @@ function dbRedis.hget(redis, key, field)
     return redis:hget(key, field)
 end
 
-function dbRedis.hset(redis, key, field, value)
-    log.info("hset %s %s %s", key, field, value)
-    return redis:hset(key, field, value)
+function dbRedis.hgetall(redis, key)
+    return redis:hgetall(key)
+end
+
+function dbRedis.hset(redis, key, ...)
+    --log.info("hset %s %s %s", key, field, value)
+    return redis:hset(key, ...)
 end
 
 function dbRedis.set(redis, key, value, expire)

@@ -8,8 +8,6 @@ local wsGateserver = {}
 local log = require "log"
 local socket = require "skynet.socket"
 local queue -- 消息队列
-local maxclient -- 最大客户端连接数
-local client_number = 0 -- 当前客户端连接数
 -- 命令表，带有垃圾回收功能
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local nodelay = false -- 是否启用无延迟模式
@@ -29,8 +27,8 @@ function wsGateserver.closeclient(fd)
 	local c = connection[fd]
 	if c ~= nil then
 		connection[fd] = nil
-		websocket.close(fd)
 	end
+	websocket.close(fd)
 end
 
 -- 启动网关服务器，监听端口并处理连接

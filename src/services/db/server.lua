@@ -19,7 +19,7 @@ local function startMysql()
         log.info("**mysql connected**")
     end
 
-    local mysql_db = mysql.connect({
+    mysql.connect({
         host = gConfig.mysql.host,
         port = gConfig.mysql.port,
         user = gConfig.mysql.user,
@@ -34,7 +34,7 @@ local function startMysql()
         dbs.dbLog = db
     end
 
-    local mysqlLog_db = mysql.connect({
+    mysql.connect({
         host = gConfig.mysqlLog.host,
         port = gConfig.mysqlLog.port,
         user = gConfig.mysqlLog.user,
@@ -49,7 +49,7 @@ local function startRedis()
         log.info("redis already started")
         return
     end
-    redis_db = redis.connect({
+    local redis_db = redis.connect({
         host = gConfig.redis.host,
         port = gConfig.redis.port,
         auth = gConfig.redis.auth,
@@ -58,12 +58,12 @@ local function startRedis()
     dbs.dbRedis = redis_db
 end
 
-function start()
+local function start()
     startMysql()
     startRedis()
 end
 
-function requireModule(moduleName)
+local function requireModule(moduleName)
     local dbmodule = nil
     local ok, err = pcall(function()
         dbmodule = require(moduleName)
@@ -75,14 +75,9 @@ function requireModule(moduleName)
 end
 
 function CMD.stop()
-    if mysql_db then
-        mysql_db:disconnect()
-        mysql_db = nil
-    end
-    if redis_db then
-        redis_db:disconnect()
-        redis_db = nil
-    end
+    dbs.db:disconnect()
+    dbs.dbLog:disconnect()
+    dbs.dbRedis:disconnect()
 end
 
 skynet.start(function()

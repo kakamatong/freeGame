@@ -221,6 +221,7 @@ end
 ------------------------------------------------------------------------------------------------------------
 -- 心跳包处理，刷新活跃时间
 function REQUEST:heartbeat()
+	log.info("heartbeat")
 	leftTime = os.time()
 	local data = {
 		timestamp = leftTime
@@ -241,43 +242,6 @@ function REQUEST:match(args)
 	else
 		return leaveMatch(args)
 	end
-end
-
--- 认证请求处理
-function REQUEST:login(args)
-	log.info("login username %s, password %s", args.userid, args.password)
-	local db =getDB()
-	local authInfo = skynet.call(db, "lua", "db", "getAuth", args.userid)
-	if not authInfo then
-		pushLog(args.userid, '', ip, args.channel, 0, 'acc failed')
-		return {code = 0, msg = "acc failed"}
-	end
-
-	if authInfo.secret ~= args.password then
-		pushLog(args.userid, '', ip, args.channel, 0, 'pass failed')
-		return {code = 0, msg = "pass failed"}
-	end
-
-	log.info("authInfo.subid %s, args.subid %s", authInfo.subid, args.subid)
-	if authInfo.subid ~= args.subid then
-		pushLog(args.userid, '', ip, args.channel, 0, 'subid failed')
-		return {code = 0, msg = "subid failed"}
-	end
-	pushLog(args.userid, '', ip, args.channel, 1, 'success')
-
-	-- 通知gate登录成功
-	skynet.call(gate, "lua", "loginSuccess", args.userid, client_fd)
-	skynet.call(db, "lua", "db", "addSubid", args.userid, authInfo.subid + 1)
-	bAuth = true
-	userid = args.userid
-	loginChannel = args.channel or ""
-	leftTime = os.time()
-
-	checkStatus()
-	local data = {
-		code = 1
-	}
-	return {code = 1, result = cjson.encode(data)}
 end
 
 -- 连接游戏
@@ -391,20 +355,6 @@ function CMD.onReport(data)
 	end
 end
 
-function CMD.leaveGame()
-	log.info("leaveGame")
-	gameid = 0
-	roomid = 0
-	setUserStatus(gConfig.USER_STATUS.ONLINE, gameid, roomid)
-	report("reportUserStatus", {status = gConfig.USER_STATUS.ONLINE, gameid = gameid, roomid = roomid})
-end
-
--- 内容推送
-function CMD.content()
-	log.info("agent content")
-	report("reportContent",{code = 1})
-end
-
 -- 启动agent服务，初始化协议和心跳检测
 function CMD.start(conf)
 	local fd = conf.client
@@ -435,14 +385,6 @@ end
 
 -- 断开连接，清理状态
 function CMD.disconnect()
-	if userStatus == gConfig.USER_STATUS.MATCHING then
-		local matchServer = skynet.localname(".match")
-		skynet.send(matchServer, "lua", "leaveQueue", userid)
-	elseif userStatus == gConfig.USER_STATUS.GAMEING then
-		local gameServer = skynet.localname(".gameManager")
-		skynet.send(gameServer, "lua", "offLine", gameid, roomid, userid)
-	end
-	setUserStatus(gConfig.USER_STATUS.OFFLINE)
 	log.info("agent disconnect")
 	skynet.exit()
 end
