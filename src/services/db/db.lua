@@ -177,7 +177,6 @@ end
 function db.reduceUserRiches(mysql,...)
     local userid,richType,richNums =...
     local nums = db.getUserRichesByType(mysql,userid,richType)
-    assert(sqlResult(res))
     if nums.richNums < richNums then
         richNums = nums.richNums
     end

@@ -26,7 +26,7 @@ end
 
 -- 处理出牌
 function aiLogic.dealGameOutHand()
-    log.info("XY.dealGameOutHand", seat, data)
+    log.info("XY.dealGameOutHand")
     aiLogic.timeFlag[config.GAME_STEP.OUT_HAND] = false
     if aiLogic.data.att == config.PLAYER_ATTITUDE.THINKING then
         local flags = {
