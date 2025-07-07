@@ -1,8 +1,6 @@
 -- agent.lua
 -- 玩家代理服务，负责与客户端通信、处理玩家请求、心跳、状态和匹配等
 local skynet = require "skynet"
-local websocket = require "http.websocket"
-local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
 local log = require "log"
 local cjson = require "cjson"
@@ -16,24 +14,10 @@ local client_fd
 local leftTime = 0
 local dTime = 15 -- 心跳时间（秒）
 local userid = 0
-local userStatus = 0
 local reportsessionid = 0
 local gameid = 0
 local roomid = 0
-local userData = nil
-local addr = ''
-local ip ="0.0.0.0"
-local loginChannel = ""
-local gConfig = CONFIG
 
-local function pushLog(userid, nickname, ip, loginType, status, ext)
-	local dbserver = skynet.localname(".db")
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-	skynet.send(dbserver, "lua", "dbLog", "insertLoginLog", userid, nickname, ip, loginType, status, ext)
-end
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -55,7 +39,6 @@ end
 local function close()
 	log.info("agent close")
 	skynet.call(gate, "lua", "kick", client_fd)
-
 end
 
 -- region 以下为客户端请求处理函数（REQUEST表）
@@ -160,10 +143,6 @@ function CMD.start(conf)
 	gate = conf.gate
 	WATCHDOG = conf.watchdog
 	client_fd = fd
-	addr = conf.addr
-	if conf.ip then
-		ip = conf.ip
-	end
 	userid =conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
