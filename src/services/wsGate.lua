@@ -22,6 +22,13 @@ local function register_handler(name)
 	end
 end
 
+local function kickByUserid(userid)
+	local fd = logins[userid]
+	if fd then
+		wsGateserver.closeclient(fd)
+	end
+end
+
 -- 登入认证
 local function auth(data)
 	if data.userid and data.token and data.subid then
@@ -87,7 +94,10 @@ function handler.handshake(fd, header, uri)
 			uri = uri,
 			header = header,
 			ip = ip,
+			userid = data.userid
 		}
+		kickByUserid(data.userid)
+		logins[data.userid] = fd
 		connection[fd] = c
 		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, data.userid)
 		wsGateserver.openclient(fd)
@@ -106,13 +116,6 @@ end
 local function clearLogin(c)
 	if c.userid then
 		logins[c.userid] = nil
-	end
-end
-
-local function kickByUserid(userid)
-	local fd = logins[userid]
-	if fd then
-		wsGateserver.closeclient(fd)
 	end
 end
 
@@ -166,13 +169,6 @@ function CMD.kick(source, fd)
 	wsGateserver.closeclient(fd)
 end
 
-function CMD.loginSuccess(source,userid, fd)
-	local c = assert(connection[fd])
-	c.userid = userid
-	-- 踢掉之前的链接
-	kickByUserid(userid)
-	logins[userid] = fd
-end
 
 function CMD.login(source, userid, secret,loginType)
 	-- todo: 将uid和secret写入数据库
