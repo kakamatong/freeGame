@@ -16,7 +16,10 @@ skynet.start(function()
 	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动数据库服务
-	local dbserver = skynet.newservice("db/server")
+	skynet.newservice("db/server")
+
+	-- 启动认证服务
+	skynet.newservice("auth/auth")
 
 	-- 签到服务
 	skynet.newservice("activity/server")
@@ -31,13 +34,13 @@ skynet.start(function()
 	skynet.newservice("games/gameManager")
 
 	-- 启动机器人服务
-	local robotManager = skynet.newservice("robot/robotManager")
+	skynet.newservice("robot/robotManager")
 
 	-- 启动匹配服务
-	local match = skynet.newservice("match/server")
+	skynet.newservice("match/server")
 
 	-- 启动WebSocket登录服务
-	local loginservice = skynet.newservice("wsAuthd")
+	skynet.newservice("wsAuthd")
 
 	-- 启动WebSocket网关服务器
 	local wswatchdog = skynet.newservice("wsWatchdog")
