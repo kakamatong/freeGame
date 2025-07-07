@@ -10,7 +10,7 @@ svrMsg 1 {
     }
 }
 
-reportContent 2 {
+svrReady 2 {
     request {
         code 0 : integer
     }

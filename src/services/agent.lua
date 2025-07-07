@@ -15,7 +15,6 @@ local REQUEST = {}
 local client_fd
 local leftTime = 0
 local dTime = 15 -- 心跳时间（秒）
-local bAuth = false -- 是否已认证
 local userid = 0
 local userStatus = 0
 local reportsessionid = 0
@@ -277,11 +276,7 @@ end
 
 -- 客户端请求分发
 local function request(name, args, response)
-	--log.info("request %s", name)
-	if not bAuth and not (args.funcName == "login" and args.serverName == "agent") then
-		return 
-	end
-
+	log.info("request %s", name)
 	local r = clientCall(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
 	if response then
 		return response(r)
@@ -316,6 +311,12 @@ skynet.register_protocol {
 		end
 	end
 }
+
+-- 服务准备就绪
+local function svrReady()
+	log.info("agent content")
+	report("svrReady",{code = 1})
+end
 ------------------------------------------------------------------------------------------------------------
 
 -- region CMD表：服务内部命令处理
@@ -381,6 +382,7 @@ function CMD.start(conf)
 		end
 	end)
 	skynet.call(gate, "lua", "forward", fd, fd, skynet.self())
+	svrReady()
 end
 
 -- 断开连接，清理状态
