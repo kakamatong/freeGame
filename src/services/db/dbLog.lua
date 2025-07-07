@@ -35,9 +35,9 @@ end
 --   KEY `idx_create_time` (`create_time`)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志表';
 
-function dbLog.insertLoginLog(mysqlLog, ...)
+function dbLog.insertAuthLog(mysqlLog, ...)
     local userid, nickname, ip, loginType, status, ext = ...
-    local sql = string.format("INSERT INTO logLogin (userid, nickname, ip, loginType, status, ext) VALUES (%d, '%s', '%s', '%s', %d, '%s');", userid, nickname, ip, loginType, status, ext)
+    local sql = string.format("INSERT INTO logAuth (userid, nickname, ip, loginType, status, ext) VALUES (%d, '%s', '%s', '%s', %d, '%s');", userid, nickname, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
     --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
@@ -59,9 +59,9 @@ end
 --   KEY `idx_create_time` (`create_time`)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='认证日志表';
 
-function dbLog.insertAuthLog(mysqlLog, ...)
+function dbLog.insertLoginLog(mysqlLog, ...)
     local username, ip, loginType, status, ext = ...
-    local sql = string.format("INSERT INTO logAuth (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
+    local sql = string.format("INSERT INTO logLogin (username, ip, loginType, status, ext) VALUES ('%s', '%s', '%s', %d, '%s');", username, ip, loginType, status, ext)
     local res, err = mysqlLog:query(sql)
     --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))

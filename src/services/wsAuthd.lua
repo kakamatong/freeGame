@@ -27,7 +27,7 @@ local function pushLog(username, ip, loginType, status, ext)
 		log.error("wsgate auth error: dbserver not started")
 		return
 	end
-	skynet.send(dbserver, "lua", "dbLog", "insertAuthLog", username, ip, loginType, status, ext)
+	skynet.send(dbserver, "lua", "dbLog", "insertLoginLog", username, ip, loginType, status, ext)
 end
 
 local function registerUser(user, password, loginType, server, ip)
