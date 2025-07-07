@@ -25,6 +25,10 @@ function dbRedis.hset(redis, key, ...)
     return redis:hset(key, ...)
 end
 
+function dbRedis.expire(redis, key, expire)
+    return redis:expire(key, expire)
+end
+
 function dbRedis.set(redis, key, value, expire)
     if expire then
         return redis:set(key, value, "EX", expire)

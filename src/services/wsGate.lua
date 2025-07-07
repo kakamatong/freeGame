@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local urlTools = require "http.url"
+local gConfig = CONFIG
 local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
@@ -35,7 +36,10 @@ local function auth(data)
 		local info = skynet.call(dbserver, "lua", "dbRedis", "hgetall", key)
 		log.info(UTILS.tableToString(info))
 		if info and info[2] == token and info[4] == clientSubid then
+			skynet.call(dbserver, "lua", "dbRedis", "hset", key, "subid", tonumber(clientSubid) + 1)
 			return true
+		else
+			log.warn("auth fail, userid %d, token %s, clientSubid %s", userid, token, clientSubid)
 		end
 	end
 	return false
@@ -185,6 +189,7 @@ function CMD.login(source, userid, secret,loginType)
 	local subid = math.random(1,999999)
 	local res = skynet.call(dbserver, "lua", "dbRedis", "hset", key, "token", secret, "subid", subid)
 	if res then
+		skynet.call(dbserver, "lua", "dbRedis", "expire", key, gConfig.TOKEN_EXPIRE)
 		return subid
 	else
 		return -1
