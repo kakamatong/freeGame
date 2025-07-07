@@ -19,7 +19,7 @@ skynet.start(function()
 	skynet.newservice("db/server")
 
 	-- 启动认证服务
-	skynet.newservice("auth/auth")
+	skynet.newservice("auth/server")
 
 	-- 签到服务
 	skynet.newservice("activity/server")

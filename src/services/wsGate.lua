@@ -31,25 +31,12 @@ end
 
 -- 登入认证
 local function auth(data)
-	if data.userid and data.token and data.subid then
-		local userid = data.userid
-		local token = data.token
-		local clientSubid = data.subid
-		local dbserver = skynet.localname(".db")
-		if not dbserver then
-			return false
-		end
-		local key = string.format("user:%d", userid)
-		local info = skynet.call(dbserver, "lua", "dbRedis", "hgetall", key)
-		log.info(UTILS.tableToString(info))
-		if info and info[2] == token and info[4] == clientSubid then
-			skynet.call(dbserver, "lua", "dbRedis", "hset", key, "subid", tonumber(clientSubid) + 1)
-			return true
-		else
-			log.warn("auth fail, userid %d, token %s, clientSubid %s", userid, token, clientSubid)
-		end
+	local svrAuth = skynet.localname(".auth")
+	if not svrAuth then
+		return false
 	end
-	return false
+	local res = skynet.call(svrAuth, "lua", "svrCall", "auth", data)
+	return res
 end
 
 local handler = {}
@@ -84,10 +71,12 @@ end
 
 function handler.handshake(fd, header, uri)
 	local addr = websocket.addrinfo(fd)
+	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
+	data.ip = ip
+	data.uri = uri
 	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
 	if auth(data) then
-		local ip = websocket.real_ip(fd)
 		local c = {
 			fd = fd,
 			addr = addr,
