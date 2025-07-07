@@ -14,7 +14,7 @@ skynet.register_protocol {
 
 local function register_handler(name)
 	log.info("wsgate register_handler")
-	local loginservice = skynet.localname(".ws_auth_master")
+	local loginservice = skynet.localname(".ws_login_master")
 	if loginservice then
 		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
 	else

@@ -40,7 +40,7 @@ skynet.start(function()
 	skynet.newservice("match/server")
 
 	-- 启动WebSocket登录服务
-	skynet.newservice("wsAuthd")
+	skynet.newservice("wsLogind")
 
 	-- 启动WebSocket网关服务器
 	local wswatchdog = skynet.newservice("wsWatchdog")

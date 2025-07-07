@@ -1,6 +1,6 @@
--- wsAuthd.lua
+-- wsLogind.lua
 -- WebSocket 登录服务，负责处理用户登录、认证和网关注册
-local auth = require "wsAuthserver"
+local login = require "wsLoginserver"
 local crypt = require "skynet.crypt"
 local skynet = require "skynet"
 local log = require "log"
@@ -11,7 +11,7 @@ local server = {
 	host = gConfig.WS_ATTH_LISTEN.host,           -- 监听地址
 	port = gConfig.WS_ATTH_LISTEN.port,                -- 监听端口
 	multilogin = gConfig.WS_ATTH_LISTEN.multilogin,         -- 是否允许多端登录
-	name = "ws_auth_master",  -- 服务名
+	name = "ws_login_master",  -- 服务名
 }
 
 local server_list = {}    -- 注册的网关服务器列表
@@ -24,7 +24,7 @@ local register = "register"
 local function pushLog(username, ip, loginType, status, ext)
 	local dbserver = skynet.localname(".db")
 	if not dbserver then
-		log.error("wsgate auth error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	skynet.send(dbserver, "lua", "dbLog", "insertLoginLog", username, ip, loginType, status, ext)
@@ -33,7 +33,7 @@ end
 local function registerUser(user, password, loginType, server, ip)
 	local dbserver = skynet.localname(".db")
 	if not dbserver then
-		log.error("wsgate auth error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	local userid = skynet.call(dbserver, "lua", "db", "registerUser", user,password,loginType)
@@ -42,7 +42,7 @@ local function registerUser(user, password, loginType, server, ip)
 end
 
 -- 认证处理函数，校验token并返回用户信息
-function server.auth_handler(token, ip)
+function server.login_handler(token, ip)
 	-- token格式：base64(user)@base64(server):base64(password)#base64(loginType)
 	local user, server, password, loginType = token:match("([^@]+)@([^:]+):([^#]+)#(.+)")
 	user = crypt.base64decode(user)
@@ -53,7 +53,7 @@ function server.auth_handler(token, ip)
 
 	local dbserver = skynet.localname(".db")
 	if not dbserver then
-		log.error("wsgate auth error: dbserver not started")
+		log.error("wsgate login error: dbserver not started")
 		return
 	end
 	local userInfo = skynet.call(dbserver, "lua", "db", "getLoginInfo", user,loginType)
@@ -86,7 +86,7 @@ function server.auth_handler(token, ip)
 end
 
 -- 登录处理函数，分配subid
-function server.auth_after_handler(server, userid, secret, loginType)
+function server.login_after_handler(server, userid, secret, loginType)
 	log.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local gameserver = assert(server_list[server], "Unknown server")
 	-- 只允许一个用户在线
@@ -126,4 +126,4 @@ function server.command_handler(command, ...)
 end
 
 -- 启动WebSocket登录服务
-auth(server)
+login(server)

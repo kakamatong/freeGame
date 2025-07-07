@@ -7,16 +7,16 @@ local crypt = require "skynet.crypt"
 require "skynet.manager"
 local log = require "log"
 -- WebSocket认证流程，完成加密握手和token解密
-local function ws_auth(fd)
+local function ws_login(fd)
     -- 生成挑战字符串，防止重放攻击
     local challenge = crypt.randomkey()
     local challenge_b64 = crypt.base64encode(challenge)
-    log.info("auth challenge_b64 %s", challenge_b64)
+    log.info("login challenge_b64 %s", challenge_b64)
     websocket.write(fd, challenge_b64, "binary")
 
     -- 读取客户端密钥
     local client_key = websocket.read(fd)
-    log.info("auth client_key_b64 %s", client_key)
+    log.info("login client_key_b64 %s", client_key)
     client_key = crypt.base64decode(client_key)
     if #client_key ~= 8 then
         log.info("Invalid client key length")
@@ -26,7 +26,7 @@ local function ws_auth(fd)
     local server_key = crypt.randomkey()
     local server_key_dh = crypt.dhexchange(server_key)
     local server_key_b64 = crypt.base64encode(server_key_dh)
-    log.info("auth server_key_b64 %s", server_key_b64)
+    log.info("login server_key_b64 %s", server_key_b64)
     websocket.write(fd, server_key_b64, "binary")
 
     -- 计算共享密钥
@@ -38,32 +38,32 @@ local function ws_auth(fd)
     if hmac ~= client_hmac then
         error("HMAC validation failed")
     end
-    log.info("auth handshake success secret %s", crypt.hexencode(secret))
+    log.info("login handshake success secret %s", crypt.hexencode(secret))
     -- 解密Token，获取用户信息
     local etoken = websocket.read(fd)
-    log.info("auth etoken %s", etoken)
+    log.info("login etoken %s", etoken)
     local token = crypt.desdecode(secret, crypt.base64decode(etoken))
-    log.info("auth token %s", token)
+    log.info("login token %s", token)
     return token, secret
 end
 
 -- WebSocket连接处理器，负责整个登录流程
 local function handle_ws_connection(fd, addr, ip, conf)
-    local ok, token, secret = pcall(ws_auth, fd)
+    local ok, token, secret = pcall(ws_login, fd)
     if not ok then
         websocket.write(fd, "401 Unauthorized", "binary")
         websocket.close(fd)
         return
     end
     -- 调用认证逻辑
-    local ok, srv, uid, loginType = pcall(conf.auth_handler, token, ip)
+    local ok, srv, uid, loginType = pcall(conf.login_handler, token, ip)
     if not ok then
         websocket.write(fd, "403 Forbidden", "binary")
         websocket.close(fd)
         return
     end
     -- 调用登录逻辑
-    local ok, subid = pcall(conf.auth_after_handler, srv, uid, secret, loginType)
+    local ok, subid = pcall(conf.login_after_handler, srv, uid, secret, loginType)
     if not ok then
         websocket.write(fd, "406 Not Acceptable", "binary")
         websocket.close(fd)
@@ -76,8 +76,8 @@ local function handle_ws_connection(fd, addr, ip, conf)
 end
 
 -- 启动WebSocket登录服务，监听端口并处理连接
-local function auth(conf)
-    assert(conf.auth_handler)
+local function login(conf)
+    assert(conf.login_handler)
 	assert(conf.command_handler)
     assert(conf.host)
     assert(conf.port)
@@ -120,4 +120,4 @@ local function auth(conf)
     end) 
 end
 
-return auth
+return login
