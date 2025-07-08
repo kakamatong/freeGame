@@ -48,6 +48,7 @@ function REQUEST:heartbeat()
 	--log.info("heartbeat")
 	leftTime = os.time()
 	local data = {
+		type = "heartbeat",
 		timestamp = leftTime
 	}
 	
