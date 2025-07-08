@@ -39,6 +39,28 @@ local function auth(data)
 	return res
 end
 
+local function unforward(c)
+	if c.agent then
+		c.agent = nil
+		c.client = nil
+	end
+end
+
+local function clearLogin(c)
+	if c.userid then
+		logins[c.userid] = nil
+	end
+end
+
+local function close_fd(fd)
+	local c = connection[fd]
+	if c then
+		clearLogin(c)
+		unforward(c)
+		connection[fd] = nil
+	end
+end
+
 local handler = {}
 
 function handler.open(source, conf)
@@ -92,28 +114,6 @@ function handler.handshake(fd, header, uri)
 		wsGateserver.openclient(fd)
 	else
 		wsGateserver.closeclient(fd)
-	end
-end
-
-local function unforward(c)
-	if c.agent then
-		c.agent = nil
-		c.client = nil
-	end
-end
-
-local function clearLogin(c)
-	if c.userid then
-		logins[c.userid] = nil
-	end
-end
-
-local function close_fd(fd)
-	local c = connection[fd]
-	if c then
-		clearLogin(c)
-		unforward(c)
-		connection[fd] = nil
 	end
 end
 
