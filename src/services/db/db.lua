@@ -41,7 +41,7 @@ end
 -- 获取用户的subid
 function db.getAuthSubid(mysql,userid)
     local sql = string.format("SELECT subid FROM auth WHERE userid = %d;",userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -55,7 +55,7 @@ function db.getAuth(mysql,...)
     local userid = ...
     log.info("getAuth:"..userid)
     local sql = string.format("SELECT * FROM auth WHERE userid = %d;",userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -68,7 +68,7 @@ end
 function db.doAuth(mysql,...)
     local userid, secret =...
     local sql = string.format("UPDATE auth SET secret = '%s' WHERE userid = %d;",secret,userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
@@ -78,7 +78,7 @@ end
 function db.checkAuth(mysql,...)
     local userid, secret =...
     local sql = string.format("SELECT * FROM auth WHERE userid = %d AND secret = '%s';",userid,secret)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -91,7 +91,7 @@ end
 function db.addSubid(mysql,...)
     local userid, newSubid = ...
     local sql = string.format("UPDATE auth SET subid = %d WHERE userid = %d;",newSubid,userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
@@ -102,7 +102,7 @@ function db.login(mysql,...)
     local username,password,loginType = ...
     -- loginType决定查哪个表
     local sql = string.format("SELECT * FROM %s WHERE username = '%s' AND password = UPPER(MD5('%s'));",loginType,username,password)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -115,7 +115,7 @@ end
 function db.getLoginInfo(mysql,...)
     local username,loginType = ...
     local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType,username)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -128,7 +128,7 @@ end
 function db.getUserData(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userData WHERE userid = %d;",userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -141,7 +141,7 @@ end
 function db.getUserRiches(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d;",userid)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -154,7 +154,7 @@ end
 function db.getUserRichesByType(mysql,...)
     local userid,richType =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -167,7 +167,7 @@ end
 function db.addUserRiches(mysql,...)
     local userid,richType,richNums =...
     local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
@@ -195,7 +195,7 @@ function db.setUserStatus(mysql,...)
     if gameid and roomid then
         sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d;",userid,status,gameid,roomid,status,gameid,roomid)
     end
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
@@ -205,8 +205,7 @@ end
 function db.getUserStatus(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userStatus WHERE userid = %d;",userid)
-    local res, err = mysql:query(sql)
-    log.info('----------------getUserStatus: %s',sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
@@ -219,7 +218,7 @@ end
 function db.getRobots(mysql,...)
     local idbegin,idend =...
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     
@@ -233,7 +232,7 @@ end
 function db.makeAuth(mysql,...)
     local loginType =...
     local sql = string.format("INSERT INTO auth (secret,subid,type) VALUES ('',0,'%s');",loginType)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return res
@@ -243,7 +242,7 @@ end
 function db.setUserData(mysql,...)
     local userid,nickname,headurl,sex,province,city,ip,ext =...
     local sql = string.format("INSERT INTO `userData` (`userid`, `nickname`, `headurl`, `sex`, `province`, `city`, `ip`, `ext`) VALUES (%d,'%s','%s',%d,'%s','%s','%s','%s');",userid,nickname,headurl,sex,province,city,ip,ext)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return res
@@ -285,7 +284,7 @@ end
 function db.insertUserGameRecords(mysql,...)
     local userid,gameid,addType,addNums =...
     local sql = string.format("INSERT INTO userGameRecords (userid,gameid,%s) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE %s = %s + %d;",addType,userid,gameid,addNums,addType,addType,addNums)
-    local res, err = mysql:query(sql)
+    local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
