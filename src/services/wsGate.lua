@@ -61,12 +61,31 @@ local function close_fd(fd)
 	end
 end
 
+local function startCheckAlive()
+	skynet.fork(function ()
+		while true do
+			skynet.sleep(1000) -- 10s
+			local now = skynet.time()
+			for fd, c in pairs(connection) do
+				if now - c.lastTime > 15 then
+					log.info("wsgate checkAlive")
+					websocket.close(fd)
+				else
+					websocket.ping(fd)
+				end
+			end
+		end
+	end)
+end
+
 local handler = {}
 
 function handler.open(source, conf)
 	log.info("wsgate open")
 	watchdog = conf.watchdog or source
 	register_handler("lobbyGate") -- 注册到login服务
+
+	startCheckAlive()
 	return conf.address, conf.port
 end
 
@@ -105,7 +124,8 @@ function handler.handshake(fd, header, uri)
 			uri = uri,
 			header = header,
 			ip = ip,
-			userid = data.userid
+			userid = data.userid,
+			lastTime = skynet.time()
 		}
 		kickByUserid(data.userid)
 		logins[data.userid] = fd
@@ -127,6 +147,16 @@ function handler.error(fd, msg)
 	log.info("wsgate error")
 	close_fd(fd)
 	skynet.send(watchdog, "lua", "socket", "error", fd, msg)
+end
+
+function handler.ping(fd)
+	log.info("wsgate ping")
+	connection[fd].lastTime = skynet.time()
+end
+
+function handler.pong(fd)
+	log.info("wsgate pong")
+	connection[fd].lastTime = skynet.time()
 end
 
 local CMD = {}

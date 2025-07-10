@@ -149,17 +149,17 @@ function CMD.start(conf)
 	host = sprotoloader.load(1):host "package"
 	leftTime = os.time()
 	-- 启动心跳检测协程
-	skynet.fork(function()
-		while true do
-			local now = os.time()
-			if now - leftTime >= dTime then
-				log.info("agent heartbeat fd %d now %d leftTime %d", client_fd, now, leftTime)
-				close()
-				break
-			end
-			skynet.sleep(dTime * 100)
-		end
-	end)
+	-- skynet.fork(function()
+	-- 	while true do
+	-- 		local now = os.time()
+	-- 		if now - leftTime >= dTime then
+	-- 			log.info("agent heartbeat fd %d now %d leftTime %d", client_fd, now, leftTime)
+	-- 			close()
+	-- 			break
+	-- 		end
+	-- 		skynet.sleep(dTime * 100)
+	-- 	end
+	-- end)
 	skynet.call(gate, "lua", "forward", fd, fd, skynet.self())
 	svrReady()
 end
