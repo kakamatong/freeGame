@@ -32,7 +32,7 @@ function wsGateserver.closeclient(fd)
 end
 
 -- 启动网关服务器，监听端口并处理连接
-function wsGateserver.start(handler)
+function wsGateserver.start(handler, newName)
 	assert(handler.message) -- 确保有消息处理函数
 	assert(handler.connect) -- 确保有连接处理函数
 
@@ -71,7 +71,8 @@ function wsGateserver.start(handler)
 				skynet.ret(skynet.pack(handler.command(cmd, address, ...)))
 			end
 		end)
-		skynet.register("." .. name)
+		local svrName = newName or name
+		skynet.register("." .. svrName)
 	end
 
 	skynet.start(init)

@@ -42,7 +42,10 @@ skynet.start(function()
 	-- 启动WebSocket登录服务
 	skynet.newservice("wsLogind")
 
-	-- 启动WebSocket网关服务器
+	local gameGate = skynet.newservice("wsGameGate")
+	skynet.call(gameGate, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
+
+	-- 启动WebSocket游戏网关服务器
 	local wswatchdog = skynet.newservice("wsWatchdog")
 	local addr,port = skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
 	log.info("Wswatchdog listen on " .. addr .. ":" .. port)

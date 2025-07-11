@@ -3,41 +3,9 @@ local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local urlTools = require "http.url"
 local gConfig = CONFIG
-local watchdog
+local log = require "log"
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
-local log = require "log"
-skynet.register_protocol {
-	name = "client",
-	id = skynet.PTYPE_CLIENT,
-}
-
-local function register_handler(name)
-	log.info("wsgate register_handler")
-	local loginservice = skynet.localname(".ws_login_master")
-	if loginservice then
-		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
-	else
-		log.error("wsgate register_handler error")
-	end
-end
-
-local function kickByUserid(userid)
-	local fd = logins[userid]
-	if fd then
-		wsGateserver.closeclient(fd)
-	end
-end
-
--- 登入认证
-local function auth(data)
-	local svrAuth = skynet.localname(".auth")
-	if not svrAuth then
-		return false
-	end
-	local res = skynet.call(svrAuth, "lua", "svrCall", "auth", data)
-	return res
-end
 
 local function unforward(c)
 	if c.agent then
@@ -61,6 +29,23 @@ local function close_fd(fd)
 	end
 end
 
+local function kickByUserid(userid)
+	local fd = logins[userid]
+	if fd then
+		wsGateserver.closeclient(fd)
+	end
+end
+
+-- 登入认证
+local function auth(data)
+	local svrAuth = skynet.localname(".auth")
+	if not svrAuth then
+		return false
+	end
+	local res = skynet.call(svrAuth, "lua", "svrCall", "auth", data)
+	return res
+end
+
 local function startCheckAlive()
 	skynet.fork(function ()
 		while true do
@@ -82,8 +67,6 @@ local handler = {}
 
 function handler.open(source, conf)
 	log.info("wsgate open")
-	watchdog = conf.watchdog or source
-	register_handler("lobbyGate") -- 注册到login服务
 
 	startCheckAlive()
 	return conf.address, conf.port
@@ -100,7 +83,6 @@ function handler.message(fd, msg, msgType)
 		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
 	else
 		log.info("wsgate message send")
-		skynet.send(watchdog, "lua", "socket", "data", fd, msg)
 		-- skynet.tostring will copy msg to a string, so we must free msg here.
 		skynet.trash(msg,string.len(msg))
 	end
@@ -130,7 +112,6 @@ function handler.handshake(fd, header, uri)
 		kickByUserid(data.userid)
 		logins[data.userid] = fd
 		connection[fd] = c
-		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, data.userid)
 		wsGateserver.openclient(fd)
 	else
 		wsGateserver.closeclient(fd)
@@ -140,13 +121,11 @@ end
 function handler.close(fd)
 	log.info("wsgate close")
 	close_fd(fd)
-	skynet.send(watchdog, "lua", "socket", "close", fd)
 end
 
 function handler.error(fd, msg)
 	log.info("wsgate error")
 	close_fd(fd)
-	skynet.send(watchdog, "lua", "socket", "error", fd, msg)
 end
 
 function handler.ping(fd)
@@ -160,76 +139,9 @@ function handler.pong(fd)
 end
 
 local CMD = {}
-
-function CMD.forward(source, fd, client, address)
-	log.info("wsgate forward")
-	local c = assert(connection[fd])
-	unforward(c)
-	c.client = client or 0
-	c.agent = address or source
-end
-
-function CMD.send(source, fd, msg)
-	if not connection[fd] then
-		log.info("wsgate send error: fd not found")
-		return
-	end
-	websocket.write(fd, msg, "binary")
-end
-
-function CMD.accept(source, fd)
-	local c = assert(connection[fd])
-	unforward(c)
-	wsGateserver.openclient(fd)
-end
-
-function CMD.kick(source, fd)
-	log.info("wsgate kick")
-	wsGateserver.closeclient(fd)
-end
-
-
-function CMD.login(source, userid, secret,loginType)
-	-- todo: 将uid和secret写入数据库
-	local dbserver = skynet.localname(".db")
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-	-- 踢掉之前的链接
-	kickByUserid(userid)
-	
-	--local subid = skynet.call(dbserver, "lua", "db", "setAuth", userid, secret, 0, loginType)
-	local key = string.format("user:%d", userid)
-	local subid = math.random(1,999999)
-	local res = skynet.call(dbserver, "lua", "dbRedis", "hset", key, "token", secret, "subid", subid)
-	if res then
-		skynet.call(dbserver, "lua", "dbRedis", "expire", key, gConfig.TOKEN_EXPIRE)
-		return subid
-	else
-		return -1
-	end
-end
-
-function CMD.showLogins()
-	for k,v in pairs(logins) do
-		log.info("wsgate showLogins: %d %d", k, v)
-	end
-
-	for k,v in pairs(connection) do
-		log.info("wsgate connection: %d %d", k, v.userid or 0)
-	end
-end
-
-function CMD.sendSvrMsg(source, userid, data)
-	log.info("sendSvrMsg %d" ,userid)
-	local fd = logins[userid]
-	CMD.send(source, fd, data)
-end
-
 function handler.command(cmd, source, ...)
 	local f = assert(CMD[cmd])
 	return f(source, ...)
 end
 
-wsGateserver.start(handler, "wsGateserver")
+wsGateserver.start(handler, "wsGameGateserver")
