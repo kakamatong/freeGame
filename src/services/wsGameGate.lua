@@ -107,8 +107,9 @@ function handler.handshake(fd, header, uri)
 	local data = urlTools.parse_query(uri)
 	data.ip = ip or "0.0.0.0"
 	data.uri = uri
-	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
+	log.info("wsGameGate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
 	if auth(data) and checkInGame(data) then
+		log.info("wsGameGate handshake success")
 		local c = {
 			fd = fd,
 			addr = addr,
@@ -122,6 +123,7 @@ function handler.handshake(fd, header, uri)
 		logins[data.userid] = fd
 		connection[fd] = c
 		wsGateserver.openclient(fd)
+		-- todo 通知成功
 	else
 		wsGateserver.closeclient(fd)
 	end
