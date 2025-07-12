@@ -56,8 +56,12 @@ end
 
 local function createOnSureItem(gameid, queueid, playerids, data)
     local readys = {}
+    
     if data.robots then
-        readys = data.robots
+        for _,v in pairs(data.robots) do
+            table.insert(readys, v)
+        end
+        --readys = data.robots
     end
     local timeNow = os.time()
     onSureIndex = onSureIndex + 1
@@ -98,11 +102,9 @@ local function onSureSuccess(index, item)
     local roomid = createGame(item.gameid, item.playerids, item.data)
     if roomid then
         for _, v in ipairs(item.playerids) do
-            log.info("matchOnSure onSureSuccess00 %d %d", v, roomid)
             setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
             if item.data.robots and isRobot(v, item.data.robots) then
             else
-                log.info("matchOnSure onSureSuccess %d %d", v, roomid)
                 sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
             end
         end
@@ -182,6 +184,7 @@ end
 
 -- 开始超时
 function matchOnSure.startOnSure(gameid, queueid, playerids, data)
+    log.info("matchOnSure startOnSure %d %d %s", gameid, queueid, UTILS.tableToString(data))
     local item = createOnSureItem(gameid, queueid, playerids, data)
     sendMatchOnSure(item)
 end
