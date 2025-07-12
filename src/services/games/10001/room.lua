@@ -422,6 +422,15 @@ function CMD.offLine(userid)
         reportPlayerInfo(0, userid)
     end
 end
+
+function CMD.checkInGame(userid)
+    for i = 1, #playerids do
+        if playerids[i] == userid then
+            return true
+        end
+    end
+    return false
+end
 ------------------------------------------------------------------------------------------------------------
 
 skynet.start(function()

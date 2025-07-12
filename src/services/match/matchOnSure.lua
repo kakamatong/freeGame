@@ -12,11 +12,13 @@ local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 
 local function sendSvrMsg(userid, typeName, data)
+    log.info("11 %s", typeName)
 	local pack = send_request('svrMsg', {type = typeName, data = cjson.encode(data)}, 1)
     local gate = skynet.localname(".wsGateserver")
     if not gate then
         return
     end
+    
     skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
 end
 
@@ -70,6 +72,7 @@ local function createOnSureItem(gameid, queueid, playerids, data)
         endTime = timeNow + onSureLimitTime,
         id = onSureIndex
     }
+    
     table.insert(waitingOnSure, item)
     return item
 end
@@ -91,23 +94,43 @@ local function destroyOnSureItem(index, msg)
     end
 end
 
-local function onSureSuccess(item)
+local function onSureSuccess(index, item)
+    table.remove(waitingOnSure, index)
     local roomid = createGame(item.gameid, item.playerids, item.data)
     if roomid then
         for _, v in ipairs(item.playerids) do
+            log.info("matchOnSure onSureSuccess00 %d %d", v, roomid)
             setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
             if item.data.robots and isRobot(v, item.data.robots) then
             else
+                log.info("matchOnSure onSureSuccess %d %d", v, roomid)
                 sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
             end
         end
     end
+
+    return roomid
 end
 
 local function getOnSureItem(id)
     for i, v in ipairs(waitingOnSure) do
         if v.id == id then
             return i,v
+        end
+    end
+end
+
+local function sendMatchOnSure(item)
+    if not item or not item.playerids then
+        return
+    end
+
+    local robots = item.data.robots
+    for _,v in pairs(item.playerids) do
+        if robots and isRobot(v, robots) then
+            
+        else
+            sendSvrMsg(v, "matchOnSure", item)
         end
     end
 end
@@ -128,38 +151,40 @@ function matchOnSure.onSure(userid, id, sure)
     if not item then
         return {code = 0, msg = "游戏不存在"}
     end
-    if item.playerids[1] ~= userid then
-        return {code = 0, msg = "游戏不匹配"}
+    -- if item.playerids[1] ~= userid then
+    --     return {code = 0, msg = "游戏不匹配"}
+    -- end
+    for _, value in pairs(item.readys) do
+        if value == userid then
+            log.warn("matchOnSure onSure %d %d", userid, id)
+            return {code = 0, msg = "已同意"}
+        end
     end
     if sure then
         --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
         table.insert(item.readys, userid)
-        for i, v in ipairs(item.playerids) do
-            sendSvrMsg(v, "matchOnSure", item)
-        end
+        sendMatchOnSure(item)
         if #item.readys == #item.playerids then
             --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            table.remove(waitingOnSure, index)
-            onSureSuccess(item)
+            local roomid = onSureSuccess(index, item)
+            if roomid then
+                return {code = 1, msg = "匹配成功", roomid = roomid, gameid = item.gameid}
+            else
+                return {code = 0, msg = "建房失败", roomid = roomid, gameid = item.gameid}
+            end
+            
         end
     else
         log.info("match fail %d", userid)
         destroyOnSureItem(index, "玩家拒绝")
-        return {code = 1, msg = "拒绝成功"}
+        return {code = 0, msg = "拒绝成功"}
     end
 end
 
 -- 开始超时
 function matchOnSure.startOnSure(gameid, queueid, playerids, data)
     local item = createOnSureItem(gameid, queueid, playerids, data)
-    for i, v in ipairs(playerids) do
-        -- todo: 机器人
-        if data.robots and isRobot(v, data.robots) then
-            
-        else
-            sendSvrMsg(v, "matchOnSure", item)
-        end
-    end
+    sendMatchOnSure(item)
 end
 
 return matchOnSure

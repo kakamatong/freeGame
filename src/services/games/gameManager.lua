@@ -7,6 +7,17 @@ local name = "gameManager"
 local allGames = {}
 local roomid = os.time() * 100000
 
+local function checkHaveRoom(gameid, roomid)
+    if not allGames[gameid] then
+        return false
+    end
+    if not allGames[gameid][roomid] then
+        return false
+    end
+
+    return true
+end
+
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     roomid = roomid + 1
@@ -30,16 +41,19 @@ function CMD.destroyGame(gameid, roomid)
     return true
 end
 
--- 检查房间是否存在
-function CMD.checkHaveRoom(gameid, roomid)
-    if not allGames[gameid] then
-        return false
-    end
-    if not allGames[gameid][roomid] then
+function CMD.checkInGame(gameid,roomid,userid)
+    if not checkHaveRoom(gameid, roomid) then
         return false
     end
 
-    return true
+    local game = allGames[gameid][roomid]
+    local ret = skynet.call(game, "lua", "checkInGame", userid)
+    return ret
+end
+
+-- 检查房间是否存在
+function CMD.checkHaveRoom(gameid, roomid)
+    return checkHaveRoom(gameid, roomid)
 end
 
 -- 获取游戏

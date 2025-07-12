@@ -42,7 +42,16 @@ local function auth(data)
 	if not svrAuth then
 		return false
 	end
-	local res = skynet.call(svrAuth, "lua", "svrCall", "auth", data)
+	local res = skynet.call(svrAuth, "lua", "svrCall", "authGame", data)
+	return res
+end
+
+local function checkInGame(data)
+	local svrGameManager = skynet.localname(".gameManager")
+	if not svrGameManager then
+		return false
+	end
+	local res = skynet.call(svrGameManager, "lua", "checkInGame", data.gameid, data.roomid, data.userid)
 	return res
 end
 
@@ -99,7 +108,7 @@ function handler.handshake(fd, header, uri)
 	data.ip = ip or "0.0.0.0"
 	data.uri = uri
 	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	if auth(data) then
+	if auth(data) and checkInGame(data) then
 		local c = {
 			fd = fd,
 			addr = addr,
