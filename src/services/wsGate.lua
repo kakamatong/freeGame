@@ -118,19 +118,20 @@ function handler.handshake(fd, header, uri)
 	data.uri = uri
 	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
 	if auth(data) then
+		local userid = tonumber(data.userid)
 		local c = {
 			fd = fd,
 			addr = addr,
 			uri = uri,
 			header = header,
 			ip = ip,
-			userid = data.userid,
+			userid = userid,
 			lastTime = skynet.time()
 		}
-		kickByUserid(data.userid)
-		logins[data.userid] = fd
+		kickByUserid(userid)
+		logins[userid] = fd
 		connection[fd] = c
-		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, data.userid)
+		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, userid)
 		wsGateserver.openclient(fd)
 	else
 		wsGateserver.closeclient(fd)

@@ -12,8 +12,8 @@ local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 
 local function sendSvrMsg(userid, typeName, data)
-    log.info("11 %s", typeName)
-	local pack = send_request('svrMsg', {type = typeName, data = cjson.encode(data)}, 1)
+    local str = cjson.encode(data)
+	local pack = send_request('svrMsg', {type = typeName, data = str}, 1)
     local gate = skynet.localname(".wsGateserver")
     if not gate then
         return
@@ -72,7 +72,6 @@ local function createOnSureItem(gameid, queueid, playerids, data)
         endTime = timeNow + onSureLimitTime,
         id = onSureIndex
     }
-    
     table.insert(waitingOnSure, item)
     return item
 end
