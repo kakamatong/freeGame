@@ -51,7 +51,7 @@ local function connectGame(data)
 	if not svrGameManager then
 		return false
 	end
-	local res = skynet.call(svrGameManager, "lua", "connectGame", data.gameid, data.roomid, data.userid, data.client_fd)
+	local res = skynet.call(svrGameManager, "lua", "connectGame", tonumber(data.gameid), tonumber(data.roomid), tonumber(data.userid), tonumber(data.client_fd))
 	return res
 end
 
@@ -62,7 +62,7 @@ local function startCheckAlive()
 			local now = skynet.time()
 			for fd, c in pairs(connection) do
 				if now - c.lastTime > 15 then
-					log.info("wsgate checkAlive")
+					log.info("wsGameGate checkAlive")
 					websocket.close(fd)
 				else
 					websocket.ping(fd)
@@ -75,30 +75,30 @@ end
 local handler = {}
 
 function handler.open(source, conf)
-	log.info("wsgate open")
+	log.info("wsGameGate open")
 
 	startCheckAlive()
 	return conf.address, conf.port
 end
 
 function handler.message(fd, msg, msgType)
-	--log.info("wsgate message")
+	--log.info("wsGameGate message")
 	-- recv a package, forward it
 	local c = connection[fd]
 	local agent = c.agent
 	if agent then
-		--log.info("wsgate message forward")
+		--log.info("wsGameGate message forward")
 		-- It's safe to redirect msg directly , gateserver framework will not free msg.
 		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
 	else
-		log.info("wsgate message send")
+		log.info("wsGameGate message send")
 		-- skynet.tostring will copy msg to a string, so we must free msg here.
 		skynet.trash(msg,string.len(msg))
 	end
 end
 
 function handler.connect(fd)
-	log.info("wsgate connect")
+	log.info("wsGameGate connect")
 end
 
 function handler.handshake(fd, header, uri)
@@ -131,22 +131,22 @@ function handler.handshake(fd, header, uri)
 end
 
 function handler.close(fd)
-	log.info("wsgate close")
+	log.info("wsGameGate close")
 	close_fd(fd)
 end
 
 function handler.error(fd, msg)
-	log.info("wsgate error")
+	log.info("wsGameGate error")
 	close_fd(fd)
 end
 
 function handler.ping(fd)
-	log.info("wsgate ping")
+	log.info("wsGameGate ping")
 	connection[fd].lastTime = skynet.time()
 end
 
 function handler.pong(fd)
-	log.info("wsgate pong")
+	log.info("wsGameGate pong")
 	connection[fd].lastTime = skynet.time()
 end
 

@@ -77,10 +77,12 @@ end
 
 -- 连接游戏
 function CMD.connectGame(gameid, roomid, userid, client_fd)
+    log.info("connectGame %s %s %s %s", gameid, roomid, userid, client_fd)
+    log.info("table: %s", UTILS.tableToString(allGames))
     local game = allGames[gameid][roomid]
     if not game then
         log.error("game not found %s %s", gameid, roomid)
-        return false
+        return
     end
     local ret = skynet.call(game, "lua", "connectGame", userid, client_fd)
     return ret
