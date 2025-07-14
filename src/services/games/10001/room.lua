@@ -15,7 +15,6 @@ local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
 local canDestroy = false -- 是否可以销毁
-local agents = {} -- 玩家代理
 local createRoomTime = 0
 local host
 local gate
@@ -391,20 +390,19 @@ function CMD.onClinetMsg(userid, name, args, response)
 end
 
 -- 连接游戏
-function CMD.connectGame(userid, client_fd, agent)
+function CMD.connectGame(userid, client_fd)
     log.info("connectGame %d", userid)
-    client_fds[userid] = client_fd
-    agents[userid] = agent
-    online(userid)
-    return true
+    for i = 1, #playerids do
+        if playerids[i] == userid then
+            client_fds[userid] = client_fd
+            online(userid)
+            return skynet.self()
+        end
+    end
 end
 
 function CMD.stop()
     -- 清理玩家
-    for userid, agent in pairs(agents) do
-        skynet.send(agent, "lua", "leaveGame")
-    end
-
     if gameData.robots and #gameData.robots > 0 then
         local robotManager = skynet.localname(".robotManager")
         if robotManager then
@@ -421,15 +419,6 @@ function CMD.offLine(userid)
         onlines[userid] = false
         reportPlayerInfo(0, userid)
     end
-end
-
-function CMD.checkInGame(userid)
-    for i = 1, #playerids do
-        if playerids[i] == userid then
-            return true
-        end
-    end
-    return false
 end
 ------------------------------------------------------------------------------------------------------------
 

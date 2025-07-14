@@ -46,12 +46,12 @@ local function auth(data)
 	return res
 end
 
-local function checkInGame(data)
+local function connectGame(data)
 	local svrGameManager = skynet.localname(".gameManager")
 	if not svrGameManager then
 		return false
 	end
-	local res = skynet.call(svrGameManager, "lua", "checkInGame", data.gameid, data.roomid, data.userid)
+	local res = skynet.call(svrGameManager, "lua", "connectGame", data.gameid, data.roomid, data.userid, data.client_fd)
 	return res
 end
 
@@ -107,8 +107,9 @@ function handler.handshake(fd, header, uri)
 	local data = urlTools.parse_query(uri)
 	data.ip = ip or "0.0.0.0"
 	data.uri = uri
+	data.client_fd = fd
 	log.info("wsGameGate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	if auth(data) and checkInGame(data) then
+	if auth(data) and connectGame(data) then
 		log.info("wsGameGate handshake success")
 		local c = {
 			fd = fd,

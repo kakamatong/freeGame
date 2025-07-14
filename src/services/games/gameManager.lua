@@ -41,16 +41,6 @@ function CMD.destroyGame(gameid, roomid)
     return true
 end
 
-function CMD.checkInGame(gameid,roomid,userid)
-    if not checkHaveRoom(gameid, roomid) then
-        return false
-    end
-
-    local game = allGames[gameid][roomid]
-    local ret = skynet.call(game, "lua", "checkInGame", userid)
-    return ret
-end
-
 -- 检查房间是否存在
 function CMD.checkHaveRoom(gameid, roomid)
     return checkHaveRoom(gameid, roomid)
@@ -86,13 +76,13 @@ function CMD.onClinetMsg(userid, name, args)
 end
 
 -- 连接游戏
-function CMD.connectGame(gameid, roomid, userid, client_fd, agent)
+function CMD.connectGame(gameid, roomid, userid, client_fd)
     local game = allGames[gameid][roomid]
     if not game then
         log.error("game not found %s %s", gameid, roomid)
         return false
     end
-    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd, agent)
+    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd)
     return ret
 end
 
