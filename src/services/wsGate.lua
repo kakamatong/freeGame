@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
-local websocket = require "http.websocket"
+local websocket = require "websocket2"
 local urlTools = require "http.url"
 local gConfig = CONFIG
 local watchdog
@@ -110,32 +110,35 @@ function handler.connect(fd)
 	log.info("wsgate connect")
 end
 
-function handler.handshake(fd, header, uri)
-	local addr = websocket.addrinfo(fd)
+function handler.auth(fd,uri)
+	log.info("wsgate auth %d, %s", fd, uri)
 	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
 	data.ip = ip or "0.0.0.0"
 	data.uri = uri
+	return auth(data)
+end
+
+function handler.handshake(fd, header, uri)
+	local addr = websocket.addrinfo(fd)
+	local ip = websocket.real_ip(fd)
+	local data = urlTools.parse_query(uri)
 	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	if auth(data) then
-		local userid = tonumber(data.userid)
-		local c = {
-			fd = fd,
-			addr = addr,
-			uri = uri,
-			header = header,
-			ip = ip,
-			userid = userid,
-			lastTime = skynet.time()
-		}
-		kickByUserid(userid)
-		logins[userid] = fd
-		connection[fd] = c
-		skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, userid)
-		wsGateserver.openclient(fd)
-	else
-		wsGateserver.closeclient(fd)
-	end
+	local userid = tonumber(data.userid)
+	local c = {
+		fd = fd,
+		addr = addr,
+		uri = uri,
+		header = header,
+		ip = ip,
+		userid = userid,
+		lastTime = skynet.time()
+	}
+	kickByUserid(userid)
+	logins[userid] = fd
+	connection[fd] = c
+	skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, userid)
+	wsGateserver.openclient(fd)
 end
 
 function handler.close(fd)

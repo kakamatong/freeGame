@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
-local websocket = require "http.websocket"
+local websocket = require "websocket2"
 local urlTools = require "http.url"
 local gConfig = CONFIG
 local log = require "log"
@@ -101,33 +101,35 @@ function handler.connect(fd)
 	log.info("wsGameGate connect")
 end
 
-function handler.handshake(fd, header, uri)
-	local addr = websocket.addrinfo(fd)
+function handler.auth(fd,uri)
+	log.info("wsgate auth %d, %s", fd, uri)
 	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
 	data.ip = ip or "0.0.0.0"
 	data.uri = uri
 	data.client_fd = fd
+	return auth(data) and connectGame(data)
+end
+
+function handler.handshake(fd, header, uri)
+	local addr = websocket.addrinfo(fd)
+	local ip = websocket.real_ip(fd)
+	local data = urlTools.parse_query(uri)
+	
 	log.info("wsGameGate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	if auth(data) and connectGame(data) then
-		log.info("wsGameGate handshake success")
-		local c = {
-			fd = fd,
-			addr = addr,
-			uri = uri,
-			header = header,
-			ip = ip,
-			userid = data.userid,
-			lastTime = skynet.time()
-		}
-		kickByUserid(data.userid)
-		logins[data.userid] = fd
-		connection[fd] = c
-		wsGateserver.openclient(fd)
-		-- todo 通知成功
-	else
-		wsGateserver.closeclient(fd)
-	end
+	local c = {
+		fd = fd,
+		addr = addr,
+		uri = uri,
+		header = header,
+		ip = ip,
+		userid = data.userid,
+		lastTime = skynet.time()
+	}
+	kickByUserid(data.userid)
+	logins[data.userid] = fd
+	connection[fd] = c
+	wsGateserver.openclient(fd)
 end
 
 function handler.close(fd)

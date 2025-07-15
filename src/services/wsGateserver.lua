@@ -2,7 +2,7 @@
 -- WebSocket 网关服务器底层实现，负责监听端口、管理连接和消息转发
 local skynet = require "skynet"
 local netpack = require "skynet.netpack"
-local websocket = require "http.websocket"
+local websocket = require "websocket2"
 require "skynet.manager"
 local wsGateserver = {}
 local log = require "log"
@@ -35,6 +35,7 @@ end
 function wsGateserver.start(handler, newName)
 	assert(handler.message) -- 确保有消息处理函数
 	assert(handler.connect) -- 确保有连接处理函数
+	assert(handler.auth) -- 确保有连接处理函数
 
 	function CMD.open(source, conf)
 		assert(socket)
