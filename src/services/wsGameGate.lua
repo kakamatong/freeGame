@@ -36,6 +36,15 @@ local function kickByUserid(userid)
 	end
 end
 
+local function getRoom(gameid, roomid)
+	local svrGameManager = skynet.localname(".gameManager")
+	if not svrGameManager then
+		return false
+	end
+	local res = skynet.call(svrGameManager, "lua", "getGame", gameid, roomid)
+	return res
+end
+
 -- 登入认证
 local function auth(data)
 	local svrAuth = skynet.localname(".auth")
@@ -85,14 +94,9 @@ function handler.message(fd, msg, msgType)
 	--log.info("wsGameGate message")
 	-- recv a package, forward it
 	local c = connection[fd]
-	local agent = c.agent
-	if agent then
-		--log.info("wsGameGate message forward")
-		-- It's safe to redirect msg directly , gateserver framework will not free msg.
-		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
+	if c and c.room then
+		skynet.redirect(c.agent, fd, "client", fd, msg, string.len(msg))
 	else
-		log.info("wsGameGate message send")
-		-- skynet.tostring will copy msg to a string, so we must free msg here.
 		skynet.trash(msg,string.len(msg))
 	end
 end
@@ -101,35 +105,35 @@ function handler.connect(fd)
 	log.info("wsGameGate connect")
 end
 
-function handler.auth(fd,uri)
+function handler.auth(fd, uri, addr)
 	log.info("wsgate auth %d, %s", fd, uri)
-	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
-	data.ip = ip or "0.0.0.0"
+	data.ip = addr or "0.0.0.0"
 	data.uri = uri
-	data.client_fd = fd
-	return auth(data) and connectGame(data)
+	local userid = tonumber(data.userid)
+	return auth(data) and connectGame(data), userid
+end
+
+function handler.authSuccess(fd, options, protocol,addr)
+	local data = urlTools.parse_query(options.upgrade.url)
+	local room = getRoom(tonumber(data.gameid), tonumber(data.roomid))
+	local c = {
+		fd = fd,
+		userid = options.userid,
+		addr = addr,
+		protocol = protocol,
+		room = room,
+		lastTime = skynet.time()
+	}
+
+	kickByUserid(options.userid)
+	logins[options.userid] = fd
+	connection[fd] = c
+
+	wsGateserver.openclient(fd, handler, protocol, addr, options)
 end
 
 function handler.handshake(fd, header, uri)
-	local addr = websocket.addrinfo(fd)
-	local ip = websocket.real_ip(fd)
-	local data = urlTools.parse_query(uri)
-	
-	log.info("wsGameGate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	local c = {
-		fd = fd,
-		addr = addr,
-		uri = uri,
-		header = header,
-		ip = ip,
-		userid = data.userid,
-		lastTime = skynet.time()
-	}
-	kickByUserid(data.userid)
-	logins[data.userid] = fd
-	connection[fd] = c
-	wsGateserver.openclient(fd)
 end
 
 function handler.close(fd)
@@ -153,6 +157,7 @@ function handler.pong(fd)
 end
 
 local CMD = {}
+
 function CMD.send(source, fd, msg)
 	if not connection[fd] then
 		log.info("wsgate send error: fd not found")
