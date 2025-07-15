@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
-local websocket = require "websocket2"
+local websocket = require "http.websocket"
 local urlTools = require "http.url"
 local gConfig = CONFIG
 local watchdog
@@ -42,7 +42,6 @@ end
 local function unforward(c)
 	if c.agent then
 		c.agent = nil
-		c.client = nil
 	end
 end
 
@@ -97,7 +96,7 @@ function handler.message(fd, msg, msgType)
 	if agent then
 		--log.info("wsgate message forward")
 		-- It's safe to redirect msg directly , gateserver framework will not free msg.
-		skynet.redirect(agent, c.client, "client", fd, msg, string.len(msg))
+		skynet.redirect(agent, c.fd, "client", fd, msg, string.len(msg))
 	else
 		log.info("wsgate message send")
 		skynet.send(watchdog, "lua", "socket", "data", fd, msg)
@@ -110,35 +109,33 @@ function handler.connect(fd)
 	log.info("wsgate connect")
 end
 
-function handler.auth(fd,uri)
+function handler.auth(fd, uri, addr)
 	log.info("wsgate auth %d, %s", fd, uri)
-	local ip = websocket.real_ip(fd)
 	local data = urlTools.parse_query(uri)
-	data.ip = ip or "0.0.0.0"
+	data.ip = addr or "0.0.0.0"
 	data.uri = uri
-	return auth(data)
+	local userid = tonumber(data.userid)
+	return auth(data), userid
+end
+
+function handler.authSuccess(fd, options, protocol,addr)
+	local c = {
+		fd = fd,
+		userid = options.userid,
+		addr = addr,
+		protocol = protocol,
+		options = options,
+		lastTime = skynet.time()
+	}
+
+	kickByUserid(options.userid)
+	logins[options.userid] = fd
+	connection[fd] = c
+	skynet.send(watchdog, "lua", "socket", "open", fd, options.userid)
 end
 
 function handler.handshake(fd, header, uri)
-	local addr = websocket.addrinfo(fd)
-	local ip = websocket.real_ip(fd)
-	local data = urlTools.parse_query(uri)
-	log.info("wsgate handshake from: %s, uri %s, addr %s " ,tostring(fd), uri, addr)
-	local userid = tonumber(data.userid)
-	local c = {
-		fd = fd,
-		addr = addr,
-		uri = uri,
-		header = header,
-		ip = ip,
-		userid = userid,
-		lastTime = skynet.time()
-	}
-	kickByUserid(userid)
-	logins[userid] = fd
-	connection[fd] = c
-	skynet.send(watchdog, "lua", "socket", "open", fd, addr, ip, userid)
-	wsGateserver.openclient(fd)
+
 end
 
 function handler.close(fd)
@@ -165,12 +162,12 @@ end
 
 local CMD = {}
 
-function CMD.forward(source, fd, client, address)
+function CMD.forward(source, fd, address)
 	log.info("wsgate forward")
 	local c = assert(connection[fd])
 	unforward(c)
-	c.client = client or 0
 	c.agent = address or source
+	wsGateserver.openclient(fd, handler, c.protocol, c.addr, c.options)
 end
 
 function CMD.send(source, fd, msg)

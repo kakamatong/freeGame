@@ -206,10 +206,6 @@ local function checkRoomStatus()
     end
 end
 
-local function onConnect(userid)
-    sendToOneClient(userid, "svrReady",{code = 1})
-end
-
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
@@ -339,10 +335,6 @@ function CMD.connectGame(userid, client_fd)
             client_fds[userid] = client_fd
             online(userid)
             --onConnect(userid)
-            skynet.fork(function()
-                skynet.sleep(10)
-                onConnect(userid)
-            end)
             return skynet.self()
         end
     end

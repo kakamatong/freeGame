@@ -160,8 +160,8 @@ function CMD.start(conf)
 	-- 		skynet.sleep(dTime * 100)
 	-- 	end
 	-- end)
-	skynet.call(gate, "lua", "forward", fd, fd, skynet.self())
-	svrReady()
+	skynet.call(gate, "lua", "forward", fd, skynet.self())
+	--svrReady()
 end
 
 -- 断开连接，清理状态

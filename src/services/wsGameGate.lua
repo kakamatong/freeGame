@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
-local websocket = require "websocket2"
+local websocket = require "http.websocket"
 local urlTools = require "http.url"
 local gConfig = CONFIG
 local log = require "log"
