@@ -160,7 +160,7 @@ function CMD.start(conf)
 	-- 		skynet.sleep(dTime * 100)
 	-- 	end
 	-- end)
-	skynet.call(gate, "lua", "forward", fd, skynet.self())
+	skynet.send(gate, "lua", "forward", fd, skynet.self())
 	--svrReady()
 end
 

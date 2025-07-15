@@ -9,8 +9,9 @@ local agent = {}
 
 -- 新客户端连接时调用，创建新的agent服务
 function SOCKET.open(fd, userid)
+	log.info("SOCKET.open %d %d",fd, userid)
 	agent[fd] = skynet.newservice("agent")
-	skynet.call(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self(), userid = userid })
+	skynet.send(agent[fd], "lua", "start", { gate = gate, client = fd, watchdog = skynet.self(), userid = userid })
 end
 
 -- 关闭指定fd的agent服务
