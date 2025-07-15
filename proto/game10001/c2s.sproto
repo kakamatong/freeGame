@@ -1,0 +1,18 @@
+# 登录服务协议(0-9999)
+.package {
+    type 0 : integer
+    session 1 : integer
+}
+
+# 调用接口
+call 2 {
+    request {
+        moduleName 0 : string
+        funcName 1 : string
+        args 2 : string
+    }
+    response {
+        code 0 : integer
+        result 1 : string
+    }
+}

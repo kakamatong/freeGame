@@ -1,0 +1,130 @@
+.package {
+    type 0 : integer
+    session 1 : integer
+}
+
+svrMsg 1 {
+    request {
+        type 0 : string
+        data 1 : string
+    }
+}
+
+# 下发玩家状态
+reportUserStatus 3 {
+    request {
+        status 0 : integer
+        gameid 1 : integer
+        roomid 2 : integer
+    }
+}
+
+# 下发玩家准备
+reportGamePlayerStatus 10001 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        userid 2 : integer
+        status 3 : integer
+    }
+}
+
+#############################################################游戏10001
+# 下发游戏阶段
+reportGameStep 10101 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        stepid 2 : integer
+    }
+}
+
+# 下发游戏结果
+reportGameResult 10102 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        type 2 : integer
+        roomRound 3 : integer
+        maxRound 4 : integer
+        roundWin 6 : *integer
+        tally 7 : *integer
+    }
+}
+
+# 下发游戏逻辑数据
+reportGameLogicData 10103 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundid 2 : integer
+        ext 3 : string
+    }
+}
+
+# 下发游戏轮数
+reportGameRound 10104 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundNum 2 : integer
+        outHandNum 3 : integer
+        time 4 : integer
+    }
+}
+
+.ResultInfo {
+    seat 0 : integer
+    outHand 1 : integer
+    endResult 2 : integer
+}
+
+# 下发这一轮游戏结果
+reportGameRoundResult 10105 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        roundNum 2 : integer
+        outHandNum 3 : integer
+        continue 4 : integer
+        info 5 : *ResultInfo
+    }
+}
+
+# 下发玩家出招
+reportGameOutHand 10106 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        flag 3 : integer
+    }
+}
+
+# 下发玩家游戏姿态
+reportGamePlayerAttitude 10107 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        att 3 : integer
+    }
+}
+
+# 下发对局玩家信息
+reportGamePlayerInfo 10108 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        seat 2 : integer
+        status 3 : integer #加载中，进入中，准备中，短线中
+        userid 4 : integer
+        sex 5 : integer
+        nickname 6 : string
+        headurl 7 : string
+        ip 8 : string
+        province 9 : string
+        city 10 : string
+        ext 11 : string
+    }
+}
