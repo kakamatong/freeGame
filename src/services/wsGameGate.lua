@@ -151,6 +151,13 @@ function handler.pong(fd)
 end
 
 local CMD = {}
+function CMD.send(source, fd, msg)
+	if not connection[fd] then
+		log.info("wsgate send error: fd not found")
+		return
+	end
+	websocket.write(fd, msg, "binary")
+end
 function handler.command(cmd, source, ...)
 	local f = assert(CMD[cmd])
 	return f(source, ...)

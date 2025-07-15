@@ -10,7 +10,6 @@ local roomid = 0
 local gameid = 0
 local playerids = {} -- 玩家id列表
 local gameData = {} -- 游戏数据
-local players = {} -- 玩家数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local seats = {} -- 玩家座位信息
@@ -133,13 +132,13 @@ end
 -- 发送消息给单个玩家
 local function sendToOneClient(userid, name, data)
     if not send_request then
+        log.error("sendToOneClient error: send_request not started")
         return 
     end
     local client_fd = client_fds[userid]
     if client_fd and onlines[userid] then
         data.gameid = gameid
         data.roomid = roomid
-        --log.info("sendToOneClient %s", UTILS.roomToString(data))
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
     elseif isRobotByUserid(userid) then
@@ -160,52 +159,7 @@ local function sendToAllClient(name, data)
     end
 end
 
--- 广播玩家信息
-local function reportPlayerInfo(userid, playerid)
-    local player = players[playerid]
-    local status = config.PLAYER_STATUS.PLAYING
-    if onlines[playerid] == nil then
-        status = config.PLAYER_STATUS.LOADING
-    end
-    if onlines[playerid] == false then
-        status = config.PLAYER_STATUS.OFFLINE
-    end
-    local seat = 0
-    for i, id in pairs(seats) do
-        if id == playerid then
-            seat = i
-            break
-        end
-    end
-    if userid == 0 then
-        sendToAllClient("reportGamePlayerInfo", {
-            userid = playerid,
-            nickname = player.nickname,
-            headurl = player.headurl,
-            status = status,
-            seat = seat,
-            sex = player.sex,
-            ip = player.ip,
-            province = player.province,
-            city = player.city,
-            ext = player.ext,
-        })
-    else
-        sendToOneClient(userid, "reportGamePlayerInfo", {
-            userid = playerid,
-            nickname = player.nickname,
-            headurl = player.headurl,
-            status = status,
-            seat = seat,
-            sex = player.sex,
-            ip = player.ip,
-            province = player.province,
-            city = player.city,
-            ext = player.ext,
-        })
-    end
-    
-end
+
 
 -- 玩家重新连接
 local function relink(userid)
@@ -215,23 +169,13 @@ end
 
 -- 玩家连入游戏，玩家客户端准备就绪
 local function online(userid)
-    if players[userid] then
         onlines[userid] = true
-        -- todo: 下发对局信息
-        reportPlayerInfo(0, userid)
-        for id, player in pairs(players) do
-            if id ~= userid then
-                reportPlayerInfo(userid, id)
-            end
-        end
-
         if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
             --gameStatus = gameStatus.START
             testStart()
         elseif gameStatus == config.GAME_STATUS.START then
             relink(userid)
         end
-    end
 end
 
 -- 游戏结束
@@ -344,12 +288,6 @@ end
 local CMD = {}
 -- 玩家进入游戏
 function CMD.playerEnter(userData)
-    if players[userData.userid] then
-        log.info("玩家已经在游戏中 %s", userData.userid)
-        return false
-    end
-    players[userData.userid] = userData
-    -- 分配座位信息
     table.insert(seats, userData.userid)
     return true
 end
@@ -401,6 +339,10 @@ function CMD.connectGame(userid, client_fd)
             client_fds[userid] = client_fd
             online(userid)
             --onConnect(userid)
+            skynet.fork(function()
+                skynet.sleep(10)
+                onConnect(userid)
+            end)
             return skynet.self()
         end
     end
@@ -420,9 +362,8 @@ function CMD.stop()
 end
 
 function CMD.offLine(userid)
-    if players[userid] and onlines[userid] then
+    if onlines[userid] then
         onlines[userid] = false
-        reportPlayerInfo(0, userid)
     end
 end
 ------------------------------------------------------------------------------------------------------------
@@ -436,5 +377,5 @@ skynet.start(function()
     end)
     host = sprotoloader.load(1):host "package"
     send_request = host:attach(sprotoloader.load(2))
-    gate = skynet.localname(".wsGateserver")
+    gate = skynet.localname(".wsGameGateserver")
 end)
