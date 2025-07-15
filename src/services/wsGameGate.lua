@@ -2,7 +2,6 @@ local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local urlTools = require "http.url"
-local gConfig = CONFIG
 local log = require "log"
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
@@ -147,12 +146,12 @@ function handler.error(fd, msg)
 end
 
 function handler.ping(fd)
-	log.info("wsGameGate ping")
+	--log.info("wsGameGate ping")
 	connection[fd].lastTime = skynet.time()
 end
 
 function handler.pong(fd)
-	log.info("wsGameGate pong")
+	--log.info("wsGameGate pong")
 	connection[fd].lastTime = skynet.time()
 end
 

@@ -151,12 +151,12 @@ function handler.error(fd, msg)
 end
 
 function handler.ping(fd)
-	log.info("wsgate ping")
+	--log.info("wsgate ping")
 	connection[fd].lastTime = skynet.time()
 end
 
 function handler.pong(fd)
-	log.info("wsgate pong")
+	--log.info("wsgate pong")
 	connection[fd].lastTime = skynet.time()
 end
 
