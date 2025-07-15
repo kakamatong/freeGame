@@ -78,6 +78,7 @@ function wsGateserver.openclient(fd, handler, protocol, addr, options)
 	if not ok then
 		websocket.close(fd)
 		log.error("wsGateserver.openclient error:%s", err)
+		return 
 	else
 		connection[fd] = {}
 	end
@@ -130,6 +131,8 @@ function wsGateserver.start(handler, newName)
 			local ok ,info = auth(id, protocol, addr)
             if not ok then
                 log.error(info)
+				socket.close(id)
+				return
             end
 			handler.authSuccess(id, info, protocol, addr)
 			
