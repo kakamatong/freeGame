@@ -6,14 +6,13 @@ local websocket = require "http.websocket"
 local socket = require "skynet.socket"
 local sockethelper = require "http.sockethelper"
 local internal = require "http.internal"
-local socket_error = sockethelper.socket_error
+
 require "skynet.manager"
 local wsGateserver = {}
 local log = require "log"
 local queue -- 消息队列
 -- 命令表，带有垃圾回收功能
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
-local nodelay = false -- 是否启用无延迟模式
 local name = "wsGateserver"
 local connection = {} -- 连接状态表
 -- true : 已连接
@@ -79,8 +78,6 @@ function wsGateserver.openclient(fd, handler, protocol, addr, options)
 	if not ok then
 		log.error("wsGateserver.openclient error:%s", err)
 		return 
-	else
-		log.info("wsGateserver.openclient %d", fd)
 	end
 end
 
