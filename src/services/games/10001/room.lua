@@ -373,6 +373,57 @@ function CMD.offLine(userid)
     end
 end
 ------------------------------------------------------------------------------------------------------------
+local REQUEST = {}
+function REQUEST:test(args)
+    log.info("REQUEST.test %s", UTILS.tableToString(args))
+end
+
+local function clientCall(moduleName, funcName, args)
+	if moduleName == "room" then
+		local f = assert(REQUEST[funcName])
+		return f(REQUEST, args)
+	elseif moduleName == "logic" then
+
+	end
+end
+
+-- 客户端请求分发
+local function request(name, args, response)
+	--log.info("request %s", name)
+	local r = clientCall(args.moduleName, args.funcName, cjson.decode(args.args))
+	if response then
+		return response(r)
+	end
+end
+
+-- 注册客户端协议，处理客户端消息
+skynet.register_protocol {
+	name = "client",
+	id = skynet.PTYPE_CLIENT,
+	unpack = function (msg, sz)
+		--log.info("agent unpack msg %s, sz %d", type(msg), sz)
+		local str = skynet.tostring(msg, sz)
+		return host:dispatch(str, sz)
+	end,
+	dispatch = function (fd, _, type, ...)
+		log.info("room dispatch fd %d, type %s", fd, type)
+		--assert(fd == client_fd) -- 只能处理自己的fd
+		skynet.ignoreret() -- session是fd，不需要返回
+		if type == "REQUEST" then
+			local ok, result  = pcall(request, ...)
+			if ok then
+				if result then
+					send_package(result)
+				end
+			else
+				log.error(result)
+			end
+		else
+			assert(type == "RESPONSE")
+			error "This example doesn't support request client"
+		end
+	end
+}
 
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)

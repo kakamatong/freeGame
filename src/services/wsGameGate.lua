@@ -5,7 +5,10 @@ local urlTools = require "http.url"
 local log = require "log"
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
-
+skynet.register_protocol {
+	name = "client",
+	id = skynet.PTYPE_CLIENT,
+}
 local function unforward(c)
 	if c.agent then
 		c.agent = nil

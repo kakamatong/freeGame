@@ -74,13 +74,13 @@ end
 -- 打开客户端连接，记录连接信息
 function wsGateserver.openclient(fd, handler, protocol, addr, options)
 	log.info("options %s", UTILS.tableToString(options))
+	connection[fd] = {}
 	local ok, err = websocket.accept(fd, handler, protocol, addr, options)
 	if not ok then
-		websocket.close(fd)
 		log.error("wsGateserver.openclient error:%s", err)
 		return 
 	else
-		connection[fd] = {}
+		log.info("wsGateserver.openclient %d", fd)
 	end
 end
 
