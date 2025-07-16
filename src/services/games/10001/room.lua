@@ -381,12 +381,17 @@ end
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)
     sendRoomInfo(userid)
+    return {msg = "success"}
 end
 
 local function clientCall(moduleName, funcName, userid, args)
 	if moduleName == "room" then
 		local f = assert(REQUEST[funcName])
-		return f(REQUEST, userid, args)
+        local res ={
+            code = 1,
+            result = cjson.encode(f(REQUEST, userid, args)),
+        }
+		return res
 	elseif moduleName == "logic" then
 
 	end
@@ -394,7 +399,7 @@ end
 
 -- 客户端请求分发
 local function request(fd, name, args, response)
-	log.info("request %d %s", fd, UTILS.tableToString(client_fds))
+	--log.info("request %d %s", fd, UTILS.tableToString(client_fds))
 	local userid = getUseridByFd(fd)
     if not userid then
         log.error("request fd %d not found userid", fd)
@@ -423,7 +428,7 @@ skynet.register_protocol {
 			local ok, result  = pcall(request, fd, ...)
 			if ok then
 				if result then
-					send_package(result)
+					send_package(fd, result)
 				end
 			else
 				log.error(result)
