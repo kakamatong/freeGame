@@ -94,7 +94,7 @@ function handler.message(fd, msg, msgType)
 	-- recv a package, forward it
 	local c = connection[fd]
 	if c and c.room then
-		skynet.redirect(c.agent, fd, "client", fd, msg, string.len(msg))
+		skynet.redirect(c.room, fd, "client", fd, msg, string.len(msg))
 	else
 		skynet.trash(msg,string.len(msg))
 	end
