@@ -32,6 +32,11 @@ local config = {
         DRAW = 3,
         ESCAPE = 4,
     },
+
+    SPROTO = {
+        C2S = "game10001_c2s",
+        S2C = "game10001_s2c",
+    }
 }
 
 return config

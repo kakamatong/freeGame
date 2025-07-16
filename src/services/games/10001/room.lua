@@ -37,11 +37,11 @@ local dTime = 100
 
 -- 加载sproto
 local function loadSproto()
-    local t = sharedata.query("game10001_c2s")
+    local t = sharedata.query(config.SPROTO.C2S)
     local sp = core.newproto(t.str)
     host = sproto.sharenew(sp):host "package"
 
-    t = sharedata.query("game10001_s2c")
+    t = sharedata.query(config.SPROTO.S2C)
     sp = core.newproto(t.str)
     send_request = host:attach(sproto.sharenew(sp))
 end
