@@ -159,8 +159,6 @@ local function sendToOneClient(userid, name, data)
     end
     local client_fd = client_fds[userid]
     if client_fd and onlines[userid] then
-        data.gameid = gameid
-        data.roomid = roomid
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
     elseif isRobotByUserid(userid) then
@@ -181,6 +179,19 @@ local function sendToAllClient(name, data)
     end
 end
 
+local function svrMsg(userid, msgType, info)
+    local data = {
+        type = msgType or "",
+        data = cjson.encode(info),
+    }
+    if userid == 0 then
+        sendToAllClient("svrMsg", data)
+        return
+    end
+
+    sendToOneClient(userid, "svrMsg", data)
+end
+
 
 
 -- 玩家重新连接
@@ -191,13 +202,13 @@ end
 
 -- 玩家连入游戏，玩家客户端准备就绪
 local function online(userid)
-        onlines[userid] = true
-        if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
-            --gameStatus = gameStatus.START
-            testStart()
-        elseif gameStatus == config.GAME_STATUS.START then
-            relink(userid)
-        end
+    onlines[userid] = true
+    if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        --gameStatus = gameStatus.START
+        testStart()
+    elseif gameStatus == config.GAME_STATUS.START then
+        relink(userid)
+    end
 end
 
 -- 游戏结束
@@ -226,6 +237,17 @@ local function checkRoomStatus()
             gameEnd()
         end
     end
+end
+
+local function sendRoomInfo(userid)
+    local info = {
+        gameid = gameid,
+        roomid = roomid,
+        playerids = playerids,
+        gameData = gameData
+    }
+    local msgType = "roomInfo"
+    svrMsg(userid, msgType, info)
 end
 
 ------------------------------------------------------------------------------------------------------------ ai消息处理
@@ -283,15 +305,6 @@ function roomHandler.gameEnd()
 end
 
 ------------------------------------------------------------------------------------------------------------ 客户端发上来的协议
--- 玩家准备就绪
-function XY.gameReady(userid, args)
-    local playerStatus = {
-        userid = userid,
-        status = 1
-    }
-
-    sendToAllClient("reportGamePlayerStatus", playerStatus)
-end
 
 -- 玩家出招
 function XY.gameOutHand(userid, args)
@@ -304,11 +317,6 @@ end
 -- region 命令接口
 ------------------------------------------------------------------------------------------------------------ 命令接口
 local CMD = {}
--- 玩家进入游戏
-function CMD.playerEnter(userData)
-    table.insert(seats, userData.userid)
-    return true
-end
 
 -- 初始化游戏逻辑
 function CMD.start(data)
@@ -338,15 +346,6 @@ function CMD.start(data)
     }
     local extstr = cjson.encode(ext)
     pushLog(config.LOG_TYPE.CREATE_ROOM, 0, gameid, roomid, extstr)
-end
-
--- 客户端消息处理
-function CMD.onClinetMsg(userid, name, args, response)
-    log.info("onClinetMsg %s", name)
-    local f = XY[name]
-    if f then
-        f(userid, args)
-    end
 end
 
 -- 连接游戏
@@ -380,8 +379,8 @@ function CMD.offLine(userid)
 end
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
-function REQUEST:test(userid, args)
-    log.info("REQUEST.test %d %s", userid, UTILS.tableToString(args))
+function REQUEST:clientReady(userid, args)
+    sendRoomInfo(userid)
 end
 
 local function clientCall(moduleName, funcName, userid, args)
