@@ -59,6 +59,14 @@ local function pushLog(logtype, userid, gameid, roomid, ext)
     skynet.send(dbserver, "lua", "dbLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
 end
 
+local function getUseridByFd(fd)
+    for key, value in pairs(client_fds) do
+        if value == fd then
+            return key
+        end
+    end
+end
+
 -- 游戏结果日志
 local function pushLogResult(type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, ext)
     local dbserver = skynet.localname(".db")
@@ -343,13 +351,11 @@ end
 
 -- 连接游戏
 function CMD.connectGame(userid, client_fd)
-    log.info("connectGame %d", userid)
     for i = 1, #playerids do
         if playerids[i] == userid then
             client_fds[userid] = client_fd
             online(userid)
-            --onConnect(userid)
-            return skynet.self()
+            return true
         end
     end
 end
@@ -374,23 +380,28 @@ function CMD.offLine(userid)
 end
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
-function REQUEST:test(args)
-    log.info("REQUEST.test %s", UTILS.tableToString(args))
+function REQUEST:test(userid, args)
+    log.info("REQUEST.test %d %s", userid, UTILS.tableToString(args))
 end
 
-local function clientCall(moduleName, funcName, args)
+local function clientCall(moduleName, funcName, userid, args)
 	if moduleName == "room" then
 		local f = assert(REQUEST[funcName])
-		return f(REQUEST, args)
+		return f(REQUEST, userid, args)
 	elseif moduleName == "logic" then
 
 	end
 end
 
 -- 客户端请求分发
-local function request(name, args, response)
-	--log.info("request %s", name)
-	local r = clientCall(args.moduleName, args.funcName, cjson.decode(args.args))
+local function request(fd, name, args, response)
+	log.info("request %d %s", fd, UTILS.tableToString(client_fds))
+	local userid = getUseridByFd(fd)
+    if not userid then
+        log.error("request fd %d not found userid", fd)
+        return
+    end
+	local r = clientCall(args.moduleName, args.funcName, userid, cjson.decode(args.args))
 	if response then
 		return response(r)
 	end
@@ -410,7 +421,7 @@ skynet.register_protocol {
 		--assert(fd == client_fd) -- 只能处理自己的fd
 		skynet.ignoreret() -- session是fd，不需要返回
 		if type == "REQUEST" then
-			local ok, result  = pcall(request, ...)
+			local ok, result  = pcall(request, fd, ...)
 			if ok then
 				if result then
 					send_package(result)

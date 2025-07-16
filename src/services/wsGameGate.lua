@@ -62,8 +62,7 @@ local function connectGame(data)
 	if not svrGameManager then
 		return false
 	end
-	local res = skynet.call(svrGameManager, "lua", "connectGame", tonumber(data.gameid), tonumber(data.roomid), tonumber(data.userid), tonumber(data.client_fd))
-	return res
+	return skynet.call(svrGameManager, "lua", "connectGame", tonumber(data.gameid), tonumber(data.roomid), tonumber(data.userid), tonumber(data.client_fd))
 end
 
 local function startCheckAlive()
@@ -112,6 +111,7 @@ function handler.auth(fd, uri, addr)
 	local data = urlTools.parse_query(uri)
 	data.ip = addr or "0.0.0.0"
 	data.uri = uri
+	data.client_fd = fd
 	local userid = tonumber(data.userid)
 	return auth(data) and connectGame(data), userid
 end

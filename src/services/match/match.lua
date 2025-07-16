@@ -3,7 +3,7 @@ local log = require "log"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
-local CHECK_MAX_NUM = 5
+local CHECK_MAX_NUM = 1
 
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.localname(".user")

@@ -91,28 +91,15 @@ function CMD.playerEnter(gameid, roomid, userData)
     return ret
 end
 
--- 客户端消息处理
-function CMD.onClinetMsg(userid, name, args)
-    log.info("onClinetMsg %s %s %s", userid, name, args)
-    local game = allGames[args.gameid][args.roomid]
-    if not game then
-        log.error("game not found %s %s", args.gameid, args.roomid)
-        return false
-    end
-    local ret = skynet.send(game, "lua", "onClinetMsg", userid, name, args)
-    return ret
-end
-
 -- 连接游戏
 function CMD.connectGame(gameid, roomid, userid, client_fd)
-    log.info("connectGame %s %s %s %s", gameid, roomid, userid, client_fd)
+    log.info("connectGame %d %d %d %d", gameid, roomid, userid, client_fd)
     local game = allGames[gameid][roomid]
     if not game then
         log.error("game not found %s %s", gameid, roomid)
         return
     end
-    local ret = skynet.call(game, "lua", "connectGame", userid, client_fd)
-    return ret
+    return skynet.call(game, "lua", "connectGame", userid, client_fd)
 end
 
 -- 玩家断线
