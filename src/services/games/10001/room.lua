@@ -6,6 +6,9 @@ require "skynet.manager"
 local logicHandler = require "games.10001.logic"
 local sprotoloader = require "sprotoloader"
 local aiHandler = require "games.10001.ai"
+local sharedata = require "skynet.sharedata"
+local core = require "sproto.core"
+local sproto = require "sproto"
 local roomid = 0
 local gameid = 0
 local playerids = {} -- 玩家id列表
@@ -31,6 +34,17 @@ local dTime = 100
 -- 游戏逻辑
 -- 销毁逻辑
 -- 未开局销毁逻辑
+
+-- 加载sproto
+local function loadSproto()
+    local t = sharedata.query("game10001_c2s")
+    local sp = core.newproto(t.str)
+    host = sproto.sharenew(sp):host "package"
+
+    t = sharedata.query("game10001_s2c")
+    sp = core.newproto(t.str)
+    send_request = host:attach(sproto.sharenew(sp))
+end
 
 -- 房间日志，创建，销毁，开始，结束
 local function pushLog(logtype, userid, gameid, roomid, ext)
@@ -367,7 +381,6 @@ skynet.start(function()
             skynet.ret(skynet.pack(f(...)))
         end
     end)
-    host = sprotoloader.load(1):host "package"
-    send_request = host:attach(sprotoloader.load(2))
+    loadSproto()
     gate = skynet.localname(".wsGameGateserver")
 end)
