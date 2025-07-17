@@ -10,7 +10,8 @@ local config = {
     PLAYER_STATUS = { -- 玩家状态
         LOADING = 1,
         OFFLINE = 2,
-        PLAYING = 3,
+        ONLINE = 3,
+        PLAYING = 4,
     },
 
     LOG_TYPE = {

@@ -19,6 +19,8 @@ local roomInfo = {
     gameData = {} -- 游戏数据
 }
 
+local players = {}
+
 local playerids = {} -- 玩家id列表,index 表示座位
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
@@ -315,6 +317,13 @@ function CMD.start(data)
     roomInfo.roomid = data.roomid
     roomInfo.gameid = data.gameid
     playerids = data.players
+    for seat, userid in pairs(playerids) do
+        players[userid] = {
+            userid = userid,
+            seat = seat,
+            status = config.PLAYER_STATUS.LOADING,
+        }
+    end
     roomInfo.gameData = data.gameData
     gameManager = data.gameManager
     logicHandler.init(#playerids, roomInfo.gameData.rule, roomHandler)
@@ -371,6 +380,11 @@ end
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)
+    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        players[userid].status = config.PLAYER_STATUS.ONLINE
+    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
+        players[userid].status = config.PLAYER_STATUS.PLAYING
+    end
     sendRoomInfo(userid)
     return {msg = "success"}
 end
