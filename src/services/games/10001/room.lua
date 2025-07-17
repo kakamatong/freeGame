@@ -15,11 +15,11 @@ local roomInfo = {
     gameStartTime = 0,
     createRoomTime = 0,
     gameStatus = config.GAME_STATUS.NONE,
-    canDestroy = false -- 是否可以销毁
+    canDestroy = false, -- 是否可以销毁
+    gameData = {} -- 游戏数据
 }
 
 local playerids = {} -- 玩家id列表,index 表示座位
-local gameData = {} -- 游戏数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local host
@@ -102,8 +102,8 @@ end
 
 -- 判断是否是机器人
 local function isRobotByUserid(userid)
-    if gameData.robots and #gameData.robots > 0 and userid and userid > 0 then
-        for _, id in pairs(gameData.robots) do
+    if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 and userid and userid > 0 then
+        for _, id in pairs(roomInfo.gameData.robots) do
             if id == userid then
                 return true
             end
@@ -245,7 +245,7 @@ local function sendRoomInfo(userid)
         gameid = roomInfo.gameid,
         roomid = roomInfo.roomid,
         playerids = playerids,
-        gameData = gameData
+        gameData = roomInfo.gameData
     }
     local msgType = "roomInfo"
     svrMsg(userid, msgType, info)
@@ -315,9 +315,9 @@ function CMD.start(data)
     roomInfo.roomid = data.roomid
     roomInfo.gameid = data.gameid
     playerids = data.players
-    gameData = data.gameData
+    roomInfo.gameData = data.gameData
     gameManager = data.gameManager
-    logicHandler.init(#playerids, gameData.rule, roomHandler)
+    logicHandler.init(#playerids, roomInfo.gameData.rule, roomHandler)
     aiHandler.init(roomHandlerAi)
     roomInfo.createRoomTime = os.time()
     skynet.fork(function()
@@ -333,7 +333,7 @@ function CMD.start(data)
     -- 创建房间日志
     local ext = {
         playerids = playerids,
-        gameData = gameData
+        gameData = roomInfo.gameData
     }
     local extstr = cjson.encode(ext)
     pushLog(config.LOG_TYPE.CREATE_ROOM, 0, roomInfo.gameid, roomInfo.roomid, extstr)
@@ -352,10 +352,10 @@ end
 
 function CMD.stop()
     -- 清理玩家
-    if gameData.robots and #gameData.robots > 0 then
+    if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
         local robotManager = skynet.localname(".robotManager")
         if robotManager then
-            skynet.send(robotManager, "lua", "returnRobots", gameData.robots)
+            skynet.send(robotManager, "lua", "returnRobots", roomInfo.gameData.robots)
         end
     end
 
