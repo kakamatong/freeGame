@@ -20,7 +20,6 @@ local createRoomTime = 0
 local host
 local gate
 local gameStatus = config.GAME_STATUS.NONE
-local XY = {}
 local reportsessionid = 0
 local gameStartTime = 0
 local roomHandler = {}
@@ -253,11 +252,11 @@ end
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("roomHandlerAi.onMsg", seat, name, data)
-    local f = XY[name]
-    if f then
-        local userid = playerids[seat]
-        f(userid, data)
-    end
+    -- local f = XY[name]
+    -- if f then
+    --     local userid = playerids[seat]
+    --     f(userid, data)
+    -- end
 end
 
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
@@ -301,16 +300,6 @@ end
 -- room接口,游戏结束
 function roomHandler.gameEnd()
     gameEnd()
-end
-
------------------------------------------------------------------------------------------------------------- 客户端发上来的协议
-
--- 玩家出招
-function XY.gameOutHand(userid, args)
-    local seat = getPlayerSeat(userid)
-    if seat then
-        logicHandler.outHand(seat, args)
-    end
 end
 
 -- region 命令接口
