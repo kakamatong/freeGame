@@ -9,19 +9,22 @@ local aiHandler = require "games.10001.ai"
 local sharedata = require "skynet.sharedata"
 local core = require "sproto.core"
 local sproto = require "sproto"
-local roomid = 0
-local gameid = 0
+local roomInfo = {
+    roomid = 0,
+    gameid = 0,
+    gameStartTime = 0,
+    createRoomTime = 0,
+    gameStatus = config.GAME_STATUS.NONE,
+    canDestroy = false -- 是否可以销毁
+}
+
 local playerids = {} -- 玩家id列表,index 表示座位
 local gameData = {} -- 游戏数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
-local canDestroy = false -- 是否可以销毁
-local createRoomTime = 0
 local host
 local gate
-local gameStatus = config.GAME_STATUS.NONE
 local reportsessionid = 0
-local gameStartTime = 0
 local roomHandler = {}
 local roomHandlerAi = {}
 local gameManager
@@ -90,10 +93,10 @@ end
 
 -- 开始游戏
 local function startGame()
-    gameStatus = config.GAME_STATUS.START
-    gameStartTime = os.time()
+    roomInfo.gameStatus = config.GAME_STATUS.START
+    roomInfo.gameStartTime = os.time()
     logicHandler.startGame()
-    pushLog(config.LOG_TYPE.GAME_START, 0, gameid, roomid, "")
+    pushLog(config.LOG_TYPE.GAME_START, 0, roomInfo.gameid, roomInfo.roomid, "")
     log.info("game start")
 end
 
@@ -201,37 +204,37 @@ end
 -- 玩家连入游戏，玩家客户端准备就绪
 local function online(userid)
     onlines[userid] = true
-    if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
-        --gameStatus = gameStatus.START
+    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        --roomInfo.gameStatus = roomInfo.gameStatus.START
         testStart()
-    elseif gameStatus == config.GAME_STATUS.START then
+    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         relink(userid)
     end
 end
 
 -- 游戏结束
 local function gameEnd()
-    gameStatus = config.GAME_STATUS.END
-    canDestroy = true
+    roomInfo.gameStatus = config.GAME_STATUS.END
+    roomInfo.canDestroy = true
 
-    if canDestroy then
+    if roomInfo.canDestroy then
         --gameManager.destroyGame(gameid, roomid)
-        skynet.send(gameManager, "lua", "destroyGame", gameid, roomid)
+        skynet.send(gameManager, "lua", "destroyGame", roomInfo.gameid, roomInfo.roomid)
     end
-    pushLog(config.LOG_TYPE.GAME_END, 0, gameid, roomid, "")
+    pushLog(config.LOG_TYPE.GAME_END, 0, roomInfo.gameid, roomInfo.roomid, "")
 end
 
 -- 检查桌子状态，如果超时，则销毁桌子
 local function checkRoomStatus()
-    if gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
         local timeNow = os.time()
-        if timeNow - createRoomTime > config.WAITTING_CONNECT_TIME then
+        if timeNow - roomInfo.createRoomTime > config.WAITTING_CONNECT_TIME then
             --testStart()
             gameEnd()
         end
-    elseif gameStatus == config.GAME_STATUS.START then
+    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         local timeNow = os.time()
-        if timeNow - gameStartTime > config.GAME_TIME then
+        if timeNow - roomInfo.gameStartTime > config.GAME_TIME then
             gameEnd()
         end
     end
@@ -239,8 +242,8 @@ end
 
 local function sendRoomInfo(userid)
     local info = {
-        gameid = gameid,
-        roomid = roomid,
+        gameid = roomInfo.gameid,
+        roomid = roomInfo.roomid,
         playerids = playerids,
         gameData = gameData
     }
@@ -291,9 +294,9 @@ function roomHandler.gameResult(data)
             playerids = playerids,
             data = data,
         }
-        pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, gameid, roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
+        pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, roomInfo.gameid, roomInfo.roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
 
-        pushUserGameRecords(userid, gameid, addType, 1)
+        pushUserGameRecords(userid, roomInfo.gameid, addType, 1)
     end
 end
 
@@ -309,14 +312,14 @@ local CMD = {}
 -- 初始化游戏逻辑
 function CMD.start(data)
     log.info("game10001 start %s", UTILS.tableToString(data))
-    roomid = data.roomid
-    gameid = data.gameid
+    roomInfo.roomid = data.roomid
+    roomInfo.gameid = data.gameid
     playerids = data.players
     gameData = data.gameData
     gameManager = data.gameManager
     logicHandler.init(#playerids, gameData.rule, roomHandler)
     aiHandler.init(roomHandlerAi)
-    createRoomTime = os.time()
+    roomInfo.createRoomTime = os.time()
     skynet.fork(function()
         while true do
             skynet.sleep(dTime)
@@ -325,7 +328,7 @@ function CMD.start(data)
             checkRoomStatus()
         end
     end)
-    gameStatus = config.GAME_STATUS.WAITTING_CONNECT
+    roomInfo.gameStatus = config.GAME_STATUS.WAITTING_CONNECT
 
     -- 创建房间日志
     local ext = {
@@ -333,7 +336,7 @@ function CMD.start(data)
         gameData = gameData
     }
     local extstr = cjson.encode(ext)
-    pushLog(config.LOG_TYPE.CREATE_ROOM, 0, gameid, roomid, extstr)
+    pushLog(config.LOG_TYPE.CREATE_ROOM, 0, roomInfo.gameid, roomInfo.roomid, extstr)
 end
 
 -- 连接游戏
@@ -356,7 +359,7 @@ function CMD.stop()
         end
     end
 
-    pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, gameid, roomid, "")
+    pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, roomInfo.gameid, roomInfo.roomid, "")
     skynet.exit()
 end
 
