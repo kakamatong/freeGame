@@ -16,3 +16,12 @@ call 2 {
         result 1 : string
     }
 }
+
+# 调用接口
+send 3 {
+    request {
+        moduleName 0 : string
+        funcName 1 : string
+        args 2 : string
+    }
+}

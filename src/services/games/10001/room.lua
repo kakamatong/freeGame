@@ -397,6 +397,15 @@ local function clientCall(moduleName, funcName, userid, args)
 	end
 end
 
+local function clientSend(moduleName, funcName, userid, args)
+	if moduleName == "room" then
+		local f = assert(REQUEST[funcName])
+        f(REQUEST, userid, args)
+	elseif moduleName == "logic" then
+
+	end
+end
+
 -- 客户端请求分发
 local function request(fd, name, args, response)
 	--log.info("request %d %s", fd, UTILS.tableToString(client_fds))
@@ -405,10 +414,15 @@ local function request(fd, name, args, response)
         log.error("request fd %d not found userid", fd)
         return
     end
-	local r = clientCall(args.moduleName, args.funcName, userid, cjson.decode(args.args))
-	if response then
-		return response(r)
-	end
+    if name == "call" then
+        local r = clientCall(args.moduleName, args.funcName, userid, cjson.decode(args.args))
+        if response then
+            return response(r)
+        end
+    elseif name == "send" then
+        clientSend(args.moduleName, args.funcName, userid, cjson.decode(args.args))
+    end
+	
 end
 
 -- 注册客户端协议，处理客户端消息
