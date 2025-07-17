@@ -11,11 +11,10 @@ local core = require "sproto.core"
 local sproto = require "sproto"
 local roomid = 0
 local gameid = 0
-local playerids = {} -- 玩家id列表
+local playerids = {} -- 玩家id列表,index 表示座位
 local gameData = {} -- 游戏数据
 local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
-local seats = {} -- 玩家座位信息
 local canDestroy = false -- 是否可以销毁
 local createRoomTime = 0
 local host
@@ -113,13 +112,13 @@ end
 
 -- 判断是否是机器人
 local function isRobotBySeat(seat)
-    local userid = seats[seat]
+    local userid = playerids[seat]
     return isRobotByUserid(userid)
 end
 
 -- 获取玩家座位
 local function getPlayerSeat(userid)
-    for i, id in pairs(seats) do
+    for i, id in pairs(playerids) do
         if id == userid then
             return i
         end
@@ -256,7 +255,7 @@ function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("roomHandlerAi.onMsg", seat, name, data)
     local f = XY[name]
     if f then
-        local userid = seats[seat]
+        local userid = playerids[seat]
         f(userid, data)
     end
 end
@@ -264,7 +263,7 @@ end
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
 -- room接口,发送消息给单个玩家
 function roomHandler.sendToOneClient(seat, name, data)
-    local userid = seats[seat]
+    local userid = playerids[seat]
     sendToOneClient(userid, name, data)
 end
 
@@ -276,7 +275,7 @@ end
 -- room接口,游戏结果
 function roomHandler.gameResult(data)
     for k, v in pairs(data) do
-        local userid = seats[v.seat]
+        local userid = playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
         local addType = "other"
         if v.endResult == 1 then
@@ -290,7 +289,7 @@ function roomHandler.gameResult(data)
             addType = "lose"
         end
         local tmp = {
-            seats = seats,
+            playerids = playerids,
             data = data,
         }
         pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, gameid, roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
