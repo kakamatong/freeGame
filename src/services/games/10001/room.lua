@@ -14,6 +14,7 @@ local roomInfo = {
     gameid = 0,
     gameStartTime = 0,
     createRoomTime = 0,
+    playerNum = 0,
     gameStatus = config.GAME_STATUS.NONE,
     canDestroy = false, -- 是否可以销毁
     gameData = {}, -- 游戏数据
@@ -138,7 +139,7 @@ local function testStart()
     log.info("testStart")
     local onlineCount = getOnLineCnt()
 
-    if onlineCount == #roomInfo.playerids then
+    if onlineCount == roomInfo.playerNum then
         startGame()
         return true
     else
@@ -304,6 +305,7 @@ function CMD.start(data)
     roomInfo.gameid = data.gameid
     roomInfo.playerids = data.players
     roomInfo.gameData = data.gameData
+    roomInfo.playerNum = #roomInfo.playerids
 
     local isRobotFunc = function (userid)
         if data.gameData.robots and #data.gameData.robots > 0 and userid and userid > 0 then
@@ -330,7 +332,7 @@ function CMD.start(data)
         }
     end
     gameManager = data.gameManager
-    logicHandler.init(#roomInfo.playerids, roomInfo.gameData.rule, roomHandler)
+    logicHandler.init(roomInfo.playerNum, roomInfo.gameData.rule, roomHandler)
     aiHandler.init(roomHandlerAi)
     roomInfo.createRoomTime = os.time()
     skynet.fork(function()
@@ -354,7 +356,7 @@ end
 
 -- 连接游戏
 function CMD.connectGame(userid, client_fd)
-    for i = 1, #roomInfo.playerids do
+    for i = 1, roomInfo.playerNum do
         if roomInfo.playerids[i] == userid then
             players[userid].clientFd = client_fd
             return true
