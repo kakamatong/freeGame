@@ -16,12 +16,11 @@ local roomInfo = {
     createRoomTime = 0,
     gameStatus = config.GAME_STATUS.NONE,
     canDestroy = false, -- 是否可以销毁
-    gameData = {} -- 游戏数据
+    gameData = {}, -- 游戏数据
+    playerids = {} -- 玩家id列表,index 表示座位
 }
 
 local players = {}
-
-local playerids = {} -- 玩家id列表,index 表示座位
 local client_fds = {} -- 玩家连接信息
 local host
 local gate
@@ -129,13 +128,13 @@ end
 
 -- 判断是否是机器人
 local function isRobotBySeat(seat)
-    local userid = playerids[seat]
+    local userid = roomInfo.playerids[seat]
     return isRobotByUserid(userid)
 end
 
 -- 获取玩家座位
 local function getPlayerSeat(userid)
-    for i, id in pairs(playerids) do
+    for i, id in pairs(roomInfo.playerids) do
         if id == userid then
             return i
         end
@@ -147,7 +146,7 @@ local function testStart()
     log.info("testStart")
     local onlineCount = getOnLineCnt()
 
-    if onlineCount == #playerids then
+    if onlineCount == #roomInfo.playerids then
         startGame()
         return true
     else
@@ -183,7 +182,7 @@ local function sendToAllClient(name, data)
         return 
     end
 
-    for i, userid in pairs(playerids) do
+    for i, userid in pairs(roomInfo.playerids) do
         sendToOneClient(userid, name, data)
     end
 end
@@ -241,7 +240,7 @@ local function sendRoomInfo(userid)
     local info = {
         gameid = roomInfo.gameid,
         roomid = roomInfo.roomid,
-        playerids = playerids,
+        playerids = roomInfo.playerids,
         gameData = roomInfo.gameData
     }
     local msgType = "roomInfo"
@@ -254,7 +253,7 @@ function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("roomHandlerAi.onMsg", seat, name, data)
     -- local f = XY[name]
     -- if f then
-    --     local userid = playerids[seat]
+    --     local userid = roomInfo.playerids[seat]
     --     f(userid, data)
     -- end
 end
@@ -262,7 +261,7 @@ end
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
 -- room接口,发送消息给单个玩家
 function roomHandler.sendToOneClient(seat, name, data)
-    local userid = playerids[seat]
+    local userid = roomInfo.playerids[seat]
     sendToOneClient(userid, name, data)
 end
 
@@ -274,7 +273,7 @@ end
 -- room接口,游戏结果
 function roomHandler.gameResult(data)
     for k, v in pairs(data) do
-        local userid = playerids[v.seat]
+        local userid = roomInfo.playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
         local addType = "other"
         if v.endResult == 1 then
@@ -288,7 +287,7 @@ function roomHandler.gameResult(data)
             addType = "lose"
         end
         local tmp = {
-            playerids = playerids,
+            playerids = roomInfo.playerids,
             data = data,
         }
         pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, roomInfo.gameid, roomInfo.roomid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
@@ -311,8 +310,8 @@ function CMD.start(data)
     log.info("game10001 start %s", UTILS.tableToString(data))
     roomInfo.roomid = data.roomid
     roomInfo.gameid = data.gameid
-    playerids = data.players
-    for seat, userid in pairs(playerids) do
+    roomInfo.playerids = data.players
+    for seat, userid in pairs(roomInfo.playerids) do
         players[userid] = {
             userid = userid,
             seat = seat,
@@ -321,7 +320,7 @@ function CMD.start(data)
     end
     roomInfo.gameData = data.gameData
     gameManager = data.gameManager
-    logicHandler.init(#playerids, roomInfo.gameData.rule, roomHandler)
+    logicHandler.init(#roomInfo.playerids, roomInfo.gameData.rule, roomHandler)
     aiHandler.init(roomHandlerAi)
     roomInfo.createRoomTime = os.time()
     skynet.fork(function()
@@ -336,7 +335,7 @@ function CMD.start(data)
 
     -- 创建房间日志
     local ext = {
-        playerids = playerids,
+        playerids = roomInfo.playerids,
         gameData = roomInfo.gameData
     }
     local extstr = cjson.encode(ext)
@@ -345,8 +344,8 @@ end
 
 -- 连接游戏
 function CMD.connectGame(userid, client_fd)
-    for i = 1, #playerids do
-        if playerids[i] == userid then
+    for i = 1, #roomInfo.playerids do
+        if roomInfo.playerids[i] == userid then
             client_fds[userid] = client_fd
             return true
         end
