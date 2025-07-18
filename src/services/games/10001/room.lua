@@ -244,11 +244,7 @@ end
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("roomHandlerAi.onMsg", seat, name, data)
-    -- local f = XY[name]
-    -- if f then
-    --     local userid = roomInfo.playerids[seat]
-    --     f(userid, data)
-    -- end
+    logicHandler.clientMsg(seat, name, data)
 end
 
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
@@ -402,7 +398,13 @@ local function clientCall(moduleName, funcName, userid, args)
         }
 		return res
 	elseif moduleName == "logic" then
-
+        local seat = getPlayerSeat(userid)
+        local data = logicHandler.clientMsg(seat, funcName, args)
+        local res ={
+            code = 1,
+            result = cjson.encode(data),
+        }
+		return res
 	end
 end
 
@@ -411,7 +413,8 @@ local function clientSend(moduleName, funcName, userid, args)
 		local f = assert(REQUEST[funcName])
         f(REQUEST, userid, args)
 	elseif moduleName == "logic" then
-
+        local seat = getPlayerSeat(userid)
+        logicHandler.clientMsg(seat, funcName, args)
 	end
 end
 

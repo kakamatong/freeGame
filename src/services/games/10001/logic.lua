@@ -363,6 +363,12 @@ function logicHandler.outHand(seatid, args)
     logic.outHand(seatid, args)
 end
 
+function logicHandler.clientMsg(seat, name, data)
+    if name == "gameOutHand" then
+        logic.outHand(seat, data)
+    end
+end
+
 -- 初始化
 function logicHandler.init(playerNum, rule, roomHandler)
     logic.init(playerNum, rule, roomHandler)

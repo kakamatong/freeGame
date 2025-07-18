@@ -59,12 +59,12 @@ end
 
 ------------------------------------------------------------------------------------------------------------ 处理协议
 -- 收到阶段消息
-function XY.reportGameStep(seat, data)
+function XY.gameStep(seat, data)
     aiLogic.startStep(data.stepid)
 end
 
 -- 收到玩家态度消息
-function XY.reportGamePlayerAttitude(seat, data)
+function XY.gamePlayerAttitude(seat, data)
     log.info("XY.reportGamePlayerAttitude", seat, data)
     if seat == data.seat then
         aiLogic.seat = seat
