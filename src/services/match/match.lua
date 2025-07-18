@@ -3,7 +3,7 @@ local log = require "log"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
-local CHECK_MAX_NUM = 1
+local CHECK_MAX_NUM = 5
 
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.localname(".user")
@@ -127,14 +127,15 @@ local function checkQueue(gameid, queueid)
     local que = queueUserids[gameid][queueid]
     --log.info("que %s", UTILS.tableToString(que))
     local queLen = #que
-    for i = 1, queLen do
+    local i = 1
+    while i <= queLen do
         if i < queLen then
             local user1 = que[i]
             local user2 = que[i+1]
             if math.abs(user1.rate - user2.rate) < 0.05 then
                 log.info("match success %d %d", user1.userid, user2.userid)
                 table.remove(que, i)
-                table.remove(que, i + 1)
+                table.remove(que, i)
                 i = i - 1
                 queLen = queLen - 2
                 matchSuccess(gameid, queueid, user1.userid, user2.userid)
@@ -154,6 +155,7 @@ local function checkQueue(gameid, queueid)
                 table.remove(que, i)
             end
         end
+        i = i + 1
     end
 end
 
