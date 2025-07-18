@@ -351,6 +351,7 @@ end
 
 -- 连接游戏
 function CMD.connectGame(userid, client_fd)
+    log.info("connectGame userid = %d",userid)
     for i = 1, roomInfo.playerNum do
         if roomInfo.playerids[i] == userid then
             players[userid].clientFd = client_fd
