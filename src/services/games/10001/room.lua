@@ -372,6 +372,15 @@ function CMD.stop()
     skynet.exit()
 end
 
+function CMD.socketClose(fd)
+    local userid = getUseridByFd(fd)
+    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        players[userid].status = config.PLAYER_STATUS.LOADING
+    else
+        players[userid].status = config.PLAYER_STATUS.OFFLINE
+    end
+end
+
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)

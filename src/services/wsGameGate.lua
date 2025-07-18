@@ -25,6 +25,9 @@ end
 local function close_fd(fd)
 	local c = connection[fd]
 	if c then
+		if c.room then
+			skynet.send(c.room, "lua", "socketClose", fd)
+		end
 		clearLogin(c)
 		unforward(c)
 		connection[fd] = nil
