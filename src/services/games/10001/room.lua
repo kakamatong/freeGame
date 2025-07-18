@@ -368,6 +368,12 @@ function CMD.stop()
         end
     end
 
+    for _, v in pairs(players) do
+        if not v.isRobot and v.clientFd then
+            skynet.send(gate, "lua", "roomOver", v.clientFd)
+        end
+    end
+
     pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, roomInfo.gameid, roomInfo.roomid, "")
     skynet.exit()
 end

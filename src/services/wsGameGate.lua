@@ -170,6 +170,11 @@ function CMD.send(source, fd, msg)
 	end
 	websocket.write(fd, msg, "binary")
 end
+
+function CMD.roomOver(source, fd)
+	websocket.close(fd)
+end
+
 function handler.command(cmd, source, ...)
 	local f = assert(CMD[cmd])
 	return f(source, ...)
