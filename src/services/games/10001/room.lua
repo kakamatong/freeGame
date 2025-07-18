@@ -115,14 +115,7 @@ end
 
 -- 判断是否是机器人
 local function isRobotByUserid(userid)
-    if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 and userid and userid > 0 then
-        for _, id in pairs(roomInfo.gameData.robots) do
-            if id == userid then
-                return true
-            end
-        end
-    end
-    return false
+    return players[userid].isRobot
 end
 
 -- 判断是否是机器人
@@ -310,14 +303,32 @@ function CMD.start(data)
     roomInfo.roomid = data.roomid
     roomInfo.gameid = data.gameid
     roomInfo.playerids = data.players
+    roomInfo.gameData = data.gameData
+
+    local isRobotFunc = function (userid)
+        if data.gameData.robots and #data.gameData.robots > 0 and userid and userid > 0 then
+            for _, id in pairs(data.gameData.robots) do
+                if id == userid then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+
     for seat, userid in pairs(roomInfo.playerids) do
+        local bRobot = isRobotFunc(userid)
+        local status = config.PLAYER_STATUS.LOADING
+        if bRobot then
+            status = config.PLAYER_STATUS.ONLINE
+        end
         players[userid] = {
             userid = userid,
             seat = seat,
-            status = config.PLAYER_STATUS.LOADING,
+            status = status,
+            isRobot = bRobot,
         }
     end
-    roomInfo.gameData = data.gameData
     gameManager = data.gameManager
     logicHandler.init(#roomInfo.playerids, roomInfo.gameData.rule, roomHandler)
     aiHandler.init(roomHandlerAi)

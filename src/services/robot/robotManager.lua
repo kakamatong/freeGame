@@ -61,23 +61,6 @@ function CMD.returnRobots(ids)
     end
 end
 
--- 机器人进入游戏
-function CMD.robotEnter(gameid, roomid, userid)
-    local robot = robotDatas[userid]
-    if not robot then
-        log.error("robotEnter robot not found %d", userid)
-        return
-    end
-    
-    local gameManager = skynet.localname(".gameManager")
-    if not gameManager then
-        log.error("robotEnter gameManager not found")
-        return
-    end
-    skynet.send(gameManager, "lua", "playerEnter", gameid, roomid, robot)
-    skynet.send(gameManager, "lua", "connectGame", gameid, roomid, userid)
-end
-
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]
