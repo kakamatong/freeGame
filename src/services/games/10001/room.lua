@@ -21,7 +21,6 @@ local roomInfo = {
 }
 
 local players = {}
-local client_fds = {} -- 玩家连接信息
 local host
 local gate
 local reportsessionid = 0
@@ -61,8 +60,8 @@ local function pushLog(logtype, userid, gameid, roomid, ext)
 end
 
 local function getUseridByFd(fd)
-    for key, value in pairs(client_fds) do
-        if value == fd then
+    for key, value in pairs(players) do
+        if value.clientFd == fd then
             return key
         end
     end
@@ -165,7 +164,7 @@ local function sendToOneClient(userid, name, data)
         log.error("sendToOneClient error: send_request not started")
         return 
     end
-    local client_fd = client_fds[userid]
+    local client_fd = players[userid].clientFd
     if client_fd then
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
@@ -346,7 +345,7 @@ end
 function CMD.connectGame(userid, client_fd)
     for i = 1, #roomInfo.playerids do
         if roomInfo.playerids[i] == userid then
-            client_fds[userid] = client_fd
+            players[userid].clientFd = client_fd
             return true
         end
     end
@@ -405,7 +404,6 @@ end
 
 -- 客户端请求分发
 local function request(fd, name, args, response)
-	--log.info("request %d %s", fd, UTILS.tableToString(client_fds))
 	local userid = getUseridByFd(fd)
     if not userid then
         log.error("request fd %d not found userid", fd)
