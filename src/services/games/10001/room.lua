@@ -22,7 +22,6 @@ local roomInfo = {
 local players = {}
 
 local playerids = {} -- 玩家id列表,index 表示座位
-local onlines = {} -- 玩家在线状态
 local client_fds = {} -- 玩家连接信息
 local host
 local gate
@@ -93,6 +92,20 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
     skynet.send(dbserver, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
+local function isUserOnline(userid)
+    return players[userid] and players[userid].status == config.PLAYER_STATUS.PLAYING
+end
+
+local function getOnLineCnt()
+    local cnt = 0
+    for _, player in pairs(players) do
+        if player.status == config.PLAYER_STATUS.PLAYING then
+            cnt = cnt + 1
+        end
+    end
+    return cnt
+end
+
 -- 开始游戏
 local function startGame()
     roomInfo.gameStatus = config.GAME_STATUS.START
@@ -132,14 +145,7 @@ end
 -- 测试是否可以开始游戏
 local function testStart()
     log.info("testStart")
-    local onlineCount = 0
-    for _, playerid in pairs(playerids) do
-        if onlines[playerid] ~= nil then
-            onlineCount = onlineCount + 1
-        else
-            return false
-        end
-    end
+    local onlineCount = getOnLineCnt()
 
     if onlineCount == #playerids then
         startGame()
@@ -161,7 +167,7 @@ local function sendToOneClient(userid, name, data)
         return 
     end
     local client_fd = client_fds[userid]
-    if client_fd and onlines[userid] then
+    if client_fd then
         reportsessionid = reportsessionid + 1
         send_package(client_fd, send_request(name, data, reportsessionid))
     elseif isRobotByUserid(userid) then
@@ -201,17 +207,6 @@ end
 local function relink(userid)
     local seat = getPlayerSeat(userid)
     logicHandler.relink(seat)
-end
-
--- 玩家连入游戏，玩家客户端准备就绪
-local function online(userid)
-    onlines[userid] = true
-    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
-        --roomInfo.gameStatus = roomInfo.gameStatus.START
-        testStart()
-    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
-        relink(userid)
-    end
 end
 
 -- 游戏结束
@@ -353,7 +348,6 @@ function CMD.connectGame(userid, client_fd)
     for i = 1, #playerids do
         if playerids[i] == userid then
             client_fds[userid] = client_fd
-            online(userid)
             return true
         end
     end
@@ -372,11 +366,6 @@ function CMD.stop()
     skynet.exit()
 end
 
-function CMD.offLine(userid)
-    if onlines[userid] then
-        onlines[userid] = false
-    end
-end
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)
@@ -386,7 +375,11 @@ function REQUEST:clientReady(userid, args)
         players[userid].status = config.PLAYER_STATUS.PLAYING
     end
     sendRoomInfo(userid)
-    return {msg = "success"}
+    if roomInfo.gameStatus == config.GAME_STATUS.START then
+        relink(userid)
+    elseif roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+        testStart()
+    end
 end
 
 local function clientCall(moduleName, funcName, userid, args)
