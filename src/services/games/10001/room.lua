@@ -4,7 +4,6 @@ local cjson = require "cjson"
 local config = require "games.10001.config"
 require "skynet.manager"
 local logicHandler = require "games.10001.logic"
-local sprotoloader = require "sprotoloader"
 local aiHandler = require "games.10001.ai"
 local sharedata = require "skynet.sharedata"
 local core = require "sproto.core"
@@ -165,7 +164,7 @@ local function sendToOneClient(userid, name, data)
     elseif isRobotByUserid(userid) then
         -- 发给ai
         local seat = getPlayerSeat(userid)
-        aiHandler.onMsg(seat, name, data)
+        aiHandler.onMsg(seat, data.type, cjson.decode(data.data))
     end
 end
 
