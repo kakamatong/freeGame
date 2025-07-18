@@ -114,17 +114,17 @@ function logic.sendResult(result)
         info = playerResult,
     }
 
-    logic.sendToAllClient("reportGameRoundResult", info)
+    logic.sendToAllClient("gameRoundResult", info)
 end
 
 function logic.sendPlayerAttitude(toseat, seatid, flag)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
-        logic.sendToAllClient("reportGamePlayerAttitude", {
+        logic.sendToAllClient("gamePlayerAttitude", {
             seat = seatid,
             att = flag,
         })
     else
-        logic.sendToOneClient(toseat, "reportGamePlayerAttitude", {
+        logic.sendToOneClient(toseat, "gamePlayerAttitude", {
             seat = seatid,
             att = flag,
         })
@@ -133,12 +133,12 @@ end
 
 function logic.sendOutHandInfo(toseat, seatid, flag)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
-        logic.sendToAllClient("reportGameOutHand", {
+        logic.sendToAllClient("gameOutHand", {
             seat = seatid,
             flag = flag,
         })
     else
-        logic.sendToOneClient(toseat, "reportGameOutHand", {
+        logic.sendToOneClient(toseat, "gameOutHand", {
             seat = seatid,
             flag = flag,
         })
@@ -163,7 +163,7 @@ end
 
 -- 开始步骤开始游戏
 function logic.startStepStartGame()
-    logic.sendToAllClient("reportGameStep", {
+    logic.sendToAllClient("gameStep", {
         stepid = config.GAME_STEP.START,
     })
 
@@ -183,7 +183,7 @@ end
 
 -- 开始步骤出招
 function logic.startStepOutHand()
-    logic.sendToAllClient("reportGameStep", {
+    logic.sendToAllClient("gameStep", {
         stepid = config.GAME_STEP.OUT_HAND,
     })
 
@@ -302,7 +302,7 @@ end
 function logic.onRelink(seat)
     log.info("onRelink %d", seat)
     local stepid = logic.getStepId()
-    logic.sendToOneClient(seat, "reportGameStep", {
+    logic.sendToOneClient(seat, "gameStep", {
         stepid = stepid,
     })
 
@@ -335,14 +335,14 @@ end
 -- 发送消息给所有玩家
 function logic.sendToAllClient(name, data)
     if logic.roomHandler then
-        logic.roomHandler.sendToAllClient(name, data)
+        logic.roomHandler.svrMsg(0, name, data)
     end
 end
 
 -- 发送消息给单个玩家
 function logic.sendToOneClient(seat, name, data)
     if logic.roomHandler then
-        logic.roomHandler.sendToOneClient(seat, name, data)
+        logic.roomHandler.svrMsg(seat, name, data)
     end
 end
 

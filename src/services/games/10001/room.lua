@@ -252,15 +252,15 @@ function roomHandlerAi.onAiMsg(seat, name, data)
 end
 
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
--- room接口,发送消息给单个玩家
-function roomHandler.sendToOneClient(seat, name, data)
-    local userid = roomInfo.playerids[seat]
-    sendToOneClient(userid, name, data)
-end
-
--- room接口,发送消息给所有玩家
-function roomHandler.sendToAllClient(name, data)
-    sendToAllClient(name, data)
+-- room接口,发送消息给玩家
+function roomHandler.svrMsg(seat, name, data)
+    if 0 == seat then
+        svrMsg(0, name, data)
+    else
+        local userid = roomInfo.playerids[seat]
+        svrMsg(userid, name, data)
+    end
+    
 end
 
 -- room接口,游戏结果
