@@ -98,7 +98,7 @@ end
 local function getOnLineCnt()
     local cnt = 0
     for _, player in pairs(players) do
-        if player.status == config.PLAYER_STATUS.PLAYING then
+        if player.status == config.PLAYER_STATUS.ONLINE then
             cnt = cnt + 1
         end
     end
