@@ -37,6 +37,13 @@ local config = {
     SPROTO = {
         C2S = "game10001_c2s",
         S2C = "game10001_s2c",
+    },
+
+    ROOM_END_FLAG = {
+        NONE = 0,
+        GAME_END = 1,
+        OUT_TIME_WAITING = 2,
+        OUT_TIME_PLAYING = 3,
     }
 }
 

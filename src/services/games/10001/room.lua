@@ -179,6 +179,7 @@ local function sendToAllClient(name, data)
     end
 end
 
+-- 发送服务消息
 local function svrMsg(userid, msgType, info)
     local data = {
         type = msgType or "",
@@ -192,8 +193,6 @@ local function svrMsg(userid, msgType, info)
     sendToOneClient(userid, "svrMsg", data)
 end
 
-
-
 -- 玩家重新连接
 local function relink(userid)
     local seat = getPlayerSeat(userid)
@@ -201,15 +200,20 @@ local function relink(userid)
 end
 
 -- 游戏结束
-local function gameEnd()
+local function roomEnd(code)
     roomInfo.gameStatus = config.GAME_STATUS.END
     roomInfo.canDestroy = true
 
     if roomInfo.canDestroy then
         --gameManager.destroyGame(gameid, roomid)
+        svrMsg(0, "roomEnd", {code=code})
         skynet.send(gameManager, "lua", "destroyGame", roomInfo.gameid, roomInfo.roomid)
     end
-    pushLog(config.LOG_TYPE.GAME_END, 0, roomInfo.gameid, roomInfo.roomid, "")
+
+    local data ={
+        code = code,
+    }
+    pushLog(config.LOG_TYPE.GAME_END, 0, roomInfo.gameid, roomInfo.roomid, cjson.encode(data))
 end
 
 -- 检查桌子状态，如果超时，则销毁桌子
@@ -218,16 +222,17 @@ local function checkRoomStatus()
         local timeNow = os.time()
         if timeNow - roomInfo.createRoomTime > config.WAITTING_CONNECT_TIME then
             --testStart()
-            gameEnd()
+            roomEnd(config.ROOM_END_FLAG.OUT_TIME_WAITING)
         end
     elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         local timeNow = os.time()
         if timeNow - roomInfo.gameStartTime > config.GAME_TIME then
-            gameEnd()
+            roomEnd(config.ROOM_END_FLAG.OUT_TIME_PLAYING)
         end
     end
 end
 
+-- 发送房间信息
 local function sendRoomInfo(userid)
     local info = {
         gameid = roomInfo.gameid,
@@ -286,7 +291,7 @@ end
 
 -- room接口,游戏结束
 function roomHandler.gameEnd()
-    gameEnd()
+    roomEnd(config.ROOM_END_FLAG.GAME_END)
 end
 
 -- region 命令接口
