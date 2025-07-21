@@ -116,7 +116,8 @@ function handler.auth(fd, uri, addr)
 	data.uri = uri
 	data.client_fd = fd
 	local userid = tonumber(data.userid)
-	return auth(data) and connectGame(data), userid
+	-- 不能先去认证玩家，如果玩家认证通过了，但是房间认证没通过，会导致subid+1，从而影响下一次认证
+	return connectGame(data) and auth(data),userid
 end
 
 function handler.authSuccess(fd, options, protocol,addr)
