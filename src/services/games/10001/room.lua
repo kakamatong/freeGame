@@ -8,6 +8,7 @@ local aiHandler = require "games.10001.ai"
 local sharedata = require "skynet.sharedata"
 local core = require "sproto.core"
 local sproto = require "sproto"
+local gConfig = CONFIG
 local roomInfo = {
     roomid = 0,
     gameid = 0,
@@ -88,6 +89,23 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
 		return
 	end
     skynet.send(dbserver, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
+end
+
+local function setUserStatus(userid, status, gameid, roomid)
+    local svrUser = skynet.localname(".user")
+    if not svrUser then
+        return
+    end
+    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, status, gameid, roomid)
+end
+
+local function getUserStatus(userid)
+    local svrUser = skynet.localname(".user")
+    if not svrUser then
+        return
+    end
+    local status = skynet.call(svrUser, "lua", "svrCall", "user", "userStatus", userid)
+    return status
 end
 
 local function isUserOnline(userid)
@@ -208,6 +226,11 @@ local function roomEnd(code)
         --gameManager.destroyGame(gameid, roomid)
         svrMsg(0, "roomEnd", {code=code})
         skynet.send(gameManager, "lua", "destroyGame", roomInfo.gameid, roomInfo.roomid)
+        for _, userid in pairs(roomInfo.playerids) do
+            if not isRobotByUserid(userid) then
+                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, roomInfo.gameid, roomInfo.roomid)
+            end
+        end
     end
 
     local data ={
@@ -323,6 +346,8 @@ function CMD.start(data)
         local status = config.PLAYER_STATUS.LOADING
         if bRobot then
             status = config.PLAYER_STATUS.ONLINE
+        else
+            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid)
         end
         players[userid] = {
             userid = userid,
