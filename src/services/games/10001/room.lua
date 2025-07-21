@@ -96,7 +96,12 @@ local function setUserStatus(userid, status, gameid, roomid)
     if not svrUser then
         return
     end
-    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, status, gameid, roomid)
+    local data = {
+        status = status,
+        gameid = gameid,
+        roomid = roomid,
+    }
+    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, data)
 end
 
 local function getUserStatus(userid)
@@ -228,7 +233,7 @@ local function roomEnd(code)
         skynet.send(gameManager, "lua", "destroyGame", roomInfo.gameid, roomInfo.roomid)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
-                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, roomInfo.gameid, roomInfo.roomid)
+                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0)
             end
         end
     end

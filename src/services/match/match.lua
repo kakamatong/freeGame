@@ -10,7 +10,12 @@ local function setUserStatus(userid, status, gameid, roomid)
     if not svrUser then
         return
     end
-    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, status, gameid, roomid)
+    local data = {
+        status = status,
+        gameid = gameid,
+        roomid = roomid,
+    }
+    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, data)
 end
 
 local function getUserStatus(userid)

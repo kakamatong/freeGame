@@ -52,10 +52,13 @@ function user.userStatus(userid, args)
 end
 
 -- 设置用户状态到数据库
-function user.setUserStatus(userid, status, gameid, roomid)
+function user.setUserStatus(userid, args)
+	local status = args.status
+	local gameid = args.gameid
+	local roomid = args.roomid
 	if not status then return end
 	local db = getDB()
-	skynet.call(db, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
+	skynet.send(db, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
 end
 
 return user

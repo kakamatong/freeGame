@@ -20,6 +20,7 @@ local function check(userid, token, clientSubid)
     if info and info[2] == token and info[4] == clientSubid then
         return true
     else
+        log.warn("auth check fail, userid %d, token %s, clientSubid %d svrToken %s svrSubid %d", userid, token, clientSubid, info[2], info[4])
         return false
     end
 end
