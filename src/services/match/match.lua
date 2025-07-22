@@ -3,6 +3,7 @@ local log = require "log"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
+local inMatchList = {}
 local CHECK_MAX_NUM = 5
 
 local function setUserStatus(userid, status, gameid, roomid)
@@ -62,6 +63,10 @@ local function enterQueue(userid, gameid, queueid, rate)
     if not gameid or not queueid or queueid == 0 then
         return false
     end
+
+    if inMatchList[userid] then
+        return false
+    end
     
     if not checkGame(gameid, queueid) then
         return false
@@ -83,6 +88,7 @@ local function enterQueue(userid, gameid, queueid, rate)
         end
     end
     table.insert(queueUserids[gameid][queueid], index, {userid = userid, rate = rate, checkNum = 0})
+    inMatchList[userid] = true
     setUserStatus(userid, gConfig.USER_STATUS.MATCHING, 0, 0)
     return true
 end
@@ -145,6 +151,8 @@ local function checkQueue(gameid, queueid)
                 log.info("match success %d %d", user1.userid, user2.userid)
                 table.remove(que, i)
                 table.remove(que, i)
+                inMatchList[user1.userid] = nil
+                inMatchList[user2.userid] = nil
                 i = i - 1
                 queLen = queLen - 2
                 matchSuccess(gameid, queueid, user1.userid, user2.userid)
@@ -153,6 +161,7 @@ local function checkQueue(gameid, queueid)
                 -- 如果用户匹配失败次数过多，则直接与机器人匹配
                 if checkMatchNum(gameid, queueid, user1.userid, user1.checkNum) then
                     table.remove(que, i)
+                    inMatchList[user1.userid] = nil
                     i = i - 1
                     queLen = queLen - 1
                 end
@@ -162,6 +171,7 @@ local function checkQueue(gameid, queueid)
             user.checkNum = user.checkNum + 1
             if checkMatchNum(gameid, queueid, user.userid, user.checkNum) then
                 table.remove(que, i)
+                inMatchList[user.userid] = nil
             end
         end
         i = i + 1
