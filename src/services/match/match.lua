@@ -15,7 +15,7 @@ local function setUserStatus(userid, status, gameid, roomid)
         gameid = gameid,
         roomid = roomid,
     }
-    skynet.send(svrUser, "lua", "svrCall" , "user", "setUserStatus", userid, data)
+    send(svrUser , "user", "setUserStatus", userid, data)
 end
 
 local function getUserStatus(userid)
@@ -23,7 +23,7 @@ local function getUserStatus(userid)
     if not svrUser then
         return
     end
-    local status = skynet.call(svrUser, "lua", "svrCall", "user", "userStatus", userid)
+    local status = call(svrUser, "user", "userStatus", userid)
     return status
 end
 
@@ -109,7 +109,7 @@ local function getRobots(gameid, num)
     if not robot then
         return nil
     end
-    local robot = skynet.call(robot, "lua", "svrCall","robot", "getRobots", gameid, num)
+    local robot = call(robot, "robot", "getRobots", gameid, num)
     return robot
 end
 

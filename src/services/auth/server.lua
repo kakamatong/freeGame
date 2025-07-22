@@ -25,8 +25,7 @@ local function callFunc(moduleName, funcName, args)
     return func(args)
 end
 
-function CMD.svrCall(funcName, args)
-    local moduleName = "auth"
+function CMD.svrCall(moduleName, funcName, args)
     return callFunc(moduleName, funcName, args)
 end
 

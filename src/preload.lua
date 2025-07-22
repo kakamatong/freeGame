@@ -108,3 +108,11 @@ _G.STAT = {
         _G.STAT.counters[key] = (_G.STAT.counters[key] or 0) + (value or 1)
     end,
 }
+
+_G.call = function (svr, module, func, ...)
+    return skynet.call(svr, "lua", "svrCall", module, func, ...)
+end
+
+_G.send = function (svr, module, func, ...)
+    skynet.send(svr, "lua", "svrCall", module, func, ...)
+end

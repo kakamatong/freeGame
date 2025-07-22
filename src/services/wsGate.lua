@@ -35,7 +35,7 @@ local function auth(data)
 	if not svrAuth then
 		return false
 	end
-	local res = skynet.call(svrAuth, "lua", "svrCall", "auth", data)
+	local res = call(svrAuth, "auth", "auth", data)
 	return res
 end
 
