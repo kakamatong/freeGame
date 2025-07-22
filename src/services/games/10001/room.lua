@@ -279,7 +279,7 @@ end
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
-    log.info("roomHandlerAi.onMsg", seat, name, data)
+    log.info("roomHandlerAi.onMsg %d, %s, %s", seat, name, UTILS.tableToString(data))
     logicHandler.clientMsg(seat, name, data)
 end
 
@@ -338,7 +338,7 @@ function CMD.start(data)
     roomInfo.playerids = data.players
     roomInfo.gameData = data.gameData
     roomInfo.playerNum = #roomInfo.playerids
-
+    local robotCnt = 0
     local isRobotFunc = function (userid)
         if data.gameData.robots and #data.gameData.robots > 0 and userid and userid > 0 then
             for _, id in pairs(data.gameData.robots) do
@@ -349,12 +349,12 @@ function CMD.start(data)
         end
         return false
     end
-
     for seat, userid in pairs(roomInfo.playerids) do
         local bRobot = isRobotFunc(userid)
         local status = config.PLAYER_STATUS.LOADING
         if bRobot then
             status = config.PLAYER_STATUS.ONLINE
+            robotCnt = robotCnt + 1
         else
             setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid)
         end
@@ -367,7 +367,7 @@ function CMD.start(data)
     end
     gameManager = data.gameManager
     logicHandler.init(roomInfo.playerNum, roomInfo.gameData.rule, roomHandler)
-    aiHandler.init(roomHandlerAi)
+    aiHandler.init(roomHandlerAi, robotCnt)
     roomInfo.createRoomTime = os.time()
     skynet.fork(function()
         while true do
@@ -386,6 +386,8 @@ function CMD.start(data)
     }
     local extstr = cjson.encode(ext)
     pushLog(config.LOG_TYPE.CREATE_ROOM, 0, roomInfo.gameid, roomInfo.roomid, extstr)
+
+    testStart()
 end
 
 -- 连接游戏

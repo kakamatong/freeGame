@@ -4,31 +4,31 @@ local config = require "games.10001.configLogic"
 local aiHandler = {}
 local aiLogic = {}
 local XY = {}
-aiLogic.stepid = 0
+aiLogic.data = {}
+
 aiLogic.roomHandlerAi = nil
-aiLogic.stepBeginTime = 0
+
 aiLogic.STEP_TIME = {
     [config.GAME_STEP.OUT_HAND] = 3,
 }
 
-aiLogic.timeFlag = {
-    [config.GAME_STEP.OUT_HAND] = false,
-}
-aiLogic.seat = 0
-aiLogic.data = nil
-
--- 处理步骤
-function aiLogic.dealStep()
-    if aiLogic.stepid == config.GAME_STEP.OUT_HAND then
-        aiLogic.dealGameOutHand()
-    end
-end
+-- function aiLogic.clear()
+--     aiLogic.stepid = 0
+--     aiLogic.stepBeginTime = 0
+--     aiLogic.timeFlag = {
+--         [config.GAME_STEP.OUT_HAND] = false,
+--     }
+--     aiLogic.seat = 0
+--     aiLogic.data = nil
+-- end
 
 -- 处理出牌
-function aiLogic.dealGameOutHand()
+function aiLogic.dealGameOutHand(seat)
     log.info("XY.dealGameOutHand")
-    aiLogic.timeFlag[config.GAME_STEP.OUT_HAND] = false
-    if aiLogic.data.att == config.PLAYER_ATTITUDE.THINKING then
+    local data = aiLogic.data[seat]
+    data.timeFlag = data.timeFlag or {}
+    data.timeFlag[config.GAME_STEP.OUT_HAND] = false
+    if data.attitude.att == config.PLAYER_ATTITUDE.THINKING then
         local flags = {
             config.HAND_FLAG.ROCK,
             config.HAND_FLAG.PAPER,
@@ -37,39 +37,47 @@ function aiLogic.dealGameOutHand()
         local backData = {
             flag = flags[math.random(1, #flags)]
         }
-        aiLogic.roomHandlerAi.onAiMsg(aiLogic.seat, "gameOutHand", backData)
+        aiLogic.roomHandlerAi.onAiMsg(seat, "gameOutHand", backData)
     end
 end
 
 -- 开始步骤
-function aiLogic.startStep(stepid)
-    aiLogic.stepid = stepid
-    aiLogic.stepBeginTime = os.time()
+function aiLogic.startStep(seat, stepid)
+    aiLogic.data[seat] = aiLogic.data[seat] or {}
+    aiLogic.data[seat].stepid = stepid
+    aiLogic.data[seat].stepBeginTime = os.time()
 end
 
 -- 计时器更新
 function aiLogic.update()
-    local stepid = aiLogic.stepid
-    local timeNow = os.time()
-    local timeLen = aiLogic.STEP_TIME[stepid]
-    if aiLogic.timeFlag[stepid] and timeLen and (timeNow - aiLogic.stepBeginTime) >= timeLen then
-        aiLogic.dealGameOutHand()
+    for key, value in pairs(aiLogic.data) do
+        local data = aiLogic.data[key]
+
+        local stepid = data.stepid
+        local timeNow = os.time()
+        local timeLen = aiLogic.STEP_TIME[stepid]
+        if data.timeFlag and data.timeFlag[stepid] and timeLen and (timeNow - data.stepBeginTime) >= timeLen then
+            aiLogic.dealGameOutHand(key)
+        end
     end
+    
 end
 
 ------------------------------------------------------------------------------------------------------------ 处理协议
 -- 收到阶段消息
 function XY.gameStep(seat, data)
-    aiLogic.startStep(data.stepid)
+    aiLogic.startStep(seat, data.stepid)
 end
 
 -- 收到玩家态度消息
 function XY.gamePlayerAttitude(seat, data)
     log.info("XY.reportGamePlayerAttitude", seat, data)
     if seat == data.seat then
-        aiLogic.seat = seat
-        aiLogic.data = data
-        aiLogic.timeFlag[aiLogic.stepid] = true
+        local uData = aiLogic.data[seat]
+        uData.seat = seat
+        uData.attitude = data
+        uData.timeFlag = uData.timeFlag or {}
+        uData.timeFlag[uData.stepid] = true
     end
 end
 
@@ -82,7 +90,7 @@ function aiHandler.onMsg(seat, name, data)
     end
 end
 
-function aiHandler.init(roomHandlerAi)
+function aiHandler.init(roomHandlerAi, robotCnt)
     aiLogic.roomHandlerAi = roomHandlerAi
 end
 

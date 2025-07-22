@@ -197,7 +197,12 @@ end
 function matchOnSure.startOnSure(gameid, queueid, playerids, data)
     log.info("matchOnSure startOnSure %d %d %s", gameid, queueid, UTILS.tableToString(data))
     local item = createOnSureItem(gameid, queueid, playerids, data)
-    sendMatchOnSure(item)
+    if #item.playerids == #item.readys then
+        local index,item1 = getOnSureItem(item.id)
+        onSureSuccess(index, item1)
+    else
+        sendMatchOnSure(item)
+    end
 end
 
 return matchOnSure

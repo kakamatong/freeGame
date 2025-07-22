@@ -130,6 +130,10 @@ end
 local function testRobotPlay(gameid, queueid)
     log.info("testRobotPlay %d %d", gameid, queueid)
     local robot = getRobots(gameid, 2)
+    if not robot or not robot[1] or not robot[2] then
+        log.info("not enough robot")
+        return
+    end
     local playerids = {robot[1].userid, robot[2].userid}
     local matchOnSure = require("match.matchOnSure")
     matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = playerids})
@@ -150,7 +154,7 @@ end
 
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
-    local btest = false
+    local btest = true
     if btest then
         testRobotPlay(gameid, queueid)
         return
