@@ -197,9 +197,13 @@ local function leaveQueue(userid, gameid, queueid)
 end
 
 local function join(userid, gameid, queueid)
+    if inMatchList[userid] then
+        return {code = 0, msg = "已经在匹配队列中"}
+    end
+    
     -- todo: 检查用户是否在游戏中
     local status = getUserStatus(userid)
-    if status.gameid > 0 and status.roomid > 0 then
+    if status and status.gameid > 0 and status.roomid > 0 then
         if checkInGame(status.gameid, status.roomid) then
             return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid}
         end
