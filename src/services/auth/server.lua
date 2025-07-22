@@ -10,14 +10,14 @@ local function start()
 end
 
 local function callFunc(moduleName, funcName, args)
-    local serModule = nil
+    local svrModule = nil
     local ok, err = pcall(function()
-        serModule = require(path .. moduleName)
+        svrModule = require(path .. moduleName)
     end)
-    if not ok then
+    if not ok or not svrModule then
         return 
     end
-    local func = serModule[funcName]
+    local func = svrModule[funcName]
     if not func then
         return 
     end
