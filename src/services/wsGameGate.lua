@@ -42,11 +42,15 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = skynet.localname(".gameManager")
+	local svrGameManager = skynet.localname(".game")
 	if not svrGameManager then
 		return false
 	end
-	local res = skynet.call(svrGameManager, "lua", "getGame", gameid, roomid)
+	local data = {
+		gameid = gameid,
+		roomid = roomid,
+	}
+	local res = call(svrGameManager, "game", "getGame", data)
 	return res
 end
 
@@ -61,11 +65,17 @@ local function auth(data)
 end
 
 local function connectGame(data)
-	local svrGameManager = skynet.localname(".gameManager")
+	local svrGameManager = skynet.localname(".game")
 	if not svrGameManager then
 		return false
 	end
-	return skynet.call(svrGameManager, "lua", "connectGame", tonumber(data.gameid), tonumber(data.roomid), tonumber(data.userid), tonumber(data.client_fd))
+	local data = {
+		gameid = tonumber(data.gameid),
+		roomid = tonumber(data.roomid),
+		userid = tonumber(data.userid),
+		client_fd = tonumber(data.client_fd),
+	}
+	return call(svrGameManager, "game", "connectGame", data)
 end
 
 local function startCheckAlive()

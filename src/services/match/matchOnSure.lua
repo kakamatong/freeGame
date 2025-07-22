@@ -37,8 +37,14 @@ end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.localname(".gameManager")
-    local roomid = skynet.call(gameManager, "lua", "createGame", gameid, playerids, gameData)
+    local gameManager = skynet.localname(".game")
+    local data = {
+        gameid = gameid,
+        players = playerids,
+        gameData = gameData,
+    }
+
+    local roomid = call(gameManager, "game", "createGame", data)
     return roomid
 end
 

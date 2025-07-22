@@ -29,13 +29,17 @@ local function getUserStatus(userid)
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
-	local gameServer = skynet.localname(".gameManager")
+	local gameServer = skynet.localname(".game")
 	if not gameServer then
-		log.error("gameManager not started")
+		log.error("game not started")
 		return
 	end
+    local data = {
+        gameid = tmpGameid,
+        roomid = tmpRoomid,
+    }
 
-	local b = skynet.call(gameServer, "lua", "checkHaveRoom", tmpGameid, tmpRoomid)
+	local b = call(gameServer, "game", "checkHaveRoom", data)
 	if not b then
 		log.error("game not found %d %d", tmpGameid, tmpRoomid)
 		return
@@ -123,6 +127,14 @@ local function getRobots(gameid, num)
     return robot
 end
 
+local function testRobotPlay(gameid, queueid)
+    log.info("testRobotPlay %d %d", gameid, queueid)
+    local robot = getRobots(gameid, 2)
+    local playerids = {robot[1].userid, robot[2].userid}
+    local matchOnSure = require("match.matchOnSure")
+    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = playerids})
+end
+
 -- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
 local function checkMatchNum(gameid, queueid, userid, checkNum)
     --log.info("checkMatchNum %d", userid)
@@ -138,6 +150,11 @@ end
 
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
+    local btest = false
+    if btest then
+        testRobotPlay(gameid, queueid)
+        return
+    end
     --log.info("checkQueue %d %d", gameid, queueid)
     local que = queueUserids[gameid][queueid]
     --log.info("que %s", UTILS.tableToString(que))
@@ -200,7 +217,7 @@ local function join(userid, gameid, queueid)
     if inMatchList[userid] then
         return {code = 0, msg = "已经在匹配队列中"}
     end
-    
+
     -- todo: 检查用户是否在游戏中
     local status = getUserStatus(userid)
     if status and status.gameid > 0 and status.roomid > 0 then

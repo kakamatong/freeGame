@@ -31,7 +31,7 @@ skynet.start(function()
 	skynet.newservice("user/server")
 
 	-- 启动游戏服务
-	skynet.newservice("games/gameManager")
+	skynet.newservice("games/server")
 
 	-- 启动机器人服务
 	skynet.newservice("robot/server")
