@@ -1,12 +1,11 @@
 local skynet = require "skynet"
 local log = require "log"
-require "skynet.manager"
-local name = "robotManager"
 local config = require "robot.config"
 local robotDatas = {}
 local freeRobots = {}
 local usingRobots = {}
-local CMD = {}
+local robot = {}
+local bload = false
 
 -- 获取空闲机器人id
 local function getFreeRobotid()
@@ -16,7 +15,7 @@ local function getFreeRobotid()
     return nil
 end
 
-local function start()
+local function load()
     local dbSvr = skynet.localname(".db")
     local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
     if robots then
@@ -28,9 +27,14 @@ local function start()
 end
 
 -- 获取机器人
-function CMD.getRobots(gameid, num)
+function robot.getRobots(gameid, num)
     if not gameid or not num or gameid == 0 or num <= 0 then
         return nil
+    end
+
+    if not bload then
+        load()
+        bload = true
     end
 
     local datas = {}
@@ -52,7 +56,7 @@ function CMD.getRobots(gameid, num)
 end
 
 -- 返回机器人
-function CMD.returnRobots(ids)
+function robot.returnRobots(ids)
     for _,id in ipairs(ids) do
         if usingRobots[id] then
             usingRobots[id] = nil
@@ -61,17 +65,4 @@ function CMD.returnRobots(ids)
     end
 end
 
-skynet.start(function()
-    skynet.dispatch("lua", function(session, source, cmd, ...)
-        local f = CMD[cmd]
-        if f then
-            skynet.ret(skynet.pack(f(...)))
-        else
-            skynet.ignoreret()
-            log.error("robotManager cmd not found %s", cmd)
-        end
-    end)
-    skynet.register("." .. name)
-
-    start()
-end)
+return robot

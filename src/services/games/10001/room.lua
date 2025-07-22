@@ -398,9 +398,9 @@ end
 function CMD.stop()
     -- 清理玩家
     if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
-        local robotManager = skynet.localname(".robotManager")
-        if robotManager then
-            skynet.send(robotManager, "lua", "returnRobots", roomInfo.gameData.robots)
+        local robot = skynet.localname(".robot")
+        if robot then
+            skynet.send(robot, "lua", "svrCall", "robot", "returnRobots", roomInfo.gameData.robots)
         end
     end
 

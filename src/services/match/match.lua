@@ -105,11 +105,11 @@ local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
 end
 
 local function getRobots(gameid, num)
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
+    local robot = skynet.localname(".robot")
+    if not robot then
         return nil
     end
-    local robot = skynet.call(robotManager, "lua", "getRobots", gameid, num)
+    local robot = skynet.call(robot, "lua", "svrCall","robot", "getRobots", gameid, num)
     return robot
 end
 

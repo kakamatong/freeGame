@@ -43,11 +43,11 @@ local function createGame(gameid, playerids, gameData)
 end
 
 local function returnRobot( userids)
-    local robotManager = skynet.localname(".robotManager")
-    if not robotManager then
+    local robot = skynet.localname(".robot")
+    if not robot then
         return nil
     end
-    skynet.send(robotManager, "lua", "returnRobots", userids)
+    skynet.send(robot, "lua", "svrCall", "robot", "returnRobots", userids)
 end
 
 local function isRobot(userid, robots)
