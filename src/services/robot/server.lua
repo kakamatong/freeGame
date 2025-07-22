@@ -10,7 +10,7 @@ local function start()
     
 end
 
-local function callFunc(moduleName, funcName, ...)
+local function callFunc(moduleName, funcName, args)
     local svrModule = nil
     local ok, err = pcall(function()
         svrModule = require(path .. moduleName)
@@ -23,12 +23,12 @@ local function callFunc(moduleName, funcName, ...)
         return 
     end
 
-    return func(...)
+    return func(args)
 end
 
-function CMD.svrCall(moduleName, funcName, ...)
+function CMD.svrCall(moduleName, funcName, args)
     log.info("robot svrCall %s %s", moduleName, funcName)
-    return callFunc(moduleName, funcName, ...)
+    return callFunc(moduleName, funcName, args)
 end
 
 skynet.start(function()

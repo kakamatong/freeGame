@@ -109,7 +109,11 @@ local function getRobots(gameid, num)
     if not robot then
         return nil
     end
-    local robot = call(robot, "robot", "getRobots", gameid, num)
+    local data = {
+        gameid = gameid,
+        num = num,
+    }
+    local robot = call(robot, "robot", "getRobots", data)
     return robot
 end
 

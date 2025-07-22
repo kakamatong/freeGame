@@ -27,7 +27,9 @@ local function load()
 end
 
 -- 获取机器人
-function robot.getRobots(gameid, num)
+function robot.getRobots(args)
+    local gameid = args.gameid
+    local num = args.num
     if not gameid or not num or gameid == 0 or num <= 0 then
         return nil
     end
