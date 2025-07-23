@@ -12,12 +12,8 @@ local CMD = {}
 local REQUEST = {}
 local client_fd
 local leftTime = 0
-local dTime = 15 -- 心跳时间（秒）
 local userid = 0
 local reportsessionid = 0
-local gameid = 0
-local roomid = 0
-
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -58,22 +54,6 @@ end
 -- 客户端主动退出
 function REQUEST:quit()
 	skynet.call(WATCHDOG, "lua", "close", client_fd)
-end
-
--- 连接游戏
-function REQUEST:connectGame(args)
-	local gameServer = skynet.localname(".gameManager")
-	if not gameServer then
-		log.error("gameManager not started")
-		return
-	else
-		local ret = skynet.call(gameServer, "lua", "connectGame", gameid, roomid, userid, client_fd, skynet.self())
-		if ret then
-			return {code = 0, msg = "链接游戏成功"}
-		else
-			return {code = 1, msg = "链接游戏失败"}
-		end
-	end
 end
 
 local function clientCall(serverName, moduleName, funcName, args)
