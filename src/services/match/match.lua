@@ -5,6 +5,7 @@ local match = {}
 local queueUserids = {}
 local inMatchList = {}
 local CHECK_MAX_NUM = 5
+local btest = false
 
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.localname(".user")
@@ -154,10 +155,9 @@ end
 
 -- 检查队列，尝试匹配
 local function checkQueue(gameid, queueid)
-    local btest = true
     if btest then
         testRobotPlay(gameid, queueid)
-        return
+        --return
     end
     --log.info("checkQueue %d %d", gameid, queueid)
     local que = queueUserids[gameid][queueid]
@@ -250,6 +250,16 @@ local function leave(userid, gameid, queueid)
         return {code = 0, msg = "离开匹配队列失败"}
     end
     return {code = 1, msg = "离开匹配队列成功"}
+end
+
+function match.startTest()
+    btest = true
+    return {code = 1, msg = "开启测试模式成功"}
+end
+
+function match.stopTest()
+    btest = false
+    return {code = 1, msg = "关闭测试模式成功"}
 end
 
 function match.join(userid, args)
