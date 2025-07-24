@@ -30,7 +30,7 @@ local function getUserStatus(userid)
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
-	local gameServer = skynet.uniqueservice("games/server")
+	local gameServer = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
 	if not gameServer then
 		log.error("game not started")
 		return
@@ -116,7 +116,7 @@ local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
 end
 
 local function getRobots(gameid, num)
-    local robot = skynet.uniqueservice("robot/server")
+    local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
     if not robot then
         return nil
     end

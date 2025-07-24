@@ -37,7 +37,7 @@ end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.uniqueservice("games/server")
+    local gameManager = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
     local data = {
         gameid = gameid,
         players = playerids,
@@ -49,7 +49,7 @@ local function createGame(gameid, playerids, gameData)
 end
 
 local function returnRobot( userids)
-    local robot = skynet.uniqueservice("robot/server")
+    local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
     if not robot then
         return nil
     end

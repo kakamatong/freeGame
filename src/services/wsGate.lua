@@ -31,7 +31,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.uniqueservice("auth/server")
+	local svrAuth = skynet.uniqueservice(CONFIG.SVR_NAME.AUTH)
 	if not svrAuth then
 		return false
 	end
@@ -192,7 +192,7 @@ end
 
 function CMD.login(source, userid, secret,loginType)
 	-- todo: 将uid和secret写入数据库
-	local dbserver = skynet.uniqueservice("db/server")
+	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return

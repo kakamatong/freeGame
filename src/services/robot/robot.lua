@@ -16,7 +16,7 @@ local function getFreeRobotid()
 end
 
 local function load()
-    local dbSvr = skynet.uniqueservice("db/server")
+    local dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
     local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
     if robots then
         for _,robot in pairs(robots) do
