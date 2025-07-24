@@ -7,34 +7,15 @@ local cjson = require "cjson"
 local WATCHDOG
 local gate
 local host
-local send_request
 local CMD = {}
 local REQUEST = {}
 local client_fd
 local leftTime = 0
 local userid = 0
-local reportsessionid = 0
 
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
-end
-
--- 上报玩家状态或消息给客户端
-local function report(name, data)
-	reportsessionid = reportsessionid + 1
-	send_request = host:attach(sprotoloader.load(2))
-	send_package(send_request(name,data, reportsessionid))
-end
-
-local function sendSvrMsg(typeName, data)
-	report("svrMsg", {type = typeName, data = data})
-end
-
--- 关闭连接
-local function close()
-	log.info("agent close")
-	skynet.call(gate, "lua", "kick", client_fd)
 end
 
 -- region 以下为客户端请求处理函数（REQUEST表）
@@ -108,12 +89,6 @@ skynet.register_protocol {
 		end
 	end
 }
-
--- 服务准备就绪
-local function svrReady()
-	log.info("agent content")
-	report("svrReady",{code = 1})
-end
 ------------------------------------------------------------------------------------------------------------
 
 -- region CMD表：服务内部命令处理
