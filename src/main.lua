@@ -13,40 +13,37 @@ skynet.start(function()
 	end
 	-- 启动调试控制台，监听8000端口
 	--skynet.newservice("debug_console","0.0.0.0",8000)
-	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
-
-	-- 启动数据库服务
-	skynet.newservice("db/server")
+	skynet.uniqueservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动认证服务
-	skynet.newservice("auth/server")
+	skynet.uniqueservice("auth/server")
 
 	-- 签到服务
-	skynet.newservice("activity/server")
+	skynet.uniqueservice("activity/server")
 
 	-- 大厅服务
-	skynet.newservice("lobby/server")
+	skynet.uniqueservice("lobby/server")
 
 	-- 用户服务
-	skynet.newservice("user/server")
+	skynet.uniqueservice("user/server")
 
 	-- 启动游戏服务
-	skynet.newservice("games/server")
+	skynet.uniqueservice("games/server")
 
 	-- 启动机器人服务
-	skynet.newservice("robot/server")
+	skynet.uniqueservice("robot/server")
 
 	-- 启动匹配服务
-	skynet.newservice("match/server")
+	skynet.uniqueservice("match/server")
 
 	-- 启动WebSocket登录服务
-	skynet.newservice("wsLogind")
+	skynet.uniqueservice("wsLogind")
 
-	local gameGate = skynet.newservice("wsGameGate")
+	local gameGate = skynet.uniqueservice("wsGameGate")
 	skynet.call(gameGate, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
 
 	-- 启动WebSocket游戏网关服务器
-	local wswatchdog = skynet.newservice("wsWatchdog")
+	local wswatchdog = skynet.uniqueservice("wsWatchdog")
 	local addr,port = skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
 	log.info("Wswatchdog listen on " .. addr .. ":" .. port)
 	-- 启动完成后退出主服务

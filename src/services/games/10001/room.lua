@@ -49,7 +49,7 @@ end
 
 -- 房间日志，创建，销毁，开始，结束
 local function pushLog(logtype, userid, gameid, roomid, ext)
-    local dbserver = skynet.localname(".db")
+    local dbserver = skynet.uniqueservice("db/server")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -70,7 +70,7 @@ end
 
 -- 游戏结果日志
 local function pushLogResult(type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, ext)
-    local dbserver = skynet.localname(".db")
+    local dbserver = skynet.uniqueservice("db/server")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -83,7 +83,7 @@ end
 
 -- 用户游戏记录
 local function pushUserGameRecords(userid, gameid, addType, addNums)
-    local dbserver = skynet.localname(".db")
+    local dbserver = skynet.uniqueservice("db/server")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return

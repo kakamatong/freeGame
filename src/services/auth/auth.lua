@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local log = require "log"
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
-	local dbserver = skynet.localname(".db")
+	local dbserver = skynet.uniqueservice("db/server")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -11,7 +11,7 @@ local function pushLog(userid, nickname, ip, loginType, status, ext)
 end
 
 local function check(userid, token, clientSubid)
-    local dbserver = skynet.localname(".db")
+    local dbserver = skynet.uniqueservice("db/server")
     if not dbserver then
         return false
     end
@@ -26,7 +26,7 @@ local function check(userid, token, clientSubid)
 end
 
 local function addSubid(userid, clientSubid)
-    local dbserver = skynet.localname(".db")
+    local dbserver = skynet.uniqueservice("db/server")
     if not dbserver then
         return
     end

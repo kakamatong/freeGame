@@ -5,7 +5,7 @@ local user = {}
 -- 返回结果
 -- 获取数据库服务句柄
 local function getDB()
-	local dbserver = skynet.localname(".db")
+	local dbserver = skynet.uniqueservice("db/server")
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
