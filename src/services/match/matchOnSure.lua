@@ -23,7 +23,7 @@ local function sendSvrMsg(userid, typeName, data)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.localname(".user")
+    local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
         return
     end
@@ -37,7 +37,7 @@ end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.localname(".game")
+    local gameManager = skynet.uniqueservice("games/server")
     local data = {
         gameid = gameid,
         players = playerids,
@@ -49,7 +49,7 @@ local function createGame(gameid, playerids, gameData)
 end
 
 local function returnRobot( userids)
-    local robot = skynet.localname(".robot")
+    local robot = skynet.uniqueservice("robot/server")
     if not robot then
         return nil
     end

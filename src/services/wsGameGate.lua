@@ -42,7 +42,7 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = skynet.localname(".game")
+	local svrGameManager = skynet.uniqueservice("games/server")
 	if not svrGameManager then
 		return false
 	end
@@ -56,7 +56,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.localname(".auth")
+	local svrAuth = skynet.uniqueservice("auth/server")
 	if not svrAuth then
 		return false
 	end
@@ -65,7 +65,7 @@ local function auth(data)
 end
 
 local function connectGame(data)
-	local svrGameManager = skynet.localname(".game")
+	local svrGameManager = skynet.uniqueservice("games/server")
 	if not svrGameManager then
 		return false
 	end

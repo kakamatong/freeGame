@@ -8,7 +8,7 @@ local CHECK_MAX_NUM = 5
 local btest = false
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.localname(".user")
+    local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
         return
     end
@@ -21,7 +21,7 @@ local function setUserStatus(userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.localname(".user")
+    local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
         return
     end
@@ -30,7 +30,7 @@ local function getUserStatus(userid)
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
-	local gameServer = skynet.localname(".game")
+	local gameServer = skynet.uniqueservice("games/server")
 	if not gameServer then
 		log.error("game not started")
 		return
@@ -116,7 +116,7 @@ local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
 end
 
 local function getRobots(gameid, num)
-    local robot = skynet.localname(".robot")
+    local robot = skynet.uniqueservice("robot/server")
     if not robot then
         return nil
     end

@@ -15,27 +15,6 @@ skynet.start(function()
 	--skynet.newservice("debug_console","0.0.0.0",8000)
 	skynet.uniqueservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
-	-- 启动认证服务
-	skynet.uniqueservice("auth/server")
-
-	-- 签到服务
-	skynet.uniqueservice("activity/server")
-
-	-- 大厅服务
-	skynet.uniqueservice("lobby/server")
-
-	-- 用户服务
-	skynet.uniqueservice("user/server")
-
-	-- 启动游戏服务
-	skynet.uniqueservice("games/server")
-
-	-- 启动机器人服务
-	skynet.uniqueservice("robot/server")
-
-	-- 启动匹配服务
-	skynet.uniqueservice("match/server")
-
 	-- 启动WebSocket登录服务
 	skynet.uniqueservice("wsLogind")
 

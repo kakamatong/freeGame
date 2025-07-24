@@ -92,7 +92,7 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.localname(".user")
+    local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
         return
     end
@@ -105,7 +105,7 @@ local function setUserStatus(userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.localname(".user")
+    local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
         return
     end
@@ -404,7 +404,7 @@ end
 function CMD.stop()
     -- 清理玩家
     if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
-        local robot = skynet.localname(".robot")
+        local robot = skynet.uniqueservice("robot/server")
         if robot then
             send(robot, "robot", "returnRobots", roomInfo.gameData.robots)
         end

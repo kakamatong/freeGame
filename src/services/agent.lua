@@ -61,7 +61,7 @@ local function clientCall(serverName, moduleName, funcName, args)
 		local f = assert(REQUEST[funcName])
 		return f(REQUEST, args)
 	else
-		local server = skynet.localname("." .. serverName)
+		local server = skynet.uniqueservice(string.format("%s/server", serverName))
 		if not server then
 			local msg = "找不到服务"
 			log.error(msg .. serverName)

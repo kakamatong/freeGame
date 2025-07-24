@@ -31,7 +31,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.localname(".auth")
+	local svrAuth = skynet.uniqueservice("auth/server")
 	if not svrAuth then
 		return false
 	end
