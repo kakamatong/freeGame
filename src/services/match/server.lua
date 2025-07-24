@@ -1,10 +1,8 @@
 -- match.lua
 -- 匹配服务，负责玩家匹配逻辑和队列管理
 local skynet = require "skynet"
-require "skynet.manager"
 local log = require "log"
 local CMD = {}
-local name = "match"
 local dTime = 1          -- 匹配检查间隔（秒）
 local defaultModule = "match"
 local path = "match."
@@ -62,7 +60,7 @@ skynet.start(function()
 		local f = CMD[command]
 		skynet.ret(skynet.pack(f(...)))
 	end)
-    skynet.register("." .. name)
+    
 
     start()
 end)

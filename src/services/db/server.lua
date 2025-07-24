@@ -2,7 +2,6 @@ local skynet = require "skynet"
 local mysql = require "skynet.db.mysql"
 local redis = require "skynet.db.redis"
 local log = require "log"
-require "skynet.manager"
 local CMD = {}
 local name = "db"
 local gConfig = CONFIG
@@ -93,8 +92,6 @@ skynet.start(function()
             return skynet.ret(skynet.pack(f(db,...)))
         end
     end)
-
-    skynet.register("." .. name)
 
     start()
 end)

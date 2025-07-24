@@ -1,6 +1,4 @@
 local skynet = require "skynet"
-require "skynet.manager"
-local name = "user"
 local log = require "log"
 local CMD = {}
 local defaultModule = "user"
@@ -48,7 +46,5 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
-
-    skynet.register("." .. name)
     start()
 end)

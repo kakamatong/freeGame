@@ -1,6 +1,4 @@
 local skynet = require "skynet"
-require "skynet.manager"
-local name = "game"
 local log = require "log"
 local CMD = {}
 
@@ -69,6 +67,6 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
 
-    skynet.register("." .. name)
+    
     start()
 end)
