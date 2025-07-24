@@ -14,7 +14,7 @@ local send_request = host:attach(sprotoloader.load(2))
 local function sendSvrMsg(userid, typeName, data)
     local str = cjson.encode(data)
 	local pack = send_request('svrMsg', {type = typeName, data = str}, 1)
-    local gate = skynet.localname(".wsGateserver")
+    local gate = skynet.uniqueservice("wsGate")
     if not gate then
         return
     end
