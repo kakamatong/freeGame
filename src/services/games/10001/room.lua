@@ -528,5 +528,5 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    gate = skynet.uniqueservice("wsGameGate")
+    gate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
 end)

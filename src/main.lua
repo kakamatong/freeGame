@@ -16,9 +16,9 @@ skynet.start(function()
 	skynet.uniqueservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动WebSocket登录服务
-	skynet.uniqueservice("wsLogind")
+	skynet.uniqueservice(CONFIG.SVR_NAME.LOGIN)
 
-	local gameGate = skynet.uniqueservice("wsGameGate")
+	local gameGate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
 	skynet.call(gameGate, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
 
 	-- 启动WebSocket游戏网关服务器
