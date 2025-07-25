@@ -56,3 +56,39 @@ userStatus 4 {
         roomid 2 : integer
     }
 }
+
+# 加入匹配
+matchJoin 5 {
+    request {
+        gameid 0 : integer
+        queueid 1 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 退出匹配  
+matchLeave 6 {
+    request {
+        gameid 0 : integer
+        queueid 1 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 匹配确认
+matchOnSure 7 {
+    request {
+        id 0 : integer
+        sure 1 : boolean
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

@@ -17,15 +17,15 @@ local function start()
     end)
 end
 
-function CMD.join(...)
+function CMD.matchJoin(...)
     return match.join(...)
 end
 
-function CMD.leave(...)
+function CMD.matchLeave(...)
     return match.leave(...)
 end
 
-function CMD.onSure(...)
+function CMD.matchOnSure(...)
     return match.onSure(...)
 end
 

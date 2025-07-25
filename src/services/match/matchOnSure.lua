@@ -11,9 +11,8 @@ local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 
-local function sendSvrMsg(userid, typeName, data)
-    local str = cjson.encode(data)
-	local pack = send_request('svrMsg', {type = typeName, data = str}, 1)
+local function sendSvrMsg(userid,xyName, data)
+	local pack = send_request(xyName, data, 1)
     local gate = skynet.uniqueservice(CONFIG.SVR_NAME.GATE)
     if not gate then
         return
@@ -23,7 +22,7 @@ local function sendSvrMsg(userid, typeName, data)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice("user/server")
+    local svrUser = skynet.uniqueservice("CONFIG.SVR_NAME.USER")
     if not svrUser then
         return
     end
@@ -32,7 +31,7 @@ local function setUserStatus(userid, status, gameid, roomid)
         gameid = gameid,
         roomid = roomid,
     }
-    send(svrUser, "user", "setUserStatus", userid, data)
+    send(svrUser, "setUserStatus", userid, data)
 end
 
 -- 创建游戏

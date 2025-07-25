@@ -8,24 +8,19 @@ local CHECK_MAX_NUM = 5
 local btest = false
 local matchOnSure = require("match.matchOnSure")
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice("user/server")
+    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
     if not svrUser then
         return
     end
-    local data = {
-        status = status,
-        gameid = gameid,
-        roomid = roomid,
-    }
-    send(svrUser , "user", "setUserStatus", userid, data)
+    send(svrUser , "setUserStatus", userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.uniqueservice("user/server")
+    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
     if not svrUser then
         return
     end
-    local status = call(svrUser, "user", "userStatus", userid)
+    local status = call(svrUser, "userStatus", userid)
     return status
 end
 

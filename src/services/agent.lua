@@ -12,6 +12,7 @@ local REQUEST = {}
 local client_fd
 local userid = 0
 local svrUser = nil
+local svrMatch = nil
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -32,6 +33,10 @@ end
 
 function REQUEST:userStatus(args)
 	return call(svrUser, "userStatus", userid)
+end
+
+function REQUEST:matchJoin(args)
+	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 
 -- 客户端请求分发
@@ -86,6 +91,7 @@ function CMD.start(conf)
 	host = sprotoloader.load(1):host "package"
 
 	svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
+	svrMatch = skynet.uniqueservice(CONFIG.SVR_NAME.MATCH)
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
 

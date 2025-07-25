@@ -91,7 +91,7 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice("user/server")
+    local svrUser = skynet.uniqueservice("CONFIG.SVR_NAME.USER")
     if not svrUser then
         return
     end
@@ -100,15 +100,15 @@ local function setUserStatus(userid, status, gameid, roomid)
         gameid = gameid,
         roomid = roomid,
     }
-    send(svrUser, "user", "setUserStatus", userid, data)
+    send(svrUser, "setUserStatus", userid, data)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.uniqueservice("user/server")
+    local svrUser = skynet.uniqueservice("CONFIG.SVR_NAME.USER")
     if not svrUser then
         return
     end
-    local status = call(svrUser, "user", "userStatus", userid)
+    local status = call(svrUser, "userStatus", userid)
     return status
 end
 
