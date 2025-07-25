@@ -31,9 +31,7 @@ local function load()
 end
 
 -- 获取机器人
-function svr.getRobots(args)
-    local gameid = args.gameid
-    local num = args.num
+function getRobots(gameid, num)
     if not gameid or not num or gameid == 0 or num <= 0 then
         return nil
     end
@@ -62,7 +60,7 @@ function svr.getRobots(args)
 end
 
 -- 返回机器人
-function svr.returnRobots(ids)
+function CMD.returnRobots(ids)
     for _,id in ipairs(ids) do
         if usingRobots[id] then
             usingRobots[id] = nil
@@ -71,18 +69,11 @@ function svr.returnRobots(ids)
     end
 end
 
-function CMD.svrCall(moduleName, funcName, args)
-    log.info("robot svrCall %s %s", moduleName, funcName)
-    local func = assert(svr[funcName])
-    return func(args)
-end
-
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
 
-    
     start()
 end)
