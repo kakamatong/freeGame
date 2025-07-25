@@ -6,7 +6,11 @@ local CMD = {}
 local name = "db"
 local gConfig = CONFIG
 local dbs = {
-
+}
+local modules ={
+    db = require("db.db"),
+    dbLog = require("db.dbLog"),
+    dbRedis = require("db.dbRedis"),
 }
 local function startMysql()
     if dbs.db or dbs.dbLog then
@@ -63,14 +67,7 @@ local function start()
 end
 
 local function requireModule(moduleName)
-    local dbmodule = nil
-    local ok, err = pcall(function()
-        dbmodule = require(moduleName)
-    end)
-    if not ok then
-        log.error("requireModule %s error %s", moduleName, err)
-    end
-    return dbmodule
+    return modules[moduleName]
 end
 
 function CMD.stop()

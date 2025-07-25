@@ -1,11 +1,10 @@
 local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
-
-local path = "games."
+local allGames = {}
+local roomid = os.time() * 100000
 local config = require "games.config"
 local sharedata = require "skynet.sharedata"
-
 local parser = require "sprotoparser"
 
 local function loadfile(filename)
@@ -40,25 +39,76 @@ local function start()
     end
 end
 
-local function callFunc(moduleName, funcName, args)
-    local svrModule = nil
-    local ok, err = pcall(function()
-        svrModule = require(path .. moduleName)
-    end)
-    if not ok or not svrModule then
-        return 
+local function checkHaveRoom(gameid, roomid)
+    local games = allGames[gameid]
+    if not allGames[gameid] then
+        return false
     end
-    local func = svrModule[funcName]
-    if not func then
-        return 
+    local room = games[roomid]
+    if not room then
+        return false
     end
 
-    return func(args)
+    return true, room
 end
 
-function CMD.svrCall(moduleName, funcName, args)
-    log.info("game svrCall %s %s", moduleName, funcName)
-    return callFunc(moduleName, funcName, args)
+-- 创建游戏
+function CMD.createGame(gameid, players, gameData)
+    roomid = roomid + 1
+    log.info("createGame %d", roomid)
+    local name = "games/" .. gameid .. "/room"
+    local game = skynet.newservice(name)
+    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
+    if not allGames[gameid] then
+        allGames[gameid] = {}
+    end
+    allGames[gameid][roomid] = game
+
+    return roomid
+end
+
+-- 销毁游戏
+function CMD.destroyGame(gameid, roomid)
+    local b, room = checkHaveRoom(gameid, roomid)
+    if not b or not room then
+        log.error("game not found %s %s", gameid, roomid)
+        return false
+    end
+    allGames[gameid][roomid] = nil
+    skynet.send(room, "lua", "stop")
+    return true
+end
+
+-- 检查房间是否存在
+function CMD.checkHaveRoom(gameid,roomid)
+    return checkHaveRoom(gameid, roomid)
+end
+
+-- 获取游戏
+function CMD.getGame(gameid,roomid)
+    local b,room = checkHaveRoom(gameid, roomid)
+    return room
+end
+
+-- 连接游戏
+function CMD.connectGame(userid,gameid,roomid,client_fd) 
+    log.info("connectGame %d %d %d %d", gameid, roomid, userid, client_fd)
+    local b, room = checkHaveRoom(gameid, roomid)
+    if not b or not room then
+        log.error("room not found %s %s", gameid, roomid)
+        return
+    end
+    return skynet.call(room, "lua", "connectGame", userid, client_fd)
+end
+
+-- 玩家断线
+function CMD.offLine(userid,gameid,roomid)
+    local b, room = checkHaveRoom(gameid, roomid)
+    if not b or not room then
+        log.error("game not found %s %s", gameid, roomid)
+        return false
+    end
+    skynet.send(room, "lua", "offLine", userid)
 end
 
 skynet.start(function()
