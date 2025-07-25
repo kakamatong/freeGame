@@ -10,7 +10,6 @@ local host
 local CMD = {}
 local REQUEST = {}
 local client_fd
-local leftTime = 0
 local userid = 0
 
 -- 发送数据包给客户端
@@ -18,44 +17,10 @@ local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
 end
 
--- region 以下为客户端请求处理函数（REQUEST表）
-------------------------------------------------------------------------------------------------------------
--- 心跳包处理，刷新活跃时间
-function REQUEST:heartbeat()
-	--log.info("heartbeat")
-	leftTime = os.time()
-	local data = {
-		type = "heartbeat",
-		timestamp = leftTime
-	}
-	
-	return { code =1, result = cjson.encode(data) }
-end
-
--- 客户端主动退出
-function REQUEST:quit()
-	skynet.call(WATCHDOG, "lua", "close", client_fd)
-end
-
-local function clientCall(serverName, moduleName, funcName, args)
-	if serverName == "agent" then
-		local f = assert(REQUEST[funcName])
-		return f(REQUEST, args)
-	else
-		local server = skynet.uniqueservice(string.format("%s/server", serverName))
-		if not server then
-			local msg = "找不到服务"
-			log.error(msg .. serverName)
-			return {code = 0, result = msg}
-		end
-		return skynet.call(server, "lua", "clientCall", moduleName, funcName, userid, args)
-	end
-end
-
 -- 客户端请求分发
 local function request(name, args, response)
-	--log.info("request %s", name)
-	local r = clientCall(args.serverName, args.moduleName, args.funcName, cjson.decode(args.args))
+	assert(REQUEST[name])
+	local r = REQUEST[name](REQUEST, args)
 	if response then
 		return response(r)
 	end
@@ -102,21 +67,7 @@ function CMD.start(conf)
 	userid =conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
-	leftTime = os.time()
-	-- 启动心跳检测协程
-	-- skynet.fork(function()
-	-- 	while true do
-	-- 		local now = os.time()
-	-- 		if now - leftTime >= dTime then
-	-- 			log.info("agent heartbeat fd %d now %d leftTime %d", client_fd, now, leftTime)
-	-- 			close()
-	-- 			break
-	-- 		end
-	-- 		skynet.sleep(dTime * 100)
-	-- 	end
-	-- end)
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
-	--svrReady()
 end
 
 -- 断开连接，清理状态
