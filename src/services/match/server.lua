@@ -9,6 +9,7 @@ local match = require("match.match")
 -- 启动匹配服务，定时检查所有队列
 local function start()
     log.info("match start")
+    match.start()
     skynet.fork(function()
         while true do
             match.tick()

@@ -39,3 +39,12 @@ gameRoomReady 4 {
         roomid 1 : integer
     }
 }
+
+# 更新用户财富
+updateRich 5 {
+    request {
+        richTypes 0 : *integer
+        richNums 1 : *integer
+        allRichNums 2 : *integer
+    }
+}

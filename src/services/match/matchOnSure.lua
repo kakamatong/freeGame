@@ -6,45 +6,36 @@ local waitingOnSure = {}
 local onSureIndex = 1
 local onSureLimitTime = 5
 local matchOnSure = {}
-
+local svrRobot = nil
+local svrUser = nil
+local svrGate = nil
+local svrGame = nil
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 
 local function sendSvrMsg(userid,xyName, data)
 	local pack = send_request(xyName, data, 1)
-    local gate = skynet.uniqueservice(CONFIG.SVR_NAME.GATE)
-    if not gate then
-        return
-    end
-    
-    skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
+    skynet.send(svrGate, "lua", "sendSvrMsg", userid, pack)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    if not svrUser then
-        return
-    end
-
     send(svrUser, "setUserStatus", userid, status, gameid, roomid)
 end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local gameManager = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
     local data = {
         gameid = gameid,
         players = playerids,
         gameData = gameData,
     }
 
-    local roomid = call(gameManager, "game", "createGame", data)
+    local roomid = call(svrGame, "game", "createGame", data)
     return roomid
 end
 
 local function returnRobot( userids)
-    local svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
     send(svrRobot, "returnRobots", userids)
 end
 
@@ -195,6 +186,13 @@ function matchOnSure.startOnSure(gameid, queueid, playerids, data)
     else
         sendMatchOnSure(item)
     end
+end
+
+function matchOnSure.start()
+    svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
+    svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
+    svrGate = skynet.uniqueservice(CONFIG.SVR_NAME.GATE)
+    svrGame = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
 end
 
 return matchOnSure

@@ -6,37 +6,23 @@ local queueUserids = {}
 local inMatchList = {}
 local CHECK_MAX_NUM = 5
 local btest = false
+local svrGame = nil
+local svrRobot = nil
+local svrUser = nil
 local matchOnSure = require("match.matchOnSure")
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    if not svrUser then
-        return
-    end
     send(svrUser , "setUserStatus", userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    if not svrUser then
-        return
-    end
     local status = call(svrUser, "userStatus", userid)
     return status
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
 	local gameServer = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
-	if not gameServer then
-		log.error("game not started")
-		return
-	end
-    local data = {
-        gameid = tmpGameid,
-        roomid = tmpRoomid,
-    }
-
-	local b = call(gameServer, "game", "checkHaveRoom", data)
+	local b = call(svrGame, "checkHaveRoom", tmpGameid, tmpRoomid)
 	if not b then
 		log.error("game not found %d %d", tmpGameid, tmpRoomid)
 		return
@@ -98,8 +84,6 @@ end
 local function matchSuccess(gameid, queueid, userid1, userid2)
     log.info("matchSuccess %d %d", userid1, userid2)
     local playerids = {userid1, userid2}
-
-    local matchOnSure = require("match.matchOnSure")
     matchOnSure.startOnSure(gameid, queueid, playerids, {rule = ""})
 end
 
@@ -107,12 +91,10 @@ end
 local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
     log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
     local playerids = {userid, robotData.userid}
-    local matchOnSure = require("match.matchOnSure")
     matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
 end
 
 local function getRobots(gameid, num)
-    local svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
     local robot = call(svrRobot, "getRobots", gameid, num)
     return robot
 end
@@ -125,7 +107,6 @@ local function testRobotPlay(gameid, queueid)
         return
     end
     local playerids = {robot[1].userid, robot[2].userid}
-    local matchOnSure = require("match.matchOnSure")
     matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = playerids})
 end
 
@@ -267,6 +248,14 @@ function match.tick()
     matching()
     matchOnSure.checkOnSure()
 end
+
+function match.start()
+    svrGame = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+    svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
+    svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
+    matchOnSure.start()
+end
+
 
 return match
 

@@ -92,3 +92,16 @@ matchOnSure 7 {
         msg 1 : string
     }
 }
+
+# 调用活动接口
+callActivityFunc 8 {
+    request {
+        moduleName 0 : string
+        funcName 1 : string
+        args 2 : string
+    }
+    response {
+        code 0 : integer
+        result 1 : string
+    }
+}

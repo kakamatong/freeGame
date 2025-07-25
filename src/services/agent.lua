@@ -13,6 +13,7 @@ local client_fd
 local userid = 0
 local svrUser = nil
 local svrMatch = nil
+local svrActivity = nil
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -45,6 +46,10 @@ end
 
 function REQUEST:matchOnSure(args)
 	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
+end
+
+function REQUEST:callActivityFunc(args)
+	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
 
 -- 客户端请求分发
@@ -100,6 +105,7 @@ function CMD.start(conf)
 
 	svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
 	svrMatch = skynet.uniqueservice(CONFIG.SVR_NAME.MATCH)
+	svrActivity = skynet.uniqueservice(CONFIG.SVR_NAME.ACTIVITY)
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
 
