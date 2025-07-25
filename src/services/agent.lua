@@ -11,10 +11,27 @@ local CMD = {}
 local REQUEST = {}
 local client_fd
 local userid = 0
+local svrUser = nil
 
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
+end
+
+function REQUEST:userData(args)
+	return call(svrUser, "userData", args.userid)
+end
+
+function REQUEST:userRiches(args)
+	local richType, richNums = call(svrUser, "userRiches", userid)
+	return {
+		richType = richType,
+		richNums = richNums,
+	}
+end
+
+function REQUEST:userStatus(args)
+	return call(svrUser, "userStatus", userid)
 end
 
 -- 客户端请求分发
@@ -67,6 +84,8 @@ function CMD.start(conf)
 	userid =conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
+
+	svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
 

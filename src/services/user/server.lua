@@ -16,7 +16,7 @@ function CMD.userData(userid)
 	return userData
 end
 
-function CMD.userRiches(userid, args)
+function CMD.userRiches(userid)
 	local userRiches = skynet.call(dbSvr, "lua", "db", "getUserRiches", userid)
 	if not userRiches then
 		return {}, {}
@@ -34,7 +34,7 @@ end
 function CMD.userStatus(userid)
 	local status = skynet.call(dbSvr, "lua", "db", "getUserStatus", userid)
     assert(status)
-	return status.status, status.gameid ,status.roomid
+	return status
 end
 
 function CMD.setUserStatus(userid, status, gameid, roomid)  
