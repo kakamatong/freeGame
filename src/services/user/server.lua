@@ -9,15 +9,14 @@ local function start()
     dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
 end
 
-local function userData(userid, args)
+function CMD.userData(userid)
     log.info("userData userid %d", userid)
 	local userData = skynet.call(dbSvr, "lua", "db", "getUserData", userid)
 	assert(userData)
-
 	return userData
 end
 
-local function userRiches(userid, args)
+function CMD.userRiches(userid, args)
 	local userRiches = skynet.call(dbSvr, "lua", "db", "getUserRiches", userid)
 	if not userRiches then
 		return {}, {}
@@ -29,75 +28,21 @@ local function userRiches(userid, args)
 		table.insert(richNums, v.richNums)
 	end
 
-	return {richType = richType, richNums = richNums}
+	return richType, richNums
 end
 
-local function userStatus(userid, args)
+function CMD.userStatus(userid)
 	local status = skynet.call(dbSvr, "lua", "db", "getUserStatus", userid)
 	if not status then
-		return {gameid = 0 , status = -1}
+		return 
 	else
-		return {gameid = status.gameid , status=status.status, roomid = status.roomid}
+		return status.status, status.gameid ,status.roomid
 	end
 end
 
-local function setUserStatus(userid, args)  
-	local status = args.status
-	local gameid = args.gameid
-	local roomid = args.roomid
+function CMD.setUserStatus(userid, status, gameid, roomid)  
 	if not status then return end
 	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
-end
-
------------------------------------------------------------------------------------------------
-local clent = {}
--- 获取用户详细数据
-function clent.userData(userid, args)
-	return userData(userid, args)
-end
-
--- 获取用户财富信息
-function clent.userRiches(userid, args)
-	return userRiches(userid, args)
-end
-
--- 获取用户状态
-function clent.userStatus(userid, args)
-	return userStatus(userid, args)
-end
-------------------------------------------------------------------------------------------------
-local svr = {}
-function svr.userData(userid, args)
-	return userData(userid, args)
-end
-
--- 获取用户财富信息
-function svr.userRiches(userid, args)
-	return userRiches(userid, args)
-end
-
--- 获取用户状态
-function svr.userStatus(userid, args)
-	return userStatus(userid, args)
-end
-
--- 设置用户状态到数据库
-function svr.setUserStatus(userid, args)  
-	setUserStatus(userid, args)
-end
-
------------------------------------------------------------------------------------------------
-function CMD.svrCall(moduleName, funcName, userid, args)
-    local func = assert(svr[funcName])
-    return func(userid, args)
-end
-
-function CMD.clientCall(moduleName, funcName, userid, args)
-    local func = clent[funcName]
-    if not func then
-        return UTILS.result()
-    end
-    return func(userid, args)
 end
 
 skynet.start(function()

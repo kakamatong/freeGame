@@ -6,6 +6,7 @@ local CMD = {}
 local dTime = 1          -- 匹配检查间隔（秒）
 local defaultModule = "match"
 local path = "match."
+local dbSvr = nil
 
 -- 启动匹配服务，定时检查所有队列
 function start()
