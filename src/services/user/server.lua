@@ -33,15 +33,13 @@ end
 
 function CMD.userStatus(userid)
 	local status = skynet.call(dbSvr, "lua", "db", "getUserStatus", userid)
-	if not status then
-		return 
-	else
-		return status.status, status.gameid ,status.roomid
-	end
+    assert(status)
+	return status.status, status.gameid ,status.roomid
 end
 
 function CMD.setUserStatus(userid, status, gameid, roomid)  
-	if not status then return end
+    assert(userid)
+    assert(status)
 	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
 end
 
