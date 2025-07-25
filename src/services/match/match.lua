@@ -6,7 +6,7 @@ local queueUserids = {}
 local inMatchList = {}
 local CHECK_MAX_NUM = 5
 local btest = false
-
+local matchOnSure = require("match.matchOnSure")
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.uniqueservice("user/server")
     if not svrUser then
@@ -262,28 +262,20 @@ function match.stopTest()
     return {code = 1, msg = "关闭测试模式成功"}
 end
 
-function match.join(userid, args)
-    local gameid = args.gameid
-    local queueid = args.queueid
+function match.join(userid, gameid, queueid)
     return join(userid, gameid, queueid)
 end
 
-function match.leave(userid, args)
-    local gameid = args.gameid
-    local queueid = args.queueid
+function match.leave(userid, gameid, queueid)
     return leave(userid, gameid, queueid)
 end
 
-function match.onSure(userid, args)
-    local id = args.id
-    local sure = args.sure
-    local matchOnSure = require("match.matchOnSure")
+function match.onSure(userid, id, sure)
     return matchOnSure.onSure(userid, id, sure)
 end
 
 function match.tick()
     matching()
-    local matchOnSure = require("match.matchOnSure")
     matchOnSure.checkOnSure()
 end
 
