@@ -39,6 +39,14 @@ function REQUEST:matchJoin(args)
 	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 
+function REQUEST:matchLeave(args)
+	return call(svrMatch, "matchLeave", userid, args.gameid, args.queueid)
+end
+
+function REQUEST:matchOnSure(args)
+	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
+end
+
 -- 客户端请求分发
 local function request(name, args, response)
 	assert(REQUEST[name])
