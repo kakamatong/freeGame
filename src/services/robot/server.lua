@@ -31,7 +31,7 @@ local function load()
 end
 
 -- 获取机器人
-function getRobots(gameid, num)
+function CMD.getRobots(gameid, num)
     if not gameid or not num or gameid == 0 or num <= 0 then
         return nil
     end

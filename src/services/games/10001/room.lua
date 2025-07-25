@@ -405,7 +405,7 @@ function CMD.stop()
     if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
         local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
         if robot then
-            send(robot, "robot", "returnRobots", roomInfo.gameData.robots)
+            send(robot, "returnRobots", roomInfo.gameData.robots)
         end
     end
 

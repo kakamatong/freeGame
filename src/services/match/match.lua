@@ -7,6 +7,7 @@ local inMatchList = {}
 local CHECK_MAX_NUM = 5
 local btest = false
 local matchOnSure = require("match.matchOnSure")
+
 local function setUserStatus(userid, status, gameid, roomid)
     local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
     if not svrUser then
@@ -111,15 +112,8 @@ local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
 end
 
 local function getRobots(gameid, num)
-    local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
-    if not robot then
-        return nil
-    end
-    local data = {
-        gameid = gameid,
-        num = num,
-    }
-    local robot = call(robot, "robot", "getRobots", data)
+    local svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
+    local robot = call(svrRobot, "getRobots", gameid, num)
     return robot
 end
 

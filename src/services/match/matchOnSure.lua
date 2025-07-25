@@ -44,11 +44,8 @@ local function createGame(gameid, playerids, gameData)
 end
 
 local function returnRobot( userids)
-    local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
-    if not robot then
-        return nil
-    end
-    send(robot, "robot", "returnRobots", userids)
+    local svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
+    send(svrRobot, "returnRobots", userids)
 end
 
 local function isRobot(userid, robots)
