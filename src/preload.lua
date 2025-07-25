@@ -113,6 +113,6 @@ _G.call = function (svr, cmd, ...)
     return skynet.call(svr, "lua", cmd, ...)
 end
 
-_G.send = function (svr, module, func, ...)
-    skynet.send(svr, "lua", "svrCall", module, func, ...)
+_G.send = function (svr, cmd, ...)
+    skynet.send(svr, "lua", cmd, ...)
 end

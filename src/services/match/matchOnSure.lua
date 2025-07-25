@@ -22,16 +22,12 @@ local function sendSvrMsg(userid,xyName, data)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice("CONFIG.SVR_NAME.USER")
+    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
     if not svrUser then
         return
     end
-    local data = {
-        status = status,
-        gameid = gameid,
-        roomid = roomid,
-    }
-    send(svrUser, "setUserStatus", userid, data)
+
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid)
 end
 
 -- 创建游戏
