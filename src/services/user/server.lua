@@ -1,35 +1,24 @@
 local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
-local defaultModule = "user"
-local path = "user."
+local dbSvr = nil
 -- 返回结果
 -- 获取数据库服务句柄
-local function getDB()
-	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-	return dbserver
-end
 
 local function start()
-    
+    dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
 end
 
 local function userData(userid, args)
     log.info("userData userid %d", userid)
-	local db = getDB()
-	local userData = skynet.call(db, "lua", "db", "getUserData", userid)
+	local userData = skynet.call(dbSvr, "lua", "db", "getUserData", userid)
 	assert(userData)
 
 	return userData
 end
 
 local function userRiches(userid, args)
-	local db = getDB()
-	local userRiches = skynet.call(db, "lua", "db", "getUserRiches", userid)
+	local userRiches = skynet.call(dbSvr, "lua", "db", "getUserRiches", userid)
 	if not userRiches then
 		return {}, {}
 	end
@@ -44,8 +33,7 @@ local function userRiches(userid, args)
 end
 
 local function userStatus(userid, args)
-	local db = getDB()
-	local status = skynet.call(db, "lua", "db", "getUserStatus", userid)
+	local status = skynet.call(dbSvr, "lua", "db", "getUserStatus", userid)
 	if not status then
 		return {gameid = 0 , status = -1}
 	else
@@ -58,8 +46,7 @@ local function setUserStatus(userid, args)
 	local gameid = args.gameid
 	local roomid = args.roomid
 	if not status then return end
-	local db = getDB()
-	skynet.send(db, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
+	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid)
 end
 
 -----------------------------------------------------------------------------------------------

@@ -1,32 +1,80 @@
 local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
-local defaultModule = "robot"
-local path = "robot."
-
+local config = require "robot.config"
+local robotDatas = {}
+local freeRobots = {}
+local usingRobots = {}
+local svr = {}
+local bload = false
+local dbSvr = nil
 local function start()
-    
+    dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
 end
 
-local function callFunc(moduleName, funcName, args)
-    local svrModule = nil
-    local ok, err = pcall(function()
-        svrModule = require(path .. moduleName)
-    end)
-    if not ok or not svrModule then
-        return 
+-- 获取空闲机器人id
+local function getFreeRobotid()
+    if #freeRobots > 0 then
+        return table.remove(freeRobots, 1)
     end
-    local func = svrModule[funcName]
-    if not func then
-        return 
+    return nil
+end
+
+local function load()
+    local robots = skynet.call(dbSvr, "lua", "db","getRobots", config.idbegin, config.idend)
+    if robots then
+        for _,robot in pairs(robots) do
+            robotDatas[robot.userid] = robot
+            table.insert(freeRobots, robot.userid)
+        end
+    end
+end
+
+-- 获取机器人
+function svr.getRobots(args)
+    local gameid = args.gameid
+    local num = args.num
+    if not gameid or not num or gameid == 0 or num <= 0 then
+        return nil
     end
 
-    return func(args)
+    if not bload then
+        load()
+        bload = true
+    end
+
+    local datas = {}
+    local n = 0
+    for i = 1, num do
+        local id = getFreeRobotid()
+        log.info("getRobots %s %d", id, n)
+        if id and robotDatas[id] then
+            table.insert(datas, robotDatas[id])
+            usingRobots[id] = true
+            n = n + 1
+            if n >= num then
+                break
+            end
+        end
+    end
+
+    return datas
+end
+
+-- 返回机器人
+function svr.returnRobots(ids)
+    for _,id in ipairs(ids) do
+        if usingRobots[id] then
+            usingRobots[id] = nil
+            table.insert(freeRobots, id)
+        end
+    end
 end
 
 function CMD.svrCall(moduleName, funcName, args)
     log.info("robot svrCall %s %s", moduleName, funcName)
-    return callFunc(moduleName, funcName, args)
+    local func = assert(svr[funcName])
+    return func(args)
 end
 
 skynet.start(function()
