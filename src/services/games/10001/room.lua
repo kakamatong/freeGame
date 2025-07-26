@@ -30,6 +30,7 @@ local gameManager
 local send_request = nil
 local dTime = 100
 local svrUser = nil
+local svrDB = nil
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -49,15 +50,9 @@ end
 
 -- 房间日志，创建，销毁，开始，结束
 local function pushLog(logtype, userid, gameid, roomid, ext)
-    local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(dbserver, "lua", "dbLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
+    skynet.send(svrDB, "lua", "dbLog", "insertRoomLog", logtype, userid, gameid, roomid, timecn, ext)
 end
 
 local function getUseridByFd(fd)
@@ -70,20 +65,14 @@ end
 
 -- 游戏结果日志
 local function pushLogResult(type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, ext)
-    local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(dbserver, "lua", "dbLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
+    skynet.send(svrDB, "lua", "dbLog", "insertResultLog", type, userid, gameid, roomid, result, score1, score2, score3, score4, score5, timecn, ext)
 end
 
 -- 用户游戏记录
 local function pushUserGameRecords(userid, gameid, addType, addNums)
-    local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -518,4 +507,5 @@ skynet.start(function()
     loadSproto()
     svrGate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
     svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
+    svrDB = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
 end)
