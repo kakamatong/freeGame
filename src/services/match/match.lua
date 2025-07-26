@@ -21,7 +21,6 @@ local function getUserStatus(userid)
 end
 
 local function checkInGame(tmpGameid, tmpRoomid)
-	local gameServer = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
 	local b = call(svrGame, "checkHaveRoom", tmpGameid, tmpRoomid)
 	if not b then
 		log.error("game not found %d %d", tmpGameid, tmpRoomid)

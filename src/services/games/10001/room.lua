@@ -95,12 +95,8 @@ local function setUserStatus(userid, status, gameid, roomid)
     if not svrUser then
         return
     end
-    local data = {
-        status = status,
-        gameid = gameid,
-        roomid = roomid,
-    }
-    send(svrUser, "setUserStatus", userid, data)
+
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)

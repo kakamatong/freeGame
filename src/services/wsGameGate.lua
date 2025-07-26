@@ -46,11 +46,8 @@ local function getRoom(gameid, roomid)
 	if not svrGameManager then
 		return false
 	end
-	local data = {
-		gameid = gameid,
-		roomid = roomid,
-	}
-	local res = call(svrGameManager, "game", "getGame", data)
+
+	local res = call(svrGameManager, "getGame", gameid, roomid)
 	return res
 end
 
@@ -69,13 +66,13 @@ local function connectGame(data)
 	if not svrGameManager then
 		return false
 	end
-	local data = {
-		gameid = tonumber(data.gameid),
-		roomid = tonumber(data.roomid),
-		userid = tonumber(data.userid),
-		client_fd = tonumber(data.client_fd),
-	}
-	return call(svrGameManager, "game", "connectGame", data)
+
+	local gameid = tonumber(data.gameid)
+	local roomid = tonumber(data.roomid)
+	local userid = tonumber(data.userid)
+	local client_fd = tonumber(data.client_fd)
+
+	return call(svrGameManager, "connectGame", userid, gameid, roomid, client_fd)
 end
 
 local function startCheckAlive()

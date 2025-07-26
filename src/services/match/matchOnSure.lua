@@ -25,13 +25,7 @@ end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local data = {
-        gameid = gameid,
-        players = playerids,
-        gameData = gameData,
-    }
-
-    local roomid = call(svrGame, "game", "createGame", data)
+    local roomid = call(svrGame, "createGame", gameid, playerids, gameData)
     return roomid
 end
 
