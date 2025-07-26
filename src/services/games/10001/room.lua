@@ -221,7 +221,7 @@ local function roomEnd(code)
             gameid = roomInfo.gameid,
             roomid = roomInfo.roomid,
         }
-        send(gameManager, "game", "destroyGame", data)
+        send(gameManager, "destroyGame", data)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
                 setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0)
