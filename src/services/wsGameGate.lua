@@ -57,7 +57,7 @@ local function auth(data)
 	if not svrAuth then
 		return false
 	end
-	local res = call(svrAuth,"auth", "authGame", data)
+	local res = call(svrAuth, "authGame", data)
 	return res
 end
 
