@@ -90,7 +90,7 @@ local function onSureSuccess(index, item)
     local roomid = createGame(item.gameid, item.playerids, item.data)
     if roomid then
         for _, v in ipairs(item.playerids) do
-            setUserStatus(v, gConfig.USER_STATUS.PLAYING, item.gameid, roomid)
+            setUserStatus(v, gConfig.USER_STATUS.GAMEING, item.gameid, roomid)
             if item.data.robots and isRobot(v, item.data.robots) then
             else
                 sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})

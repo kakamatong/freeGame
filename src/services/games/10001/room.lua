@@ -22,13 +22,14 @@ local roomInfo = {
 
 local players = {}
 local host
-local gate
+local svrGate
 local reportsessionid = 0
 local roomHandler = {}
 local roomHandlerAi = {}
 local gameManager
 local send_request = nil
 local dTime = 100
+local svrUser = nil
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -91,19 +92,10 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
-    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    if not svrUser then
-        return
-    end
-
     send(svrUser, "setUserStatus", userid, status, gameid, roomid)
 end
 
 local function getUserStatus(userid)
-    local svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    if not svrUser then
-        return
-    end
     local status = call(svrUser, "userStatus", userid)
     return status
 end
@@ -166,7 +158,7 @@ end
 
 -- 发送消息
 local function send_package(client_fd, pack)
-    skynet.send(gate, "lua", "send", client_fd, pack)
+    skynet.send(svrGate, "lua", "send", client_fd, pack)
 end
 
 -- 发送消息给单个玩家
@@ -407,7 +399,7 @@ function CMD.stop()
 
     for _, v in pairs(players) do
         if not v.isRobot and v.clientFd then
-            skynet.send(gate, "lua", "roomOver", v.clientFd)
+            skynet.send(svrGate, "lua", "roomOver", v.clientFd)
         end
     end
 
@@ -524,5 +516,6 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    gate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
+    svrGate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
+    svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
 end)
