@@ -81,7 +81,8 @@ end
 
 -- 检查房间是否存在
 function CMD.checkHaveRoom(gameid,roomid)
-    return checkHaveRoom(gameid, roomid)
+    local b, room = checkHaveRoom(gameid, roomid)
+    return b
 end
 
 -- 获取游戏

@@ -14,6 +14,7 @@ local userid = 0
 local svrUser = nil
 local svrMatch = nil
 local svrActivity = nil
+local svrGame = nil
 
 -- 发送数据包给客户端
 local function send_package(pack)
@@ -33,7 +34,16 @@ function REQUEST:userRiches(args)
 end
 
 function REQUEST:userStatus(args)
-	return call(svrUser, "userStatus", userid)
+	local status = call(svrUser, "userStatus", userid)
+	local b = call(svrGame, "checkHaveRoom", status.gameid, status.roomid)
+	if not b then
+		status.gameid = 0
+		status.roomid = 0
+		status.status = CONFIG.USER_STATUS.ONLINE
+
+		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid)
+	end
+	return status
 end
 
 function REQUEST:matchJoin(args)
@@ -106,6 +116,8 @@ function CMD.start(conf)
 	svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
 	svrMatch = skynet.uniqueservice(CONFIG.SVR_NAME.MATCH)
 	svrActivity = skynet.uniqueservice(CONFIG.SVR_NAME.ACTIVITY)
+	svrGame = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
 
