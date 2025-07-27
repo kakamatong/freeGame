@@ -119,12 +119,12 @@ end
 
 function logic.sendPlayerAttitude(toseat, seatid, flag)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
-        logic.sendToAllClient("gamePlayerAttitude", {
+        logic.sendToAllClient("playerAtt", {
             seat = seatid,
             att = flag,
         })
     else
-        logic.sendToOneClient(toseat, "gamePlayerAttitude", {
+        logic.sendToOneClient(toseat, "playerAtt", {
             seat = seatid,
             att = flag,
         })
@@ -133,12 +133,12 @@ end
 
 function logic.sendOutHandInfo(toseat, seatid, flag)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
-        logic.sendToAllClient("gameOutHand", {
+        logic.sendToAllClient("outHandInfo", {
             seat = seatid,
             flag = flag,
         })
     else
-        logic.sendToOneClient(toseat, "gameOutHand", {
+        logic.sendToOneClient(toseat, "outHandInfo", {
             seat = seatid,
             flag = flag,
         })
