@@ -163,7 +163,7 @@ local function sendToOneClient(userid, name, data)
     elseif isRobotByUserid(userid) then
         -- 发给ai
         local seat = getPlayerSeat(userid)
-        aiHandler.onMsg(seat, data.type, cjson.decode(data.data))
+        aiHandler.onMsg(seat, data.type, data.data)
     end
 end
 
@@ -246,10 +246,10 @@ local function sendRoomInfo(userid)
         gameid = roomInfo.gameid,
         roomid = roomInfo.roomid,
         playerids = roomInfo.playerids,
-        gameData = roomInfo.gameData
+        gameData = cjson.encode(roomInfo.gameData),
     }
     local msgType = "roomInfo"
-    svrMsg(userid, msgType, info)
+    sendToOneClient(userid, msgType, info)
 end
 
 ------------------------------------------------------------------------------------------------------------ ai消息处理
@@ -457,13 +457,10 @@ local function request(fd, name, args, response)
         log.error("request fd %d not found userid", fd)
         return
     end
-    if name == "call" then
-        local r = clientCall(args.moduleName, args.funcName, userid, cjson.decode(args.args))
-        if response then
-            return response(r)
-        end
-    elseif name == "send" then
-        clientSend(args.moduleName, args.funcName, userid, cjson.decode(args.args))
+    local func = assert(REQUEST[name])
+    local res = func(REQUEST, userid, args)
+    if response then
+        return response(res)
     end
 	
 end

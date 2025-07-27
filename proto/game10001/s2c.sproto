@@ -15,7 +15,7 @@ roomInfo 2 {
     request {
         gameid 0 : integer
         roomid 1 : integer
-        playerid 2 : *integer
+        playerids 2 : *integer
         gameData 3 : string
     }
 }
