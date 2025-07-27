@@ -25,3 +25,17 @@ send 3 {
         args 2 : string
     }
 }
+
+# 客户端准备
+clientReady 4 {
+    request {
+        ready 0 : integer
+    }
+}
+
+# 游戏协议出手
+outHand 5 {
+    request {
+        flag 0 : integer
+    }
+}
