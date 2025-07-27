@@ -163,7 +163,7 @@ end
 
 -- 开始步骤开始游戏
 function logic.startStepStartGame()
-    logic.sendToAllClient("gameStep", {
+    logic.sendToAllClient("stepId", {
         stepid = config.GAME_STEP.START,
     })
 
@@ -183,7 +183,7 @@ end
 
 -- 开始步骤出招
 function logic.startStepOutHand()
-    logic.sendToAllClient("gameStep", {
+    logic.sendToAllClient("stepId", {
         stepid = config.GAME_STEP.OUT_HAND,
     })
 
@@ -302,7 +302,7 @@ end
 function logic.onRelink(seat)
     log.info("onRelink %d", seat)
     local stepid = logic.getStepId()
-    logic.sendToOneClient(seat, "gameStep", {
+    logic.sendToOneClient(seat, "stepId", {
         stepid = stepid,
     })
 
@@ -335,14 +335,14 @@ end
 -- 发送消息给所有玩家
 function logic.sendToAllClient(name, data)
     if logic.roomHandler then
-        logic.roomHandler.svrMsg(0, name, data)
+        logic.roomHandler.logicMsg(0, name, data)
     end
 end
 
 -- 发送消息给单个玩家
 function logic.sendToOneClient(seat, name, data)
     if logic.roomHandler then
-        logic.roomHandler.svrMsg(seat, name, data)
+        logic.roomHandler.logicMsg(seat, name, data)
     end
 end
 
@@ -361,12 +361,6 @@ end
 -- 出招
 function logicHandler.outHand(seatid, args)
     logic.outHand(seatid, args)
-end
-
-function logicHandler.clientMsg(seat, name, data)
-    if name == "gameOutHand" then
-        logic.outHand(seat, data)
-    end
 end
 
 -- 初始化

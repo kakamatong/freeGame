@@ -261,12 +261,12 @@ end
 
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
 -- room接口,发送消息给玩家
-function roomHandler.svrMsg(seat, name, data)
+function roomHandler.logicMsg(seat, name, data)
     if 0 == seat then
-        svrMsg(0, name, data)
+        sendToAllClient(name, data)
     else
         local userid = roomInfo.playerids[seat]
-        svrMsg(userid, name, data)
+        sendToOneClient(userid, name, data)
     end
     
 end
@@ -421,33 +421,9 @@ function REQUEST:clientReady(userid, args)
     end
 end
 
-local function clientCall(moduleName, funcName, userid, args)
-	if moduleName == "room" then
-		local f = assert(REQUEST[funcName])
-        local res ={
-            code = 1,
-            result = cjson.encode(f(REQUEST, userid, args)),
-        }
-		return res
-	elseif moduleName == "logic" then
-        local seat = getPlayerSeat(userid)
-        local data = logicHandler.clientMsg(seat, funcName, args)
-        local res ={
-            code = 1,
-            result = cjson.encode(data),
-        }
-		return res
-	end
-end
-
-local function clientSend(moduleName, funcName, userid, args)
-	if moduleName == "room" then
-		local f = assert(REQUEST[funcName])
-        f(REQUEST, userid, args)
-	elseif moduleName == "logic" then
-        local seat = getPlayerSeat(userid)
-        logicHandler.clientMsg(seat, funcName, args)
-	end
+function REQUEST:outHand(userid, args)
+    local seat = getPlayerSeat(userid)
+    logicHandler.outHand(seat, args)
 end
 
 -- 客户端请求分发
