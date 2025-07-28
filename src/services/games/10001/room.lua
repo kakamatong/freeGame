@@ -173,20 +173,6 @@ local function sendToAllClient(name, data)
     end
 end
 
--- 发送服务消息
-local function svrMsg(userid, msgType, info)
-    local data = {
-        type = msgType or "",
-        data = cjson.encode(info),
-    }
-    if userid == 0 then
-        sendToAllClient("svrMsg", data)
-        return
-    end
-
-    sendToOneClient(userid, "svrMsg", data)
-end
-
 -- 玩家重新连接
 local function relink(userid)
     local seat = getPlayerSeat(userid)
@@ -241,6 +227,17 @@ local function sendRoomInfo(userid)
     }
     local msgType = "roomInfo"
     sendToOneClient(userid, msgType, info)
+end
+
+local function sendPlayerInfo(userid)
+    local data = {}
+    for _, player in pairs(players) do
+        data[player.seat] = player.info
+        data[player.seat].status = player.status
+    end
+
+    local msgType = "playerInfos"
+    sendToOneClient(userid, msgType, {infos = data})
 end
 
 ------------------------------------------------------------------------------------------------------------ ai消息处理
@@ -326,11 +323,13 @@ function CMD.start(data)
         else
             setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid)
         end
+        local info = call(svrUser, "userData", userid)
         players[userid] = {
             userid = userid,
             seat = seat,
             status = status,
             isRobot = bRobot,
+            info = info,
         }
     end
     gameManager = data.gameManager
@@ -406,6 +405,7 @@ function REQUEST:clientReady(userid, args)
         players[userid].status = config.PLAYER_STATUS.PLAYING
     end
     sendRoomInfo(userid)
+    sendPlayerInfo(userid)
     if roomInfo.gameStatus == config.GAME_STATUS.START then
         relink(userid)
     elseif roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then

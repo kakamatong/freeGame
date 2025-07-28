@@ -65,3 +65,22 @@ roomEnd 7 {
         code 0 : integer
     }
 }
+
+.PlayerInfo {
+    userid 0 : integer
+    nickname 1 : string
+    headurl 2 : string
+    sex 3 : integer
+    province 4 : string
+    city 5 : string
+    ip 6 : string
+    status 7 : integer
+    ext 8 : string
+}
+
+# 玩家信息 
+playerInfos 8 {
+    request {
+        infos 0 : *PlayerInfo
+    }
+}
