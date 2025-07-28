@@ -205,7 +205,7 @@ local function roomEnd(code)
 
     if roomInfo.canDestroy then
         --gameManager.destroyGame(gameid, roomid)
-        svrMsg(0, "roomEnd", {code=code})
+        sendToAllClient("roomEnd", {code=code})
         local data = {
             gameid = roomInfo.gameid,
             roomid = roomInfo.roomid,

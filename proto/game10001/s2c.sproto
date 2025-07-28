@@ -49,11 +49,19 @@ outHandInfo 5 {
     endResult 2 : integer
 }
 
+# 一轮游戏结果
 roundResult 6 {
     request {
         roundNum 0 : integer
         outHandNum 1 : integer
         continue 2 : integer
         info 3 : *ResultInfo
+    }
+}
+
+# 房间结束
+roomEnd 7 {
+    request {
+        code 0 : integer
     }
 }
