@@ -53,4 +53,12 @@ function dbRedis.unlock(redis, key)
     return redis:del(key)
 end
 
+function dbRedis.zadd(redis, key, score, member)
+    return redis:zadd(key, score, member)
+end
+
+function dbRedis.zscore(redis, key, member)
+    return redis:zscore(key, member)
+end
+
 return dbRedis

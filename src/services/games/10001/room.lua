@@ -262,20 +262,30 @@ end
 
 -- room接口,游戏结果
 function roomHandler.gameResult(data)
+    local day = os.date("%Y%m%d")
+    local rankKey = "game10001DayRank:" .. day
     for k, v in pairs(data) do
         local userid = roomInfo.playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
         local addType = "other"
+        local score = 0
         if v.endResult == 1 then
             flag = config.RESULT_TYPE.WIN
             addType = "win"
+            score = 4
         elseif v.endResult == 2 then
             flag = config.RESULT_TYPE.DRAW
             addType = "draw"
+            score = 1
         else 
             flag = config.RESULT_TYPE.LOSE
             addType = "lose"
         end
+        local totalScore = call(svrDB, "dbRedis", "zscore", rankKey, userid) or 0
+        totalScore = totalScore + score
+        call(svrDB, "dbRedis", "zadd", rankKey, totalScore, userid)
+        call(svrDB, "dbRedis", "expire", rankKey, 86400 * 7)
+
         local tmp = {
             playerids = roomInfo.playerids,
             data = data,
