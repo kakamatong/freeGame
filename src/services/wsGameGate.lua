@@ -188,4 +188,4 @@ function handler.command(cmd, source, ...)
 	return f(source, ...)
 end
 
-wsGateserver.start(handler, CONFIG.SVR_NAME.WS_GAME_GATE)
+wsGateserver.start(handler, CONFIG.SVR_NAME.GAME_GATE)

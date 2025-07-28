@@ -156,6 +156,7 @@ function wsGateserver.start(handler, newName)
 			end
 		end)
 		local svrName = newName or name
+		log.info("wsGateserver start %s", svrName)
 		skynet.register(svrName)
 	end
 

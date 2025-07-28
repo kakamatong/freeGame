@@ -33,9 +33,6 @@ skynet.start(function()
 	-- 启动机器人服务
 	skynet.newservice("robot/server")
 
-	-- 启动匹配服务
-	skynet.newservice("match/server")
-
 	-- 启动WebSocket登录服务
 	skynet.newservice("wsLogind")
 
@@ -46,6 +43,9 @@ skynet.start(function()
 	local wswatchdog = skynet.newservice("wsWatchdog")
 	local addr,port = skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
 	log.info("Wswatchdog listen on " .. addr .. ":" .. port)
+
+	-- 启动匹配服务
+	skynet.newservice("match/server")
 	-- 启动完成后退出主服务
 	skynet.exit()
 end)

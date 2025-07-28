@@ -233,4 +233,4 @@ function handler.command(cmd, source, ...)
 	return f(source, ...)
 end
 
-wsGateserver.start(handler, CONFIG.SVR_NAME.WS_GATE)
+wsGateserver.start(handler, CONFIG.SVR_NAME.GATE)
