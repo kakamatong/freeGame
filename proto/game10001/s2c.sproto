@@ -35,9 +35,25 @@ playerAtt 4 {
     }
 }
 
+# 玩家出招信息
 outHandInfo 5 {
     request {
         seat 0 : integer
         flag 1 : integer
+    }
+}
+
+.ResultInfo {
+    seat 0 : integer
+    outHand 1 : integer
+    endResult 2 : integer
+}
+
+roundResult 6 {
+    request {
+        roundNum 0 : integer
+        outHandNum 1 : integer
+        continue 2 : integer
+        info 3 : *ResultInfo
     }
 }

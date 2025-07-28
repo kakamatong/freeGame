@@ -114,7 +114,7 @@ function logic.sendResult(result)
         info = playerResult,
     }
 
-    logic.sendToAllClient("gameRoundResult", info)
+    logic.sendToAllClient("roundResult", info)
 end
 
 function logic.sendPlayerAttitude(toseat, seatid, flag)
