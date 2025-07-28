@@ -61,4 +61,12 @@ function dbRedis.zscore(redis, key, member)
     return redis:zscore(key, member)
 end
 
+function dbRedis.zrevrange(redis, key, start, stop)
+    return redis:zrevrange(key, start, stop)
+end
+
+function dbRedis.zrevrank(redis, key, member)
+    return redis:zrevrank(key, member)
+end
+
 return dbRedis

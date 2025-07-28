@@ -5,33 +5,22 @@ local log = require "log"
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
+local svrDB = nil
+local svrGate = nil
 
 local function sendSvrMsg(userid, typeName, data)
 	local pack = send_request(typeName, data, 1)
-    local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
-    if not gate then
-        return
-    end
-    skynet.send(gate, "lua", "sendSvrMsg", userid, pack)
-end
-
--- 获取dbserver
-function tools.getDB()
-    local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
-	assert(dbserver, "dbserver not started")
-	return dbserver
+    skynet.send(svrGate, "lua", "sendSvrMsg", userid, pack)
 end
 
 -- 调用redis
 function tools.callRedis(func,...)
-    local db = tools.getDB()
-    return skynet.call(db, "lua", "dbRedis", func, ...)
+    return skynet.call(svrDB, "lua", "dbRedis", func, ...)
 end
 
 -- 调用mysql
 function tools.callMysql(func,...)
-    local db = tools.getDB()
-    return skynet.call(db, "lua", "db", func, ...)
+    return skynet.call(svrDB, "lua", "db", func, ...)
 end
 
 -- 下发财富变更信息
@@ -43,5 +32,10 @@ function tools.reportAward(userid, richTypes, richNums, allRichNums)
     }
     sendSvrMsg(userid, "updateRich", data)
 end 
+
+function tools.start()
+    svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
+    svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+end
 
 return tools

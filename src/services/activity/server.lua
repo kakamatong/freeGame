@@ -2,8 +2,9 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 require "skynet.manager"
+local tools = require "activity.tools"
 local function start()
-    
+    tools.start()
 end
 
 function CMD.clientCall(moduleName, funcName, userid, args)
