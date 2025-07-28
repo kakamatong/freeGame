@@ -72,12 +72,7 @@ end
 
 -- 用户游戏记录
 local function pushUserGameRecords(userid, gameid, addType, addNums)
-    
-	if not dbserver then
-		log.error("wsgate login error: dbserver not started")
-		return
-	end
-    skynet.send(dbserver, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
+    skynet.send(svrDB, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
@@ -206,11 +201,7 @@ local function roomEnd(code)
     if roomInfo.canDestroy then
         --gameManager.destroyGame(gameid, roomid)
         sendToAllClient("roomEnd", {code=code})
-        local data = {
-            gameid = roomInfo.gameid,
-            roomid = roomInfo.roomid,
-        }
-        send(gameManager, "destroyGame", data)
+        send(gameManager, "destroyGame", roomInfo.gameid, roomInfo.roomid)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
                 setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0)
