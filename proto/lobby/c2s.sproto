@@ -105,3 +105,25 @@ callActivityFunc 8 {
         result 1 : string
     }
 }
+
+# 开启测试模式
+matchTestStart 9 {
+    request {
+        code 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 关闭测试模式
+matchTestStop 10 {
+    request {
+        code 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

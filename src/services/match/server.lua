@@ -30,6 +30,14 @@ function CMD.matchOnSure(...)
     return match.onSure(...)
 end
 
+function CMD.startTest()
+    return match.startTest()
+end
+
+function CMD.stopTest()
+    return match.stopTest()
+end
+
 -----------------------------------------------------------------------------------------
 
 skynet.start(function()

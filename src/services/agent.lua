@@ -58,6 +58,14 @@ function REQUEST:matchOnSure(args)
 	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
 end
 
+function REQUEST:matchTestStart(args)
+	return call(svrMatch, "startTest")
+end
+
+function REQUEST:matchTestStop(args)
+	return call(svrMatch, "stopTest")
+end
+
 function REQUEST:callActivityFunc(args)
 	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
