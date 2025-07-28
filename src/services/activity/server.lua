@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
-
+require "skynet.manager"
 local function start()
     
 end
@@ -31,6 +31,6 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
 
-    
+    skynet.register(CONFIG.SVR_NAME.ACTIVITY)
     start()
 end)

@@ -2,11 +2,12 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 local dbSvr = nil
+require "skynet.manager"
 -- 返回结果
 -- 获取数据库服务句柄
 
 local function start()
-    dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
 end
 
 function CMD.userData(userid)
@@ -48,5 +49,6 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
+    skynet.register(CONFIG.SVR_NAME.USER)
     start()
 end)

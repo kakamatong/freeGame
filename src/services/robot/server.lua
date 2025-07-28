@@ -5,11 +5,11 @@ local config = require "robot.config"
 local robotDatas = {}
 local freeRobots = {}
 local usingRobots = {}
-local svr = {}
+require "skynet.manager"
 local bload = false
 local dbSvr = nil
 local function start()
-    dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
 end
 
 -- 获取空闲机器人id
@@ -74,6 +74,6 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
-
+    skynet.register(CONFIG.SVR_NAME.ROBOT)
     start()
 end)

@@ -4,6 +4,7 @@ local redis = require "skynet.db.redis"
 local log = require "log"
 local CMD = {}
 local name = "db"
+require "skynet.manager"
 local gConfig = CONFIG
 local dbs = {
 }
@@ -89,6 +90,6 @@ skynet.start(function()
             return skynet.ret(skynet.pack(f(db,...)))
         end
     end)
-
+    skynet.register(CONFIG.SVR_NAME.DB)
     start()
 end)

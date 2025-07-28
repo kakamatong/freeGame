@@ -115,7 +115,7 @@ local function login(conf)
             skynet.ret(skynet.pack(conf.command_handler(command, ...)))
         end)
 
-        local name = "." .. (conf.name or 'wslogin')
+        local name = conf.name or '.wslogin'
         skynet.register(name)
     end) 
 end

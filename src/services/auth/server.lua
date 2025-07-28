@@ -1,9 +1,10 @@
 local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
-local dbSvr =nil
+local dbSvr = nil
+require "skynet.manager"
 local function start()
-    dbSvr = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
 end
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
@@ -80,5 +81,6 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
+    skynet.register(CONFIG.SVR_NAME.AUTH)
     start()
 end)

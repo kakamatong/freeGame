@@ -183,10 +183,10 @@ function matchOnSure.startOnSure(gameid, queueid, playerids, data)
 end
 
 function matchOnSure.start()
-    svrRobot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
-    svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    svrGate = skynet.uniqueservice(CONFIG.SVR_NAME.GATE)
-    svrGame = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+    svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
+    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+    svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
+    svrGame = skynet.localname(CONFIG.SVR_NAME.GAME)
 end
 
 return matchOnSure

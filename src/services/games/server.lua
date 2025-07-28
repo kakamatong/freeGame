@@ -6,7 +6,7 @@ local roomid = os.time() * 100000
 local config = require "games.config"
 local sharedata = require "skynet.sharedata"
 local parser = require "sprotoparser"
-
+require "skynet.manager"
 local function loadfile(filename)
     local f = assert(io.open(filename), "Can't open sproto file")
     local data = f:read "a"
@@ -119,6 +119,6 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
 
-    
+    skynet.register(CONFIG.SVR_NAME.GAME)
     start()
 end)

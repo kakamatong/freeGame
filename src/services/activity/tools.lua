@@ -8,7 +8,7 @@ local send_request = host:attach(sprotoloader.load(2))
 
 local function sendSvrMsg(userid, typeName, data)
 	local pack = send_request(typeName, data, 1)
-    local gate = skynet.uniqueservice(CONFIG.SVR_NAME.GATE)
+    local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
     if not gate then
         return
     end
@@ -17,7 +17,7 @@ end
 
 -- 获取dbserver
 function tools.getDB()
-    local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	assert(dbserver, "dbserver not started")
 	return dbserver
 end

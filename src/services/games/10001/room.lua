@@ -372,7 +372,7 @@ end
 function CMD.stop()
     -- 清理玩家
     if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
-        local robot = skynet.uniqueservice(CONFIG.SVR_NAME.ROBOT)
+        local robot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
         if robot then
             send(robot, "returnRobots", roomInfo.gameData.robots)
         end
@@ -470,7 +470,7 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    svrGate = skynet.uniqueservice(CONFIG.SVR_NAME.GAME_GATE)
-    svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-    svrDB = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+    svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
+    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+    svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)

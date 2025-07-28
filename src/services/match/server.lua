@@ -5,7 +5,7 @@ local log = require "log"
 local CMD = {}
 local dTime = 1          -- 匹配检查间隔（秒）
 local match = require("match.match")
-
+require "skynet.manager"
 -- 启动匹配服务，定时检查所有队列
 local function start()
     log.info("match start")
@@ -37,5 +37,6 @@ skynet.start(function()
 		local f = CMD[command]
 		skynet.ret(skynet.pack(f(...)))
 	end)
+    skynet.register(CONFIG.SVR_NAME.MATCH)
     start()
 end)

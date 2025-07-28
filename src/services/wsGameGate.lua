@@ -42,7 +42,7 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAME)
 	if not svrGameManager then
 		return false
 	end
@@ -53,7 +53,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.uniqueservice(CONFIG.SVR_NAME.AUTH)
+	local svrAuth = skynet.localname(CONFIG.SVR_NAME.AUTH)
 	if not svrAuth then
 		return false
 	end
@@ -62,7 +62,7 @@ local function auth(data)
 end
 
 local function connectGame(data)
-	local svrGameManager = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAME)
 	if not svrGameManager then
 		return false
 	end
@@ -188,4 +188,4 @@ function handler.command(cmd, source, ...)
 	return f(source, ...)
 end
 
-wsGateserver.start(handler, "wsGameGateserver")
+wsGateserver.start(handler, CONFIG.SVR_NAME.WS_GAME_GATE)

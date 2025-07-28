@@ -14,7 +14,7 @@ skynet.register_protocol {
 
 local function register_handler(name)
 	log.info("wsgate register_handler")
-	local loginservice = skynet.uniqueservice(CONFIG.SVR_NAME.LOGIN)
+	local loginservice = skynet.localname(CONFIG.SVR_NAME.LOGIN)
 	if loginservice then
 		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
 	else
@@ -31,7 +31,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.uniqueservice(CONFIG.SVR_NAME.AUTH)
+	local svrAuth = skynet.localname(CONFIG.SVR_NAME.AUTH)
 	if not svrAuth then
 		return false
 	end
@@ -192,7 +192,7 @@ end
 
 function CMD.login(source, userid, secret,loginType)
 	-- todo: 将uid和secret写入数据库
-	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+	local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -233,4 +233,4 @@ function handler.command(cmd, source, ...)
 	return f(source, ...)
 end
 
-wsGateserver.start(handler, "wsGateserver")
+wsGateserver.start(handler, CONFIG.SVR_NAME.WS_GATE)

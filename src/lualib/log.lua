@@ -47,7 +47,7 @@ local function send_log(level, ...)
         local filename = info.short_src
 		str = string.format("[%s:%d] %s", filename, info.currentline, str)
     end
-    local logger = skynet.uniqueservice("logger")
+    local logger = skynet.localname(".logger")
     skynet.send(logger, "lua", "logging", LOG_LEVEL_DESC[level], str)
 end
 

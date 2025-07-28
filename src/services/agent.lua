@@ -113,10 +113,10 @@ function CMD.start(conf)
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
 
-	svrUser = skynet.uniqueservice(CONFIG.SVR_NAME.USER)
-	svrMatch = skynet.uniqueservice(CONFIG.SVR_NAME.MATCH)
-	svrActivity = skynet.uniqueservice(CONFIG.SVR_NAME.ACTIVITY)
-	svrGame = skynet.uniqueservice(CONFIG.SVR_NAME.GAME)
+	svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+	svrMatch = skynet.localname(CONFIG.SVR_NAME.MATCH)
+	svrActivity = skynet.localname(CONFIG.SVR_NAME.ACTIVITY)
+	svrGame = skynet.localname(CONFIG.SVR_NAME.GAME)
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end

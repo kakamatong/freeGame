@@ -11,7 +11,7 @@ local server = {
 	host = gConfig.WS_ATTH_LISTEN.host,           -- 监听地址
 	port = gConfig.WS_ATTH_LISTEN.port,                -- 监听端口
 	multilogin = gConfig.WS_ATTH_LISTEN.multilogin,         -- 是否允许多端登录
-	name = "ws_login_master",  -- 服务名
+	name = CONFIG.SVR_NAME.LOGIN,  -- 服务名
 }
 
 local server_list = {}    -- 注册的网关服务器列表
@@ -22,7 +22,7 @@ local bRegister = false
 local register = "register"
 
 local function pushLog(username, ip, loginType, status, ext)
-	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+	local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -31,7 +31,7 @@ local function pushLog(username, ip, loginType, status, ext)
 end
 
 local function registerUser(user, password, loginType, server, ip)
-	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+	local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
@@ -51,7 +51,7 @@ function server.login_handler(token, ip)
 	loginType = crypt.base64decode(loginType)
 	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
 
-	local dbserver = skynet.uniqueservice(CONFIG.SVR_NAME.DB)
+	local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	if not dbserver then
 		log.error("wsgate login error: dbserver not started")
 		return
