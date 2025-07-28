@@ -119,6 +119,6 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
 
-    skynet.register(CONFIG.SVR_NAME.GAME)
+    skynet.register(CONFIG.SVR_NAME.GAMES)
     start()
 end)

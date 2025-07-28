@@ -42,7 +42,7 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAME)
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
 	if not svrGameManager then
 		return false
 	end
@@ -62,7 +62,7 @@ local function auth(data)
 end
 
 local function connectGame(data)
-	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAME)
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
 	if not svrGameManager then
 		return false
 	end

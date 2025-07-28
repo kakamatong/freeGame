@@ -116,7 +116,7 @@ function CMD.start(conf)
 	svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
 	svrMatch = skynet.localname(CONFIG.SVR_NAME.MATCH)
 	svrActivity = skynet.localname(CONFIG.SVR_NAME.ACTIVITY)
-	svrGame = skynet.localname(CONFIG.SVR_NAME.GAME)
+	svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end

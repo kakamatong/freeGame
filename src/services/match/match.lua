@@ -249,7 +249,7 @@ function match.tick()
 end
 
 function match.start()
-    svrGame = skynet.localname(CONFIG.SVR_NAME.GAME)
+    svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
     svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
     svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
     matchOnSure.start()

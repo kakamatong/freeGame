@@ -186,7 +186,7 @@ function matchOnSure.start()
     svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
     svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
     svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
-    svrGame = skynet.localname(CONFIG.SVR_NAME.GAME)
+    svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
 end
 
 return matchOnSure
