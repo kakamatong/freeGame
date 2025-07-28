@@ -37,7 +37,7 @@ function aiLogic.dealGameOutHand(seat)
         local backData = {
             flag = flags[math.random(1, #flags)]
         }
-        aiLogic.roomHandlerAi.onAiMsg(seat, "gameOutHand", backData)
+        aiLogic.roomHandlerAi.onAiMsg(seat, "outHand", backData)
     end
 end
 
@@ -65,12 +65,12 @@ end
 
 ------------------------------------------------------------------------------------------------------------ 处理协议
 -- 收到阶段消息
-function XY.gameStep(seat, data)
+function XY.stepId(seat, data)
     aiLogic.startStep(seat, data.stepid)
 end
 
 -- 收到玩家态度消息
-function XY.gamePlayerAttitude(seat, data)
+function XY.playerAtt(seat, data)
     log.info("XY.reportGamePlayerAttitude", seat, data)
     if seat == data.seat then
         local uData = aiLogic.data[seat]

@@ -163,7 +163,7 @@ local function sendToOneClient(userid, name, data)
     elseif isRobotByUserid(userid) then
         -- 发给ai
         local seat = getPlayerSeat(userid)
-        aiHandler.onMsg(seat, data.type, data.data)
+        aiHandler.onMsg(seat, name, data)
     end
 end
 
@@ -255,8 +255,9 @@ end
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
-    log.info("roomHandlerAi.onMsg %d, %s, %s", seat, name, UTILS.tableToString(data))
-    logicHandler.clientMsg(seat, name, data)
+    log.info("roomHandlerAi.onAiMsg %d, %s, %s", seat, name, UTILS.tableToString(data))
+    local func = assert(logicHandler[name], "roomHandlerAi.onAiMsg not found")
+    func(seat, data)
 end
 
 ------------------------------------------------------------------------------------------------------------ room接口，提供给logic调用
