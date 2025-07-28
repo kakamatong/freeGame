@@ -63,5 +63,5 @@ skynet.start(function()
 		end
 	end)
 
-	gate = skynet.localname(CONFIG.SVR_NAME.GATE)
+	gate = skynet.newservice("wsGate")
 end)

@@ -13,7 +13,7 @@ local log = require "log"
 local queue -- 消息队列
 -- 命令表，带有垃圾回收功能
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
-local name = "wsGateserver"
+local name = ".wsGateserver"
 local connection = {} -- 连接状态表
 -- true : 已连接
 -- nil : 已关闭
