@@ -33,7 +33,7 @@ local PLAYER_ATTITUDE = {
 
 local STIP_TIME_LEN = {
     [GAME_STEP.START] = 1,
-    [GAME_STEP.OUT_HAND] = 30,
+    [GAME_STEP.OUT_HAND] = 10,
     [GAME_STEP.ROUND_END] = 1,
     [GAME_STEP.GAME_END] = 0,
 }

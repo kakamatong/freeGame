@@ -197,9 +197,27 @@ function logic.stopStepOutHand()
 
 end
 
+function logic.randOutHand()
+    local flag = math.random(0, 2)
+    if flag == 0 then
+        return config.HAND_FLAG.ROCK
+    elseif flag == 1 then
+        return config.HAND_FLAG.PAPER
+    else
+        return config.HAND_FLAG.SCISSORS
+    end
+end
+
 -- 步骤出招超时
 function logic.onStepOutHandTimeout()
-
+    for seat = 1, logic.playerNum do
+        if not logic.outHandInfo[seat] then
+            local data = {
+                flag = logic.randOutHand()
+            }
+            logic.outHand(seat,data)
+        end
+    end
 end
 
 -- 开始一轮结束步骤
