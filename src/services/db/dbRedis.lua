@@ -41,6 +41,10 @@ function dbRedis.get(redis, key)
     return redis:get(key)
 end
 
+function dbRedis.exists(redis, key)
+    return redis:exists(key)
+end
+
 function dbRedis.del(redis, key)
     return redis:del(key)
 end

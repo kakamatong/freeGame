@@ -69,15 +69,6 @@ _G.UTILS = {
         
         return str
     end,
-
-    result=function(info)
-        if info then
-            return {code = 1, result = cjson.encode(info)}
-        else
-            return {code = 0, result = "调用接口失败"}
-        end
-    end
-
 }
 
 -- 性能统计相关工具

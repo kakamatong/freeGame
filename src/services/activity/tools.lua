@@ -14,6 +14,18 @@ local function sendSvrMsg(userid, typeName, data)
     skynet.send(svrGate, "lua", "sendSvrMsg", userid, pack)
 end
 
+function tools.result(info)
+    if info then
+        if type(info) == "table" then
+            return {code = 1, result = cjson.encode(info)}
+        else
+            return {code = 1, result = info}
+        end
+    else
+        return {code = 0, result = "调用接口失败"}
+    end
+end
+
 -- 调用redis
 function tools.callRedis(func,...)
     return skynet.call(svrDB, "lua", "dbRedis", func, ...)
