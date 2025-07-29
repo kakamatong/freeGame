@@ -1,10 +1,10 @@
 local gameRank = {}
 local tools = require "activity.tools"
+
 function gameRank.getRank(userid)
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
-    tools.callRedis("zrevrank", rankKey, userid)
-    return rank
+    return tools.callRedis("zrevrank", rankKey, userid)
 end
 
 function gameRank.getRankList()
