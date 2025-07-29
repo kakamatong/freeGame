@@ -6,7 +6,11 @@
 .vscode
 game.pid
 src/config/gameConfig.lua
+skynetLobby.pid
+skynetGame.pid
 skynet.pid
 /log/*
+/logLobby/*
+/logGame/*
 /output/*
 /output.zip
