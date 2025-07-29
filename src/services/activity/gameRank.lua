@@ -34,7 +34,8 @@ end
 function gameRank.getRank(userid)
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
-    local rank = tools.callRedis("zrevrank", rankKey, userid)
+    local rank = tools.callRedis("zrevrank", rankKey, userid) or 999999
+    log.info("gameRank.getRank userid:%s rank:%s", userid, rank)
     return tools.result(rank)
 end
 

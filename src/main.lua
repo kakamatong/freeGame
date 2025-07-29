@@ -31,9 +31,6 @@ skynet.start(function()
 	-- 启动机器人服务
 	skynet.newservice("robot/server")
 
-	-- 签到服务
-	skynet.newservice("activity/server")
-
 	-- 启动WebSocket登录服务
 	skynet.newservice("wsLogind")
 
@@ -47,6 +44,8 @@ skynet.start(function()
 
 	-- 启动匹配服务
 	skynet.newservice("match/server")
+	-- 签到服务
+	skynet.newservice("activity/server")
 	-- 启动完成后退出主服务
 	skynet.exit()
 end)

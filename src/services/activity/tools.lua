@@ -16,7 +16,7 @@ end
 
 function tools.result(info)
     if info then
-        if type(info) == "table" then
+        if type(info) == "table" or type(info) == "number" then
             return {code = 1, result = cjson.encode(info)}
         else
             return {code = 1, result = info}
