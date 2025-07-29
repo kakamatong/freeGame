@@ -5,6 +5,9 @@ local log = require "log"
 local gConfig = CONFIG
 
 local function startService(name)
+	if name == "" then
+		return
+	end
 	local svr = skynet.newservice(name)
 	if name == "wsGameGate" then
 		skynet.call(svr, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
@@ -26,6 +29,7 @@ skynet.start(function()
 
 	-- 启动需要按顺序，否则会出现获取不到服务的情况
 	local strSvrList = skynet.getenv("svrList")
+	log.info("----strSvrList: %s", strSvrList)
 	local svrList = UTILS.string_split(strSvrList, ";")
 	for _, svr in ipairs(svrList) do
 		startService(svr)
