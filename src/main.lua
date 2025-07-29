@@ -25,35 +25,11 @@ skynet.start(function()
 	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
 	-- 启动需要按顺序，否则会出现获取不到服务的情况
-	-- 启动数据库服务
-	skynet.newservice("db/server")
-
-	-- 启动认证服务
-	skynet.newservice("auth/server")
-
-	-- 用户服务
-	skynet.newservice("user/server")
-
-	-- 启动游戏服务
-	skynet.newservice("games/server")
-
-	-- 启动机器人服务
-	skynet.newservice("robot/server")
-
-	-- 启动WebSocket登录服务
-	skynet.newservice("wsLogind")
-
-	local gameGate = skynet.newservice("wsGameGate")
-	skynet.call(gameGate, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
-
-	-- 启动WebSocket游戏网关服务器
-	local wswatchdog = skynet.newservice("wsWatchdog")
-	skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
-
-	-- 启动匹配服务
-	skynet.newservice("match/server")
-	-- 签到服务
-	skynet.newservice("activity/server")
+	local strSvrList = skynet.getenv("svrList")
+	local svrList = UTILS.string_split(strSvrList, ";")
+	for _, svr in ipairs(svrList) do
+		startService(svr)
+	end
 	-- 启动完成后退出主服务
 	skynet.exit()
 end)

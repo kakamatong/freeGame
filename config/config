@@ -17,3 +17,4 @@ standalone = "0.0.0.0:2013"
 -- snax_interface_g = "snax_g"
 cpath = root.."skynet/cservice/?.so"
 --daemon = "./skynet.pid" -- 启动服务时，会生成一个 skynet.pid 文件，用于保存服务进程的 PID， 并脱离控制台
+svrList = "db/server;auth/server;user/server;games/server;robot/server;wsLogind;wsGameGate;wsWatchdog;match/server;activity/server"
