@@ -1,9 +1,18 @@
 -- main.lua
 -- 游戏服务器主入口，负责启动各个核心服务
 local skynet = require "skynet"
-local sprotoloader = require "sprotoloader"
 local log = require "log"
 local gConfig = CONFIG
+
+local function startService(name)
+	local svr = skynet.newservice(name)
+	if name == "wsGameGate" then
+		skynet.call(svr, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
+	elseif name == "wsWatchdog" then
+		skynet.call(svr, "lua", "start", gConfig.WS_GATE_LISTEN)
+	end
+end
+
 skynet.start(function()
 	-- 启动协议加载服务（用于sproto协议）
 	skynet.newservice("protoloader")
@@ -39,8 +48,7 @@ skynet.start(function()
 
 	-- 启动WebSocket游戏网关服务器
 	local wswatchdog = skynet.newservice("wsWatchdog")
-	local addr,port = skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
-	log.info("Wswatchdog listen on " .. addr .. ":" .. port)
+	skynet.call(wswatchdog, "lua", "start", gConfig.WS_GATE_LISTEN)
 
 	-- 启动匹配服务
 	skynet.newservice("match/server")
