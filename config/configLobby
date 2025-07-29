@@ -8,6 +8,7 @@ logservice = "snlua"  -- 现在日志服务用 Lua 实现
 logpath    = "./logLobby/" -- 日志输出目录
 loggroup   = "skynet"   -- 日志文件分组名
 
+debugConsolePort = 8000
 harbor = 1
 address = "127.0.0.1:2526"
 master = "127.0.0.1:2013"

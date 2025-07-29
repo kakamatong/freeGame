@@ -25,7 +25,8 @@ skynet.start(function()
 	end
 	-- 启动调试控制台，监听8000端口
 	--skynet.newservice("debug_console","0.0.0.0",8000)
-	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
+	local consolePort = skynet.getenv("debugConsolePort")
+	skynet.newservice("debug_console",consolePort)
 
 	-- 启动需要按顺序，否则会出现获取不到服务的情况
 	local strSvrList = skynet.getenv("svrList")

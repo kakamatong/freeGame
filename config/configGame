@@ -8,7 +8,8 @@ logservice = "snlua"  -- 现在日志服务用 Lua 实现
 logpath    = "./logGame/" -- 日志输出目录
 loggroup   = "skynet"   -- 日志文件分组名
 
-harbor = 1
+debugConsolePort = 8001
+harbor = 2
 address = "127.0.0.1:2527"
 master = "127.0.0.1:2013"
 start = "main"	-- main script
