@@ -15,14 +15,12 @@ skynet.start(function()
 	--skynet.newservice("debug_console","0.0.0.0",8000)
 	skynet.newservice("debug_console",gConfig.DEBUG_CONSOLE_PORT)
 
+	-- 启动需要按顺序，否则会出现获取不到服务的情况
 	-- 启动数据库服务
 	skynet.newservice("db/server")
 
 	-- 启动认证服务
 	skynet.newservice("auth/server")
-
-	-- 签到服务
-	skynet.newservice("activity/server")
 
 	-- 用户服务
 	skynet.newservice("user/server")
@@ -32,6 +30,9 @@ skynet.start(function()
 
 	-- 启动机器人服务
 	skynet.newservice("robot/server")
+
+	-- 签到服务
+	skynet.newservice("activity/server")
 
 	-- 启动WebSocket登录服务
 	skynet.newservice("wsLogind")

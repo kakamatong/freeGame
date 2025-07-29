@@ -7,6 +7,7 @@ local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 local svrDB = nil
 local svrGate = nil
+local svrUser = nil
 
 local function sendSvrMsg(userid, typeName, data)
 	local pack = send_request(typeName, data, 1)
@@ -33,9 +34,14 @@ function tools.reportAward(userid, richTypes, richNums, allRichNums)
     sendSvrMsg(userid, "updateRich", data)
 end 
 
+function tools.userData(userid)
+    return skynet.call(svrUser, "lua", "userData", userid)
+end
+
 function tools.start()
     svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
     svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
 end
 
 return tools
