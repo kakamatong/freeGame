@@ -251,7 +251,7 @@ end
 
 function match.start()
     svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
-    svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
+    svrRobot = cluster.proxy("robot@robot")
     svrUser = cluster.proxy("lobby@user")
     matchOnSure.start()
 end

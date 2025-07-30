@@ -184,7 +184,7 @@ function matchOnSure.startOnSure(gameid, queueid, playerids, data)
 end
 
 function matchOnSure.start()
-    svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
+    svrRobot = cluster.proxy("robot@robot")
     svrUser = cluster.proxy("lobby@user")
     svrGate = cluster.proxy("gate@gate")
     svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
