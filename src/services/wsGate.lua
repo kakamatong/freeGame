@@ -7,6 +7,7 @@ local watchdog
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
 local log = require "log"
+local cluster = require "skynet.cluster"
 skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
@@ -14,9 +15,10 @@ skynet.register_protocol {
 
 local function register_handler(name)
 	log.info("wsgate register_handler")
-	local loginservice = skynet.localname(CONFIG.SVR_NAME.LOGIN)
+	--local loginservice = skynet.localname(CONFIG.SVR_NAME.LOGIN)
+	local loginservice = cluster.proxy("login@login")
 	if loginservice then
-		skynet.call(loginservice, "lua", "register_gate", name, skynet.self())
+		skynet.call(loginservice, "lua", "register_gate", name, "gate")
 	else
 		log.error("wsgate register_handler error")
 	end

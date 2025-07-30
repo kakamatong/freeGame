@@ -5,6 +5,7 @@ local crypt = require "skynet.crypt"
 local skynet = require "skynet"
 local log = require "log"
 local md5 =	require	"md5"
+local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 -- 服务器配置信息
 local server = {
@@ -89,6 +90,7 @@ end
 function server.login_after_handler(server, userid, secret, loginType)
 	log.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local gameserver = assert(server_list[server], "Unknown server")
+
 	-- 只允许一个用户在线
 	-- local last = user_online[numid]
 	-- if last then
@@ -97,8 +99,8 @@ function server.login_after_handler(server, userid, secret, loginType)
 	-- if user_online[numid] then
 	-- 	error(string.format("user %d is already online", numid))
 	-- end
-
-	local subid = tostring(skynet.call(gameserver, "lua", "login", userid, crypt.hexencode(secret), loginType))
+	local proxy = cluster.proxy(gameserver.."@gate")
+	local subid = tostring(skynet.call(proxy, "lua", "login", userid, crypt.hexencode(secret), loginType))
 	-- user_online[numid] = { address = gameserver, subid = subid , secret = crypt.hexencode(secret)}
 	return subid
 end
