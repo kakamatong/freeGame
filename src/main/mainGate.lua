@@ -13,12 +13,12 @@ skynet.start(function()
 		local console = skynet.newservice("console")
 	end
 	-- 启动调试控制台，监听8000端口
-	-- local consolePort = skynet.getenv("debugConsolePort")
-	-- skynet.newservice("debug_console",consolePort)
+	local consolePort = skynet.getenv("debugConsolePort")
+	skynet.newservice("debug_console",consolePort)
 
 	skynet.newservice("db/server")
 	skynet.newservice("auth/server")
-	
+
 	local svr = skynet.newservice("wsWatchdog")
 	skynet.call(svr, "lua", "start", gConfig.WS_GATE_LISTEN)
 	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)

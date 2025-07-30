@@ -13,8 +13,8 @@ skynet.start(function()
 		local console = skynet.newservice("console")
 	end
 	-- 启动调试控制台，监听8000端口
-	-- local consolePort = skynet.getenv("debugConsolePort")
-	-- skynet.newservice("debug_console",consolePort)
+	local consolePort = skynet.getenv("debugConsolePort")
+	skynet.newservice("debug_console",consolePort)
 
 	skynet.newservice("db/server")
 	skynet.newservice("auth/server")
