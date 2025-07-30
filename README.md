@@ -1,5 +1,5 @@
 # freeGame
-基于skynet的游戏服务端
+基于skynet的游戏服务端,main_oneNode 分支是单节点模式
 
 ### skynet
 编译需要修改skynet里面的makefile内容，修改如下，增加了cjon库，可以参考根目录/build/下面的makefile
