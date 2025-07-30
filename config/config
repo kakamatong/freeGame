@@ -9,13 +9,10 @@ logpath    = "./log/" -- 日志输出目录
 loggroup   = "skynet"   -- 日志文件分组名
 
 debugConsolePort = 8000
-harbor = 1
-address = "127.0.0.1:2526"
-master = "127.0.0.1:2013"
+harbor = 0
 start = "main"	-- main script
 bootstrap = "snlua bootstrap"	-- The service for bootstrap
-standalone = "0.0.0.0:2013"
 -- snax_interface_g = "snax_g"
 cpath = root.."skynet/cservice/?.so"
 --daemon = "./skynet.pid" -- 启动服务时，会生成一个 skynet.pid 文件，用于保存服务进程的 PID， 并脱离控制台
-svrList = "db/server;auth/server;user/server;games/server;robot/server;wsLogind;wsGameGate;wsWatchdog;match/server;activity/server"
+cluster = "./config/clusterConfig.lua"
