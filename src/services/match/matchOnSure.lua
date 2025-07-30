@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local log = require "log"
 local cjson = require "cjson"
+local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local waitingOnSure = {}
 local onSureIndex = 1
@@ -184,8 +185,8 @@ end
 
 function matchOnSure.start()
     svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
-    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
-    svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
+    svrUser = cluster.proxy("lobby@user")
+    svrGate = cluster.proxy("gate@gate")
     svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
 end
 

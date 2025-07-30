@@ -1,5 +1,6 @@
 local skynet = require "skynet"
 local log = require "log"
+local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
@@ -251,7 +252,7 @@ end
 function match.start()
     svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
     svrRobot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
-    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+    svrUser = cluster.proxy("lobby@user")
     matchOnSure.start()
 end
 
