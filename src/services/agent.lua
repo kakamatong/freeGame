@@ -15,7 +15,7 @@ local svrUser = nil
 local svrMatch = nil
 local svrActivity = nil
 local svrGame = nil
-
+local cluster = require "skynet.cluster"
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
@@ -121,9 +121,9 @@ function CMD.start(conf)
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
 
-	svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+	svrUser = cluster.proxy("lobby@user")
 	svrMatch = skynet.localname(CONFIG.SVR_NAME.MATCH)
-	svrActivity = skynet.localname(CONFIG.SVR_NAME.ACTIVITY)
+	svrActivity = cluster.proxy("lobby@activity")
 	svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())

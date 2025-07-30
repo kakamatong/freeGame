@@ -17,12 +17,12 @@ skynet.start(function()
 	-- skynet.newservice("debug_console",consolePort)
 
 	skynet.newservice("db/server")
-	skynet.newservice("auth/server")
-	
-	local svr = skynet.newservice("wsWatchdog")
-	skynet.call(svr, "lua", "start", gConfig.WS_GATE_LISTEN)
-	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
-	cluster.register("gate", gate)
-	cluster.open("gate")
+	local svrUser = skynet.newservice("user/server")
+	local svrActivity = skynet.newservice("activity/server")
+
+	cluster.register("user", svrUser)
+	cluster.register("activity", svrActivity)
+
+	cluster.open("lobby")
 	skynet.exit()
 end)
