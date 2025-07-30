@@ -1,6 +1,7 @@
 -- main.lua
 -- 游戏服务器主入口，负责启动各个核心服务
 local skynet = require "skynet"
+local cluster = require "skynet.cluster"
 local log = require "log"
 local gConfig = CONFIG
 
@@ -16,5 +17,8 @@ skynet.start(function()
 	local consolePort = skynet.getenv("debugConsolePort")
 	skynet.newservice("debug_console",consolePort)
 
+	skynet.newservice("db/server")
+	local svrLogin = skynet.newservice("wsLogind")
+	cluster.register("login", svrLogin)
 	skynet.exit()
 end)
