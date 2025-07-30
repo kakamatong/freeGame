@@ -8,6 +8,10 @@ game.pid
 src/config/gameConfig.lua
 skynetLobby.pid
 skynetGame.pid
+skynetLogin.pid
+skynetRobot.pid
+skynetGate.pid
+skynetMatch.pid
 skynet.pid
 /log/*
 /logLobby/*
