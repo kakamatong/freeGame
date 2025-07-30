@@ -481,7 +481,7 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    svrGate = cluster.proxy("gameGate@gate")
+    svrGate = cluster.proxy("gameGate@gameGate")
     svrUser = cluster.proxy("lobby@user")
     svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)
