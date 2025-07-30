@@ -410,6 +410,7 @@ end
 ------------------------------------------------------------------------------------------------------------
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)
+    log.info("clientReady userid = %d",userid)
     if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
         players[userid].status = config.PLAYER_STATUS.ONLINE
     elseif roomInfo.gameStatus == config.GAME_STATUS.START then
@@ -481,7 +482,7 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    svrGate = cluster.proxy("gameGate@gameGate")
+    svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
     svrUser = cluster.proxy("lobby@user")
     svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)

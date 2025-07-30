@@ -17,6 +17,9 @@ skynet.start(function()
 	-- skynet.newservice("debug_console",consolePort)
 
 	skynet.newservice("db/server")
+	skynet.newservice("auth/server")
+	local svr = skynet.newservice("wsGameGate")
+	skynet.call(svr, "lua", "open", gConfig.WS_GAME_GATE_LISTEN)
 	local svrGame = skynet.newservice("games/server")
 	cluster.register("game", svrGame)
 
