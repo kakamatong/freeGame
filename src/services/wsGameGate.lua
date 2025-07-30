@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local wsGateserver = require "wsGateserver"
 local websocket = require "http.websocket"
 local urlTools = require "http.url"
+local cluster = require "skynet.cluster"
 local log = require "log"
 local connection = {}	-- fd -> connection : { fd , client, agent , ip, mode } 链接池
 local logins = {}	-- uid -> fd 登入池子
@@ -42,7 +43,7 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
+	local svrGameManager = cluster.proxy("game@game")
 	if not svrGameManager then
 		return false
 	end
@@ -62,7 +63,7 @@ local function auth(data)
 end
 
 local function connectGame(data)
-	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
+	local svrGameManager = cluster.proxy("game@game")
 	if not svrGameManager then
 		return false
 	end

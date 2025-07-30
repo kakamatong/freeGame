@@ -250,7 +250,7 @@ function match.tick()
 end
 
 function match.start()
-    svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
+    svrGame = cluster.proxy("game@game")
     svrRobot = cluster.proxy("robot@robot")
     svrUser = cluster.proxy("lobby@user")
     matchOnSure.start()

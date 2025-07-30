@@ -7,6 +7,7 @@ local aiHandler = require "games.10001.ai"
 local sharedata = require "skynet.sharedata"
 local core = require "sproto.core"
 local sproto = require "sproto"
+local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local roomInfo = {
     roomid = 0,
@@ -480,7 +481,7 @@ skynet.start(function()
         end
     end)
     loadSproto()
-    svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
-    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+    svrGate = cluster.proxy("gameGate@gate")
+    svrUser = cluster.proxy("lobby@user")
     svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)

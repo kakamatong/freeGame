@@ -122,9 +122,9 @@ function CMD.start(conf)
 	host = sprotoloader.load(1):host "package"
 
 	svrUser = cluster.proxy("lobby@user")
-	svrMatch = skynet.localname(CONFIG.SVR_NAME.MATCH)
+	svrMatch = cluster.proxy("match@match")
 	svrActivity = cluster.proxy("lobby@activity")
-	svrGame = skynet.localname(CONFIG.SVR_NAME.GAMES)
+	svrGame = cluster.proxy("game@game")
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
