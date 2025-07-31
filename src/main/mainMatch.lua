@@ -4,6 +4,7 @@ local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local log = require "log"
 local gConfig = CONFIG
+local cjson = require "cjson"
 
 skynet.start(function()
 	-- 启动协议加载服务（用于sproto协议）
@@ -22,5 +23,8 @@ skynet.start(function()
 
 	cluster.open("match")
 
+	local svrManager = skynet.newservice("clusterManager/server")
+	skynet.send(svrManager, "lua", "start")
+	
 	skynet.exit()
 end)
