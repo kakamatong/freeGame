@@ -38,6 +38,10 @@ function CMD.stopTest()
     return match.stopTest()
 end
 
+function CMD.start()
+    return start()
+end
+
 -----------------------------------------------------------------------------------------
 
 skynet.start(function()
@@ -46,5 +50,4 @@ skynet.start(function()
 		skynet.ret(skynet.pack(f(...)))
 	end)
     skynet.register(CONFIG.SVR_NAME.MATCH)
-    start()
 end)

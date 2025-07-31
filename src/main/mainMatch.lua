@@ -21,5 +21,6 @@ skynet.start(function()
 	cluster.register("match", svrMatch)
 
 	cluster.open("match")
+
 	skynet.exit()
 end)
