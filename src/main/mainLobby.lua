@@ -26,6 +26,7 @@ skynet.start(function()
 	cluster.register("user", svrUser)
 	cluster.register("activity", svrActivity)
 
-	cluster.open("lobby")
+	local name = skynet.getenv("clusterName")
+	cluster.open(name)
 	skynet.exit()
 end)

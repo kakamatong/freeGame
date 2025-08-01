@@ -8,23 +8,17 @@ local upTime = 60 * 2
 local key = "clusterConfig"
 local clusterConfigVer = 0
 local list = {}
-local proxys = {}
-local configs = {}
 
-local function checkConfig()
-    for k,v in pairs(list) do
-        local name = UTILS.string_split(k, "#")
-        configs[name[1]] = configs[name[1]] or {}
-        table.insert(configs[name[1]], v)
-        local proxyName = k .. "@" .. name[1]
-        log.info("proxyName: %s", proxyName)
-        local ok,proxy = pcall(cluster.query, k, name[1])
-        if ok then
-            proxys[name[1]] = proxys[name[1]] or {}
-            table.insert(proxys[name[1]], proxy)
+local function dealList(data)
+    local list = {}
+    for key, value in pairs(data) do
+        for k, v in ipairs(value) do
+            local name = string.format("%s%d", key, k)
+            list[name] = v
         end
     end
-    log.info(UTILS.tableToString(configs))
+
+    return list
 end
 
 local function checkClusterConfigUp()
@@ -33,11 +27,12 @@ local function checkClusterConfigUp()
     log.info("strClusterConfig: %s", strClusterConfig)
     local config = cjson.decode(strClusterConfig)
     if config.ver ~= clusterConfigVer then
+        cluster.reload({["__nowaiting"] = true})
         clusterConfigVer = config.ver
         list = config.list
-        config.list["__nowaiting"] = true 
-        cluster.reload(config.list)
-        --checkConfig()
+        local clusterConfig = dealList(list)
+        log.info("clusterConfig: %s", UTILS.tableToString(clusterConfig))
+        cluster.reload(clusterConfig)
     end
 end
 
