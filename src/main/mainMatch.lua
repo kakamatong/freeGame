@@ -19,9 +19,9 @@ skynet.start(function()
 
 	skynet.newservice("db/server")
 	local svrMatch = skynet.newservice("match/server")
-	
+
 	local svrManager = skynet.newservice("clusterManager/server")
-	skynet.send(svrManager, "lua", "start")
+	skynet.call(svrManager, "lua", "start")
 	cluster.register("match", svrMatch)
 
 	cluster.open("match")

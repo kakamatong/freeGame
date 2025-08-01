@@ -20,6 +20,9 @@ skynet.start(function()
 	local svrUser = skynet.newservice("user/server")
 	local svrActivity = skynet.newservice("activity/server")
 
+	local svrManager = skynet.newservice("clusterManager/server")
+	skynet.call(svrManager, "lua", "start")
+
 	cluster.register("user", svrUser)
 	cluster.register("activity", svrActivity)
 

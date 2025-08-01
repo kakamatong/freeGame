@@ -35,7 +35,7 @@ local function checkClusterConfigUp()
     if config.ver ~= clusterConfigVer then
         clusterConfigVer = config.ver
         list = config.list
-        config.list["__nowaiting"] = false 
+        config.list["__nowaiting"] = true 
         cluster.reload(config.list)
         --checkConfig()
     end
@@ -47,7 +47,7 @@ function CMD.start()
     skynet.fork(function()
         while true do
             -- 从redis获取clusterConfig
-            skynet.sleep(upTime * 10)
+            skynet.sleep(upTime * 100)
             checkClusterConfigUp()
         end
     end)
