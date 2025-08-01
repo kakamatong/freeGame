@@ -11,22 +11,17 @@ local CMD = {}
 local REQUEST = {}
 local client_fd
 local userid = 0
-local svrUser = nil
-local svrMatch = nil
-local svrActivity = nil
-local svrGame = nil
-local cluster = require "skynet.cluster"
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
 end
 
 function REQUEST:userData(args)
-	return call(svrUser, "userData", args.userid)
+	return call("user", "userData", args.userid)
 end
 
 function REQUEST:userRiches(args)
-	local richType, richNums = call(svrUser, "userRiches", userid)
+	local richType, richNums = call("user", "userRiches", userid)
 	return {
 		richType = richType,
 		richNums = richNums,
@@ -34,40 +29,40 @@ function REQUEST:userRiches(args)
 end
 
 function REQUEST:userStatus(args)
-	local status = call(svrUser, "userStatus", userid)
-	local b = call(svrGame, "checkHaveRoom", status.gameid, status.roomid)
+	local status = call("user", "userStatus", userid)
+	local b = call("game", "checkHaveRoom", status.gameid, status.roomid)
 	if not b then
 		status.gameid = 0
 		status.roomid = 0
 		status.status = CONFIG.USER_STATUS.ONLINE
 
-		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid)
+		send("user", "setUserStatus", userid, status.status, status.gameid, status.roomid)
 	end
 	return status
 end
 
 function REQUEST:matchJoin(args)
-	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
+	return call("match", "matchJoin", userid, args.gameid, args.queueid)
 end
 
 function REQUEST:matchLeave(args)
-	return call(svrMatch, "matchLeave", userid, args.gameid, args.queueid)
+	return call("match", "matchLeave", userid, args.gameid, args.queueid)
 end
 
 function REQUEST:matchOnSure(args)
-	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
+	return call("match", "matchOnSure", userid, args.id, args.sure)
 end
 
 function REQUEST:matchTestStart(args)
-	return call(svrMatch, "startTest")
+	return call("match", "startTest")
 end
 
 function REQUEST:matchTestStop(args)
-	return call(svrMatch, "stopTest")
+	return call("match", "stopTest")
 end
 
 function REQUEST:callActivityFunc(args)
-	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
+	return call("activity", "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
 
 -- 客户端请求分发
@@ -120,11 +115,6 @@ function CMD.start(conf)
 	userid =conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
-
-	svrUser = cluster.proxy("lobby@user")
-	svrMatch = cluster.proxy("match@match")
-	svrActivity = cluster.proxy("lobby@activity")
-	svrGame = cluster.proxy("game@game")
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
