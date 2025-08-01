@@ -8,6 +8,7 @@ local upTime = 60 * 2
 local key = "clusterConfig"
 local clusterConfigVer = 0
 local list = {}
+local list2 = {}
 
 local function dealList(data)
     local list = {}
@@ -17,7 +18,7 @@ local function dealList(data)
             list[name] = v
         end
     end
-
+    list2 = list
     return list
 end
 
@@ -46,6 +47,10 @@ function CMD.start()
             checkClusterConfigUp()
         end
     end)
+end
+
+function CMD.checkHaveSvr(name)
+    return list2[name]
 end
 
 function CMD.call(svrName, funcName, ...)
