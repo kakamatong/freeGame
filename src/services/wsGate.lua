@@ -13,17 +13,6 @@ skynet.register_protocol {
 	id = skynet.PTYPE_CLIENT,
 }
 
-local function register_handler(name)
-	log.info("wsgate register_handler")
-	--local loginservice = skynet.localname(CONFIG.SVR_NAME.LOGIN)
-	local loginservice = cluster.proxy("login@login")
-	if loginservice then
-		skynet.call(loginservice, "lua", "register_gate", name, "gate")
-	else
-		log.error("wsgate register_handler error")
-	end
-end
-
 local function kickByUserid(userid)
 	local fd = logins[userid]
 	if fd then
@@ -33,11 +22,7 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.localname(CONFIG.SVR_NAME.AUTH)
-	if not svrAuth then
-		return false
-	end
-	local res = call(svrAuth, "auth", data)
+	local res = call("auth", "auth", data)
 	return res
 end
 
