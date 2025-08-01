@@ -23,7 +23,7 @@ local function createGameSvr()
 	local svr = skynet.newservice("wsGameGate")
 	skynet.call(svr, "lua", "open", CONFIG.WS_GAME_GATE_LISTEN)
 	local svrGame = skynet.newservice("games/server")
-	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAMES, svrGame)
+	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAME, svrGame)
 end
 
 local function createCommonSvr(path, name)
@@ -80,9 +80,14 @@ skynet.start(function()
 		createGateSvr()
 	end
 
-	open = skynet.getenv(CONFIG.CLUSTER_SVR_NAME.GAMES)
+	open = skynet.getenv(CONFIG.CLUSTER_SVR_NAME.GAME)
 	if open then
 		createGameSvr()
+	end
+
+	open = skynet.getenv(CONFIG.CLUSTER_SVR_NAME.LOGIN)
+	if open then
+		createCommonSvr("wsLogind", CONFIG.CLUSTER_SVR_NAME.LOGIN)
 	end
 
 

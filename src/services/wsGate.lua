@@ -84,7 +84,7 @@ local handler = {}
 function handler.open(source, conf)
 	log.info("wsgate open")
 	watchdog = conf.watchdog or source
-	register_handler("lobbyGate") -- 注册到login服务
+	--register_handler("lobbyGate") -- 注册到login服务
 
 	startCheckAlive()
 	return conf.address, conf.port
