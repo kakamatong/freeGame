@@ -66,6 +66,7 @@ skynet.start(function()
 
 	open = skynet.getenv(CONFIG.CLUSTER_SVR_NAME.ACTIVITY)
 	if open then
+		skynet.newservice("protoloader")
 		createCommonSvr("activity/server", CONFIG.CLUSTER_SVR_NAME.ACTIVITY)
 	end
 
