@@ -100,8 +100,8 @@ function server.login_after_handler(server, userid, secret, loginType)
 	-- if user_online[numid] then
 	-- 	error(string.format("user %d is already online", numid))
 	-- end
-	local proxy = cluster.proxy(server.."@gate")
-	local subid = tostring(skynet.call(clusterManager, "lua", "login", userid, crypt.hexencode(secret), loginType))
+
+	local subid = tostring(call("gate","login", userid, crypt.hexencode(secret), loginType))
 	-- user_online[numid] = { address = gameserver, subid = subid , secret = crypt.hexencode(secret)}
 	return subid
 end
