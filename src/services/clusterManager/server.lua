@@ -27,23 +27,28 @@ local function checkConfig()
     log.info(UTILS.tableToString(configs))
 end
 
+local function checkClusterConfigUp()
+    local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+    local strClusterConfig = skynet.call(svrDB, "lua", "dbRedis", "get", key)
+    log.info("strClusterConfig: %s", strClusterConfig)
+    local config = cjson.decode(strClusterConfig)
+    if config.ver ~= clusterConfigVer then
+        clusterConfigVer = config.ver
+        list = config.list
+        config.list["__nowaiting"] = false 
+        cluster.reload(config.list)
+        --checkConfig()
+    end
+end
+
 -- "{"ver":1,"list":{"lobby":"127.0.0.1:13006","match":"127.0.0.1:13001","robot":"127.0.0.1:13007","gate":"127.0.0.1:13005","game":"127.0.0.1:13002","login":"127.0.0.1:13004"}}"
 function CMD.start()
+    checkClusterConfigUp()
     skynet.fork(function()
         while true do
             -- 从redis获取clusterConfig
-            local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
-            local strClusterConfig = skynet.call(svrDB, "lua", "dbRedis", "get", key)
-            log.info("strClusterConfig: %s", strClusterConfig)
-            local config = cjson.decode(strClusterConfig)
-            if config.ver ~= clusterConfigVer then
-                clusterConfigVer = config.ver
-                list = config.list
-                cluster.reload(config.list)
-                checkConfig()
-            end
-            break
-            --skynet.sleep(upTime * 10)
+            skynet.sleep(upTime * 10)
+            checkClusterConfigUp()
         end
     end)
 end
