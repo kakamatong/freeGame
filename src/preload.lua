@@ -99,11 +99,17 @@ _G.STAT = {
         _G.STAT.counters[key] = (_G.STAT.counters[key] or 0) + (value or 1)
     end,
 }
-
-_G.call = function (svr, cmd, ...)
-    return skynet.call(svr, "lua", cmd, ...)
+_G.clusterManager = nil
+_G.call = function (...)
+    if not _G.clusterManager then
+        _G.clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)
+    end
+    return skynet.call(_G.clusterManager, "lua", "call", ...)
 end
 
-_G.send = function (svr, cmd, ...)
-    skynet.send(svr, "lua", cmd, ...)
+_G.send = function (...)
+    if not _G.clusterManager then
+        _G.clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)
+    end
+    skynet.send(_G.clusterManager, "lua", "send", ...)
 end

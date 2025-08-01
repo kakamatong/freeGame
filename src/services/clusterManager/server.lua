@@ -54,11 +54,23 @@ function CMD.checkHaveSvr(name)
 end
 
 function CMD.call(svrName, funcName, ...)
-    
+    local svr = list[svrName]
+    if not svr and #svr > 0 then
+        return nil
+    end
+    local index = math.random(1, #svr)
+    local node = svrName .. tostring(index)
+    return cluster.call(node, "@" .. svrName, funcName, ...)
 end
 
 function CMD.send(svrName, funcName, ...)
-    
+    local svr = list[svrName]
+    if not svr and #svr > 0 then
+        return nil
+    end
+    local index = math.random(1, #svr)
+    local node = svrName .. tostring(index)
+    return cluster.send(node, "@" .. svrName, funcName, ...)
 end
 
 skynet.start(function()
@@ -66,5 +78,6 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
+
     skynet.register(CONFIG.SVR_NAME.CLUSTER)
 end)
