@@ -2,11 +2,6 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 require "skynet.manager"
-local tools = require "activity.tools"
-local function start()
-    tools.start()
-end
-
 function CMD.clientCall(moduleName, funcName, userid, args)
     local modulePath = "activity." .. moduleName
     log.info("modulePath %s", modulePath)
@@ -33,5 +28,4 @@ skynet.start(function()
     end)
 
     skynet.register(CONFIG.SVR_NAME.ACTIVITY)
-    start()
 end)

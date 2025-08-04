@@ -6,12 +6,19 @@ local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 local svrDB = nil
-local svrGate = nil
-local svrUser = nil
+local svrGate = CONFIG.CLUSTER_SVR_NAME.GAME
+local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
+
+local function getDB()
+    if not svrDB then
+        svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+    end
+    return svrDB
+end
 
 local function sendSvrMsg(userid, typeName, data)
 	local pack = send_request(typeName, data, 1)
-    skynet.send(svrGate, "lua", "sendSvrMsg", userid, pack)
+    send(svrGate, "sendSvrMsg", userid, pack)
 end
 
 function tools.result(info)
@@ -28,12 +35,12 @@ end
 
 -- 调用redis
 function tools.callRedis(func,...)
-    return skynet.call(svrDB, "lua", "dbRedis", func, ...)
+    return skynet.call(getDB(), "lua", "dbRedis", func, ...)
 end
 
 -- 调用mysql
 function tools.callMysql(func,...)
-    return skynet.call(svrDB, "lua", "db", func, ...)
+    return skynet.call(getDB(), "lua", "db", func, ...)
 end
 
 -- 下发财富变更信息
@@ -47,13 +54,7 @@ function tools.reportAward(userid, richTypes, richNums, allRichNums)
 end 
 
 function tools.userData(userid)
-    return skynet.call(svrUser, "lua", "userData", userid)
-end
-
-function tools.start()
-    svrGate = skynet.localname(CONFIG.SVR_NAME.GATE)
-    svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
-    svrUser = skynet.localname(CONFIG.SVR_NAME.USER)
+    return call(svrUser, "userData", userid)
 end
 
 return tools
