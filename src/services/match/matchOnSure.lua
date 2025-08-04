@@ -1,23 +1,21 @@
 local skynet = require "skynet"
 local log = require "log"
-local cjson = require "cjson"
-local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local waitingOnSure = {}
 local onSureIndex = 1
 local onSureLimitTime = 5
 local matchOnSure = {}
-local svrRobot = nil
-local svrUser = nil
-local svrGate = nil
-local svrGame = nil
+local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
+local svrUser = gConfig.CLUSTER_SVR_NAME.USER
+local svrGate = gConfig.CLUSTER_SVR_NAME.GATE
+local svrGame = gConfig.CLUSTER_SVR_NAME.GAME
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 
 local function sendSvrMsg(userid,xyName, data)
 	local pack = send_request(xyName, data, 1)
-    skynet.send(svrGate, "lua", "sendSvrMsg", userid, pack)
+    call(svrGate, "sendSvrMsg", userid, pack)
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
@@ -181,13 +179,6 @@ function matchOnSure.startOnSure(gameid, queueid, playerids, data)
     else
         sendMatchOnSure(item)
     end
-end
-
-function matchOnSure.start()
-    svrRobot = cluster.proxy("robot@robot")
-    svrUser = cluster.proxy("lobby@user")
-    svrGate = cluster.proxy("gate@gate")
-    svrGame = cluster.proxy("game@game")
 end
 
 return matchOnSure

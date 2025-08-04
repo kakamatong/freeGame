@@ -8,8 +8,6 @@ local match = require("match.match")
 require "skynet.manager"
 -- 启动匹配服务，定时检查所有队列
 local function start()
-    log.info("match start")
-    match.start()
     skynet.fork(function()
         while true do
             match.tick()
@@ -49,5 +47,6 @@ skynet.start(function()
 		local f = CMD[command]
 		skynet.ret(skynet.pack(f(...)))
 	end)
+    start()
     skynet.register(CONFIG.SVR_NAME.MATCH)
 end)

@@ -1,15 +1,14 @@
 local skynet = require "skynet"
 local log = require "log"
-local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local match = {}
 local queueUserids = {}
 local inMatchList = {}
 local CHECK_MAX_NUM = 5
 local btest = false
-local svrGame = nil
-local svrRobot = nil
-local svrUser = nil
+local svrGame = CONFIG.CLUSTER_SVR_NAME.GAME
+local svrRobot = CONFIG.CLUSTER_SVR_NAME.ROBOT
+local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 local matchOnSure = require("match.matchOnSure")
 
 local function setUserStatus(userid, status, gameid, roomid)
@@ -248,14 +247,6 @@ function match.tick()
     matching()
     matchOnSure.checkOnSure()
 end
-
-function match.start()
-    svrGame = cluster.proxy("game@game")
-    svrRobot = cluster.proxy("robot@robot")
-    svrUser = cluster.proxy("lobby@user")
-    matchOnSure.start()
-end
-
 
 return match
 
