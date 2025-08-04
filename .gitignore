@@ -6,12 +6,15 @@
 .vscode
 game.pid
 src/config/gameConfig.lua
-skynetLobby.pid
+skynetAuth.pid
 skynetGame.pid
 skynetLogin.pid
 skynetRobot.pid
 skynetGate.pid
 skynetMatch.pid
+skynetUser.pid
+skynetActivity.pid
+skynetActivity2.pid
 skynet.pid
 /log/*
 /logLobby/*
