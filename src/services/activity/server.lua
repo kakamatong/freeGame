@@ -23,6 +23,7 @@ end
 
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
+        log.info("session %s, source %s, cmd %s", session, source, cmd)
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)

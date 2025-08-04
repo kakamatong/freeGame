@@ -113,3 +113,10 @@ _G.send = function (...)
     end
     skynet.send(_G.clusterManager, "lua", "send", ...)
 end
+
+_G.sendTo = function (name, ...)
+    if not _G.clusterManager then
+        _G.clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)
+    end
+    skynet.send(_G.clusterManager, "lua", "sendTo", name, ...)
+end

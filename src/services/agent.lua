@@ -121,6 +121,10 @@ function CMD.start(conf)
 	host = sprotoloader.load(1):host "package"
 
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
+	local name = skynet.getenv("clusterName")
+	local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+	local redisKey = string.format("gateAgent:%d", userid)
+	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name)
 end
 
 -- 断开连接，清理状态

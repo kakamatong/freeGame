@@ -75,6 +75,10 @@ function CMD.send(svrName, funcName, ...)
     return cluster.send(node, "@" .. svrName, funcName, ...)
 end
 
+function CMD.sendTo(node, svrName, funcName, ...)
+    return cluster.send(node, "@" .. svrName, funcName, ...)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])

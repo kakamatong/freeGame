@@ -6,7 +6,7 @@ local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
 local svrDB = nil
-local svrGate = CONFIG.CLUSTER_SVR_NAME.GAME
+local svrGate = CONFIG.CLUSTER_SVR_NAME.GATE
 local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 
 local function getDB()
@@ -18,7 +18,10 @@ end
 
 local function sendSvrMsg(userid, typeName, data)
 	local pack = send_request(typeName, data, 1)
-    send(svrGate, "sendSvrMsg", userid, pack)
+    local name = skynet.call(getDB(), "lua", "dbRedis", "get", string.format("gateAgent:%d", userid))
+    --skynet.send(16,"lua", "sendSvrMsg", userid, pack)
+    sendTo(name, "gate","sendSvrMsg", userid, pack)
+    --send(svrGate, "sendSvrMsg", userid, pack)
 end
 
 function tools.result(info)
