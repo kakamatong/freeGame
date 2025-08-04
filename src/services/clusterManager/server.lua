@@ -55,7 +55,8 @@ end
 
 function CMD.call(svrName, funcName, ...)
     local svr = list[svrName]
-    if not svr and #svr > 0 then
+    if not svr or #svr <= 0 then
+        log.info("call fail svrName: %s", svrName)
         return nil
     end
     local index = math.random(1, #svr)
@@ -65,7 +66,8 @@ end
 
 function CMD.send(svrName, funcName, ...)
     local svr = list[svrName]
-    if not svr and #svr > 0 then
+    if not svr or #svr <= 0  then
+        log.info("send fail svrName: %s", svrName)
         return nil
     end
     local index = math.random(1, #svr)

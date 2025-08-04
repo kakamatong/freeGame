@@ -48,14 +48,13 @@ local function getRoom(gameid, roomid)
 		return false
 	end
 
-	local res = call(svrGameManager, "getGame", gameid, roomid)
+	local res = skynet.call(svrGameManager, "lua", "getGame", gameid, roomid)
 	return res
 end
 
 -- 登入认证
 local function auth(data)
-	local res = call(CONFIG.CLUSTER_SVR_NAME.AUTH, "authGame", data)
-	return res
+	return call(CONFIG.CLUSTER_SVR_NAME.AUTH, "authGame", data)
 end
 
 local function connectGame(data)
@@ -69,7 +68,7 @@ local function connectGame(data)
 	local userid = tonumber(data.userid)
 	local client_fd = tonumber(data.client_fd)
 
-	return call(svrGameManager, "connectGame", userid, gameid, roomid, client_fd)
+	return skynet.call(svrGameManager, "lua", "connectGame", userid, gameid, roomid, client_fd)
 end
 
 local function startCheckAlive()
