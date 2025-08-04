@@ -7,7 +7,6 @@ local aiHandler = require "games.10001.ai"
 local sharedata = require "skynet.sharedata"
 local core = require "sproto.core"
 local sproto = require "sproto"
-local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 local roomInfo = {
     roomid = 0,
@@ -30,7 +29,7 @@ local roomHandlerAi = {}
 local gameManager
 local send_request = nil
 local dTime = 100
-local svrUser = nil
+local svrUser = gConfig.CLUSTER_SVR_NAME.USER
 local svrDB = nil
 -- 更新玩家状态
 -- 收发协议
@@ -483,6 +482,5 @@ skynet.start(function()
     end)
     loadSproto()
     svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
-    svrUser = cluster.proxy("lobby@user")
     svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)

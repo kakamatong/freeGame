@@ -43,7 +43,7 @@ local function kickByUserid(userid)
 end
 
 local function getRoom(gameid, roomid)
-	local svrGameManager = cluster.proxy("game@game")
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
 	if not svrGameManager then
 		return false
 	end
@@ -54,16 +54,12 @@ end
 
 -- 登入认证
 local function auth(data)
-	local svrAuth = skynet.localname(CONFIG.SVR_NAME.AUTH)
-	if not svrAuth then
-		return false
-	end
-	local res = call(svrAuth, "authGame", data)
+	local res = call(CONFIG.CLUSTER_SVR_NAME.AUTH, "authGame", data)
 	return res
 end
 
 local function connectGame(data)
-	local svrGameManager = cluster.proxy("game@game")
+	local svrGameManager = skynet.localname(CONFIG.SVR_NAME.GAMES)
 	if not svrGameManager then
 		return false
 	end
