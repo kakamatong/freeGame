@@ -11,17 +11,21 @@ local CMD = {}
 local REQUEST = {}
 local client_fd
 local userid = 0
+local svrMatch = CONFIG.CLUSTER_SVR_NAME.MATCH
+local svrActivity = CONFIG.CLUSTER_SVR_NAME.ACTIVITY
+local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
+local svrGame = CONFIG.CLUSTER_SVR_NAME.GAME
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
 end
 
 function REQUEST:userData(args)
-	return call("user", "userData", args.userid)
+	return call(svrUser, "userData", args.userid)
 end
 
 function REQUEST:userRiches(args)
-	local richType, richNums = call("user", "userRiches", userid)
+	local richType, richNums = call(svrUser, "userRiches", userid)
 	return {
 		richType = richType,
 		richNums = richNums,
@@ -29,40 +33,40 @@ function REQUEST:userRiches(args)
 end
 
 function REQUEST:userStatus(args)
-	local status = call("user", "userStatus", userid)
-	local b = call("game", "checkHaveRoom", status.gameid, status.roomid)
+	local status = call(svrUser, "userStatus", userid)
+	local b = call(svrGame, "checkHaveRoom", status.gameid, status.roomid)
 	if not b then
 		status.gameid = 0
 		status.roomid = 0
 		status.status = CONFIG.USER_STATUS.ONLINE
 
-		send("user", "setUserStatus", userid, status.status, status.gameid, status.roomid)
+		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid)
 	end
 	return status
 end
 
 function REQUEST:matchJoin(args)
-	return call("match", "matchJoin", userid, args.gameid, args.queueid)
+	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 
 function REQUEST:matchLeave(args)
-	return call("match", "matchLeave", userid, args.gameid, args.queueid)
+	return call(svrMatch, "matchLeave", userid, args.gameid, args.queueid)
 end
 
 function REQUEST:matchOnSure(args)
-	return call("match", "matchOnSure", userid, args.id, args.sure)
+	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
 end
 
 function REQUEST:matchTestStart(args)
-	return call("match", "startTest")
+	return call(svrMatch, "startTest")
 end
 
 function REQUEST:matchTestStop(args)
-	return call("match", "stopTest")
+	return call(svrMatch, "stopTest")
 end
 
 function REQUEST:callActivityFunc(args)
-	return call("activity", "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
+	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
 
 -- 客户端请求分发
