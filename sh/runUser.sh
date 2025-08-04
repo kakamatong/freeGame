@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configUser
+cd ../
+./skynet/skynet config/configUser

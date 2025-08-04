@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configMatch
+cd ../
+./skynet/skynet config/configMatch

@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configRobot
+cd ../
+./skynet/skynet config/configRobot

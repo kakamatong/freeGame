@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configGate
+cd ../
+./skynet/skynet config/configGate

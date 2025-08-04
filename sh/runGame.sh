@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configGame
+cd ../
+./skynet/skynet config/configGame

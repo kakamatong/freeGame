@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configAuth
+cd ../
+./skynet/skynet config/configAuth

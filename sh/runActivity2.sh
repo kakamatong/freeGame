@@ -1,2 +1,3 @@
 #!/bin/bash
-../skynet/skynet ../config/configActivity2
+cd ../
+./skynet/skynet config/configActivity2
