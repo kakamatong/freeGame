@@ -123,8 +123,8 @@ function CMD.start(conf)
 	skynet.send(gate, "lua", "forward", fd, skynet.self())
 	local name = skynet.getenv("clusterName")
 	local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
-	local redisKey = string.format("gateAgent:%d", userid)
-	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name)
+	local redisKey = string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid)
+	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name, 86400 * 3)
 end
 
 -- 断开连接，清理状态
