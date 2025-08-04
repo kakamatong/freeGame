@@ -31,6 +31,7 @@ local send_request = nil
 local dTime = 100
 local svrUser = gConfig.CLUSTER_SVR_NAME.USER
 local svrDB = nil
+local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -187,7 +188,7 @@ local function roomEnd(code)
     if roomInfo.canDestroy then
         --gameManager.destroyGame(gameid, roomid)
         sendToAllClient("roomEnd", {code=code})
-        send(gameManager, "destroyGame", roomInfo.gameid, roomInfo.roomid)
+        skynet.send(gameManager, "lua","destroyGame", roomInfo.gameid, roomInfo.roomid)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
                 setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0)
@@ -281,10 +282,10 @@ function roomHandler.gameResult(data)
             flag = config.RESULT_TYPE.LOSE
             addType = "lose"
         end
-        local totalScore = call(svrDB, "dbRedis", "zscore", rankKey, userid) or 0
+        local totalScore = skynet.call(svrDB,"lua", "dbRedis", "zscore", rankKey, userid) or 0
         totalScore = totalScore + score
-        call(svrDB, "dbRedis", "zadd", rankKey, totalScore, userid)
-        call(svrDB, "dbRedis", "expire", rankKey, 86400 * 7)
+        skynet.call(svrDB,"lua", "dbRedis", "zadd", rankKey, totalScore, userid)
+        skynet.call(svrDB,"lua", "dbRedis", "expire", rankKey, 86400 * 7)
 
         local tmp = {
             playerids = roomInfo.playerids,
@@ -381,10 +382,7 @@ end
 function CMD.stop()
     -- 清理玩家
     if roomInfo.gameData.robots and #roomInfo.gameData.robots > 0 then
-        local robot = skynet.localname(CONFIG.SVR_NAME.ROBOT)
-        if robot then
-            send(robot, "returnRobots", roomInfo.gameData.robots)
-        end
+        send(svrRobot, "returnRobots", roomInfo.gameData.robots)
     end
 
     for _, v in pairs(players) do
