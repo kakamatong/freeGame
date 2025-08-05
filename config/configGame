@@ -16,3 +16,7 @@ cpath = root.."skynet/cservice/?.so"
 daemon = "./skynetGame.pid" -- 启动服务时，会生成一个 skynet.pid 文件，用于保存服务进程的 PID， 并脱离控制台
 clusterName = "game1"
 game = true
+
+gateAddress = "0.0.0.0"
+gatePort = 9003
+gateMaxclient = 4096

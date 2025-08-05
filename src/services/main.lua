@@ -26,7 +26,12 @@ end
 
 local function createGameSvr()
 	local svr = skynet.newservice("wsGameGate")
-	skynet.call(svr, "lua", "open", CONFIG.WS_GAME_GATE_LISTEN)
+	local data = {
+		address = skynet.getenv("gateAddress"),
+    	port = skynet.getenv("gatePort"),
+    	maxclient = skynet.getenv("gateMaxclient"),
+	}
+	skynet.call(svr, "lua", "open", data)
 	local svrGame = skynet.newservice("games/server")
 	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAME, svrGame)
 end
