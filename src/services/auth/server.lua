@@ -68,7 +68,7 @@ function CMD.auth(data)
 end
 
 function CMD.authGame(data)
-    if not data.userid or not data.token or not data.subid then
+    if not data.userid or not data.token then
         return false
     end
     local userid = data.userid
