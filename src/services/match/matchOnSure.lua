@@ -95,19 +95,9 @@ local function destroyOnSureItem(index, msg)
 end
 
 local function onSureSuccess(index, item)
+    log.info("onSureSuccess %d", index)
     table.remove(waitingOnSure, index)
-    local roomid = createGame(item.gameid, item.playerids, item.data)
-    if roomid then
-        for _, v in ipairs(item.playerids) do
-            setUserStatus(v, gConfig.USER_STATUS.GAMEING, item.gameid, roomid)
-            if item.data.robots and isRobot(v, item.data.robots) then
-            else
-                sendSvrMsg(v, "gameRoomReady", {roomid = roomid, gameid = item.gameid})
-            end
-        end
-    end
-
-    return roomid
+    return createGame(item.gameid, item.playerids, item.data)
 end
 
 local function getOnSureItem(id)
@@ -137,6 +127,23 @@ end
 function matchOnSure.checkOnSure()
     local timeNow = os.time()
     for i, v in ipairs(waitingOnSure) do
+        if #v.readys == #v.playerids then
+            --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
+            local roomid = onSureSuccess(i, v)
+            if roomid then
+                for _, userid in ipairs(v.playerids) do
+                    setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid)
+                    if v.data.robots and isRobot(userid, v.data.robots) then
+                    else
+                        sendSvrMsg(userid, "gameRoomReady", {roomid = roomid, gameid = v.gameid})
+                    end
+                end
+            else
+                log.error("matchOnSure onSureSuccess roomid is nil")
+            end
+            return
+        end
+
         if timeNow > v.endTime then
             destroyOnSureItem(i, "游戏等待确认超时")
             i = i - 1
@@ -145,6 +152,7 @@ function matchOnSure.checkOnSure()
 end
 
 function matchOnSure.onSure(userid, id, sure)
+    log.info("matchOnSure onSure %s %s %s", userid, id, sure)
     local index,item = getOnSureItem(id)
     if not item then
         return {code = 0, msg = "游戏不存在"}
@@ -162,16 +170,6 @@ function matchOnSure.onSure(userid, id, sure)
         --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
         table.insert(item.readys, userid)
         sendMatchOnSure(item)
-        if #item.readys == #item.playerids then
-            --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            local roomid = onSureSuccess(index, item)
-            if roomid then
-                return {code = 1, msg = "匹配成功", roomid = roomid, gameid = item.gameid}
-            else
-                return {code = 0, msg = "建房失败", roomid = roomid, gameid = item.gameid}
-            end
-            
-        end
     else
         log.info("match fail %d", userid)
         destroyOnSureItem(index, "玩家拒绝")
@@ -183,12 +181,7 @@ end
 function matchOnSure.startOnSure(gameid, queueid, playerids, data)
     log.info("matchOnSure startOnSure %d %d %s", gameid, queueid, UTILS.tableToString(data))
     local item = createOnSureItem(gameid, queueid, playerids, data)
-    if #item.playerids == #item.readys then
-        local index,item1 = getOnSureItem(item.id)
-        onSureSuccess(index, item1)
-    else
-        sendMatchOnSure(item)
-    end
+    sendMatchOnSure(item)
 end
 
 return matchOnSure
