@@ -7,15 +7,25 @@ local onSureLimitTime = 5
 local matchOnSure = {}
 local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
 local svrUser = gConfig.CLUSTER_SVR_NAME.USER
-local svrGate = gConfig.CLUSTER_SVR_NAME.GATE
 local svrGame = gConfig.CLUSTER_SVR_NAME.GAME
 local sprotoloader = require "sprotoloader"
 local host = sprotoloader.load(1):host "package"
 local send_request = host:attach(sprotoloader.load(2))
+local svrDB = nil
+
+local function getDB()
+    if not svrDB then
+        svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+    end
+    return svrDB
+end
 
 local function sendSvrMsg(userid,xyName, data)
 	local pack = send_request(xyName, data, 1)
-    call(svrGate, "sendSvrMsg", userid, pack)
+    local name = skynet.call(getDB(), "lua", "dbRedis", "get", string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid))
+    if name and name ~= "" then
+        sendTo(name, "gate","sendSvrMsg", userid, pack)
+    end
 end
 
 local function setUserStatus(userid, status, gameid, roomid)
