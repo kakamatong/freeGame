@@ -11,6 +11,7 @@ skynetGame.pid
 skynetLogin.pid
 skynetRobot.pid
 skynetGate.pid
+skynetGate2.pid
 skynetMatch.pid
 skynetUser.pid
 skynetActivity.pid
