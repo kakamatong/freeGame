@@ -12,9 +12,14 @@ end
 local function createGateSvr()
 	-- 启动协议加载服务（用于sproto协议）
 	skynet.newservice("protoloader")
+	local data = {
+		address = skynet.getenv("gateAddress"),
+    	port = skynet.getenv("gatePort"),
+    	maxclient = skynet.getenv("gateMaxclient"),
+	}
 	-- 启动网关服务
 	local svr = skynet.newservice("wsWatchdog")
-	skynet.call(svr, "lua", "start", CONFIG.WS_GATE_LISTEN)
+	skynet.call(svr, "lua", "start", data)
 	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
 	cluster.register(CONFIG.CLUSTER_SVR_NAME.GATE, gate)
 end
