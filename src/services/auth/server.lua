@@ -53,8 +53,8 @@ function CMD.auth(data)
     local ip = data.ip
     local status = 0
     local uri = data.uri
-    local loginData = check(userid, token)
-    if loginData then
+    local ok,loginData = pcall(check, userid, token)
+    if ok and loginData then
         status = 1
         addSubid(userid, loginData.subid)
         pushLog(userid, "", ip, loginData.channel, status, uri)
@@ -73,8 +73,8 @@ function CMD.authGame(data)
     end
     local userid = data.userid
     local token = data.token
-    local loginData = check(userid, token)
-    if loginData then
+    local ok,loginData = pcall(check, userid, token)
+    if ok and loginData then
         addSubid(userid, loginData.subid)
         --pushLog(userid, "", ip, loginType, status, uri)
         return true
