@@ -130,6 +130,7 @@ function matchOnSure.checkOnSure()
         if #v.readys == #v.playerids then
             --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
             local roomid = onSureSuccess(i, v)
+            i = i - 1
             if roomid then
                 for _, userid in ipairs(v.playerids) do
                     setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid)
@@ -141,12 +142,11 @@ function matchOnSure.checkOnSure()
             else
                 log.error("matchOnSure onSureSuccess roomid is nil")
             end
-            return
-        end
-
-        if timeNow > v.endTime then
-            destroyOnSureItem(i, "游戏等待确认超时")
-            i = i - 1
+        else
+            if timeNow > v.endTime then
+                destroyOnSureItem(i, "游戏等待确认超时")
+                i = i - 1
+            end
         end
     end
 end
