@@ -6,4 +6,5 @@
 ./skynet/skynet config/configGame
 ./skynet/skynet config/configRobot
 ./skynet/skynet config/configGate
+./skynet/skynet config/configGate2
 ./skynet/skynet config/configMatch
