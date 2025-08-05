@@ -107,6 +107,13 @@ _G.call = function (...)
     return skynet.call(_G.clusterManager, "lua", "call", ...)
 end
 
+_G.callTo = function (name, ...)
+    if not _G.clusterManager then
+        _G.clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)
+    end
+    return skynet.call(_G.clusterManager, "lua", "callTo", name, ...)
+end
+
 _G.send = function (...)
     if not _G.clusterManager then
         _G.clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)

@@ -64,6 +64,10 @@ function CMD.call(svrName, funcName, ...)
     return cluster.call(node, "@" .. svrName, funcName, ...)
 end
 
+function CMD.callTo(node, svrName, funcName, ...)
+    return cluster.call(node, "@" .. svrName, funcName, ...)
+end
+
 function CMD.send(svrName, funcName, ...)
     local svr = list[svrName]
     if not svr or #svr <= 0  then

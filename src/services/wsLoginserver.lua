@@ -63,7 +63,7 @@ local function handle_ws_connection(fd, addr, ip, conf)
         return
     end
     -- 调用登录逻辑
-    local ok, subid = pcall(conf.login_after_handler, srv, uid, secret, loginType)
+    local ok, subid,svr = pcall(conf.login_after_handler, srv, uid, secret, loginType)
     if not ok then
         websocket.write(fd, "406 Not Acceptable", "binary")
         websocket.close(fd)
@@ -71,7 +71,7 @@ local function handle_ws_connection(fd, addr, ip, conf)
     end
     log.info("login subid %s", subid)
     -- 返回登录成功信息
-    websocket.write(fd, "200 "..crypt.base64encode(subid) .. " " .. crypt.base64encode(uid), "binary")
+    websocket.write(fd, "200 "..crypt.base64encode(subid) .. " " .. crypt.base64encode(uid) .. " " .. crypt.base64encode(svr), "binary")
     websocket.close(fd)
 end
 
