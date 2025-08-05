@@ -2,6 +2,8 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 local dbSvr = nil
+local crypt = require "skynet.crypt"
+local cjson = require "cjson"
 require "skynet.manager"
 local function start()
     dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
@@ -11,13 +13,28 @@ local function pushLog(userid, nickname, ip, loginType, status, ext)
 	skynet.send(dbSvr, "lua", "dbLog", "insertAuthLog", userid, nickname, ip, loginType, status, ext)
 end
 
-local function check(userid, token, clientSubid)
+local function check(userid, token)
     local key = string.format("user:%d", userid)
     local info = skynet.call(dbSvr, "lua", "dbRedis", "hgetall", key)
-    if info and info[2] == token and info[4] == clientSubid then
-        return true
+    if info and info[2] and info[4] then
+        --return true
+        local secret = crypt.hexdecode(info[2])
+        local newToken = crypt.base64decode(token)
+        local strdata = crypt.desdecode(secret, newToken)
+        if not strdata then
+            log.warn("auth check fail, userid %d, token %s svrToken %s svrSubid %d", userid, token, info[2], info[4])
+            return false
+        end
+
+        local data = cjson.decode(strdata)
+        if data and data.subid == tonumber(info[4]) then
+            return data
+        else
+            log.warn("auth check fail, userid %d, token %s svrToken %s svrSubid %d", userid, token, info[2], info[4])
+        return false
+        end
     else
-        log.warn("auth check fail, userid %d, token %s, clientSubid %d svrToken %s svrSubid %d", userid, token, clientSubid, info[2], info[4])
+        log.warn("auth check fail, userid %d, token %s svrToken %s svrSubid %d", userid, token, info[2], info[4])
         return false
     end
 end
@@ -28,25 +45,23 @@ local function addSubid(userid, clientSubid)
 end
 
 function CMD.auth(data)
-    if not data.userid or not data.token or not data.subid then
+    if not data.userid or not data.token then
         return false
     end
     local userid = data.userid
     local token = data.token
-    local clientSubid = data.subid
-    local loginType = data.channel
     local ip = data.ip
     local status = 0
     local uri = data.uri
-
-    if check(userid, token, clientSubid) then
+    local loginData = check(userid, token)
+    if loginData then
         status = 1
-        addSubid(userid, clientSubid)
-        pushLog(userid, "", ip, loginType, status, uri)
+        addSubid(userid, loginData.subid)
+        pushLog(userid, "", ip, loginData.channel, status, uri)
         return true
     else
-        log.warn("auth fail, userid %d, token %s, clientSubid %s", userid, token, clientSubid)
-        pushLog(userid, "", ip, loginType, status, uri)
+        log.warn("auth fail, userid %d, token %s", userid, token)
+        pushLog(userid, "", ip, "", status, uri)
         return false
     end
     
@@ -58,19 +73,13 @@ function CMD.authGame(data)
     end
     local userid = data.userid
     local token = data.token
-    local clientSubid = data.subid
-    local loginType = data.channel
-    local ip = data.ip
-    local status = 0
-    local uri = data.uri
-
-    if check(userid, token, clientSubid) then
-        status = 1
-        addSubid(userid, clientSubid)
+    local loginData = check(userid, token)
+    if loginData then
+        addSubid(userid, loginData.subid)
         --pushLog(userid, "", ip, loginType, status, uri)
         return true
     else
-        log.warn("auth fail, userid %d, token %s, clientSubid %s", userid, token, clientSubid)
+        log.warn("auth fail, userid %d, token %s", userid, token)
         --pushLog(userid, "", ip, loginType, status, uri)
         return false
     end

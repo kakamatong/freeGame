@@ -101,7 +101,9 @@ function handler.auth(fd, uri, addr)
 	local data = urlTools.parse_query(uri)
 	data.ip = addr or "0.0.0.0"
 	data.uri = uri
+	
 	local userid = tonumber(data.userid)
+	log.info("auth %s %d", UTILS.tableToString(data), userid)
 	return auth(data), userid
 end
 
