@@ -5,17 +5,20 @@ local dbSvr = nil
 local crypt = require "skynet.crypt"
 local cjson = require "cjson"
 require "skynet.manager"
-local function start()
-    dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
+local function getDB()
+    if not dbSvr then
+        dbSvr = skynet.localname(CONFIG.SVR_NAME.DB)
+    end
+    return dbSvr
 end
 
 local function pushLog(userid, nickname, ip, loginType, status, ext)
-	skynet.send(dbSvr, "lua", "dbLog", "insertAuthLog", userid, nickname, ip, loginType, status, ext)
+	skynet.send(getDB(), "lua", "dbLog", "insertAuthLog", userid, nickname, ip, loginType, status, ext)
 end
 
 local function check(userid, token)
     local key = string.format("user:%d", userid)
-    local info = skynet.call(dbSvr, "lua", "dbRedis", "hgetall", key)
+    local info = skynet.call(getDB(), "lua", "dbRedis", "hgetall", key)
     if info and info[2] and info[4] then
         --return true
         local secret = crypt.hexdecode(info[2])
@@ -41,7 +44,7 @@ end
 
 local function addSubid(userid, clientSubid)
     local key = string.format("user:%d", userid)
-    skynet.call(dbSvr, "lua", "dbRedis", "hset", key, "subid", tonumber(clientSubid) + 1)
+    skynet.call(getDB(), "lua", "dbRedis", "hset", key, "subid", tonumber(clientSubid) + 1)
 end
 
 function CMD.auth(data)
@@ -91,5 +94,4 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
     skynet.register(CONFIG.SVR_NAME.AUTH)
-    start()
 end)
