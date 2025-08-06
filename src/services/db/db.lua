@@ -129,7 +129,7 @@ function db.getUserData(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userData WHERE userid = %d;",userid)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
         return nil
@@ -142,7 +142,7 @@ function db.getUserRiches(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d;",userid)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
         return nil
@@ -155,7 +155,7 @@ function db.getUserRichesByType(mysql,...)
     local userid,richType =...
     local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType = %d;",userid,richType)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
         return nil
@@ -168,7 +168,7 @@ function db.addUserRiches(mysql,...)
     local userid,richType,richNums =...
     local sql = string.format("INSERT INTO userRiches (userid,richType,richNums) VALUES (%d,%d,%d) ON DUPLICATE KEY UPDATE richNums = richNums + %d;",userid,richType,richNums,richNums)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
@@ -182,7 +182,7 @@ function db.reduceUserRiches(mysql,...)
     end
     local sql = string.format("UPDATE userRiches SET richNums = richNums - %d WHERE userid = %d AND richType = %d;",richNums,userid,richType)
     local res, err = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
@@ -196,7 +196,7 @@ function db.setUserStatus(mysql,...)
         sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d;",userid,status,gameid,roomid,status,gameid,roomid)
     end
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     return true
 end
@@ -206,7 +206,7 @@ function db.getUserStatus(mysql,...)
     local userid =...
     local sql = string.format("SELECT * FROM userStatus WHERE userid = %d;",userid)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     if #res == 0 then
         return nil
@@ -219,7 +219,7 @@ function db.getRobots(mysql,...)
     local idbegin,idend =...
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
     local res = mysql:query(sql)
-    --log.info(UTILS.tableToString(res))
+    log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     
     if #res == 0 then
