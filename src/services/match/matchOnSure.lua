@@ -28,8 +28,8 @@ local function sendSvrMsg(userid,xyName, data)
     end
 end
 
-local function setUserStatus(userid, status, gameid, roomid)
-    send(svrUser, "setUserStatus", userid, status, gameid, roomid)
+local function setUserStatus(userid, status, gameid, roomid, addr)
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr)
 end
 
 -- 创建游戏
@@ -134,10 +134,10 @@ function matchOnSure.checkOnSure()
             i = i - 1
             if roomid then
                 for _, userid in ipairs(v.playerids) do
-                    setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid)
+                    setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid, addr)
                     if v.data.robots and isRobot(userid, v.data.robots) then
                     else
-                        sendSvrMsg(userid, "gameRoomReady", {roomid = roomid, gameid = v.gameid, addr = addr})
+                        sendSvrMsg(userid, "gameRoomReady", {roomid = tostring(roomid), gameid = v.gameid, addr = addr})
                     end
                 end
             else

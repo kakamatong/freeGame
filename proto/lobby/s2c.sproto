@@ -36,7 +36,7 @@ matchOnSure 3 {
 gameRoomReady 4 {
     request {
         gameid 0 : integer
-        roomid 1 : integer
+        roomid 1 : string
         addr 2 : string
     }
 }

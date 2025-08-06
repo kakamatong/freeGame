@@ -40,8 +40,9 @@ function REQUEST:userStatus(args)
 		status.roomid = 0
 		status.status = CONFIG.USER_STATUS.ONLINE
 
-		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid)
+		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "")
 	end
+	status.roomid = tostring(status.roomid)
 	return status
 end
 
@@ -125,6 +126,10 @@ function CMD.start(conf)
 	local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 	local redisKey = string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid)
 	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name, 86400 * 3)
+
+	-- 可以重构
+	-- local status = call(svrUser, "userStatus", userid)
+	-- send(svrUser, "setUserStatus", userid, status.status or CONFIG.USER_STATUS.ONLINE, status.gameid or 0, status.roomid or 0, status.addr or "")
 end
 
 -- 断开连接，清理状态

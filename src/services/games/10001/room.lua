@@ -76,8 +76,8 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
     skynet.send(svrDB, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
-local function setUserStatus(userid, status, gameid, roomid)
-    send(svrUser, "setUserStatus", userid, status, gameid, roomid)
+local function setUserStatus(userid, status, gameid, roomid, addr)
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr)
 end
 
 local function getUserStatus(userid)
@@ -191,7 +191,7 @@ local function roomEnd(code)
         skynet.send(gameManager, "lua","destroyGame", roomInfo.gameid, roomInfo.roomid)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
-                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0)
+                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0, "")
             end
         end
     end
@@ -332,7 +332,7 @@ function CMD.start(data)
             status = config.PLAYER_STATUS.ONLINE
             robotCnt = robotCnt + 1
         else
-            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid)
+            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, roomInfo.addr)
         end
         local info = call(svrUser, "userData", userid)
         players[userid] = {

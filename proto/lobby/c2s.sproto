@@ -53,7 +53,8 @@ userStatus 4 {
     response {
         status 0 : integer
         gameid 1 : integer
-        roomid 2 : integer
+        roomid 2 : string
+        addr 3 : string
     }
 }
 

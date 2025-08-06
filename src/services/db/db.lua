@@ -189,11 +189,11 @@ end
 
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
 function db.setUserStatus(mysql,...)
-    local userid,status,gameid,roomid =...
+    local userid,status,gameid,roomid,addr =...
     -- 默认gameid为0，如果有传gameid则用传入的
-    local sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d;",userid,status,0,0,status)
+    local sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr) VALUES (%d, %d, %d, %d,'%s') ON DUPLICATE KEY UPDATE status = %d;",userid,status,0,0,addr,status)
     if gameid and roomid then
-        sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid) VALUES (%d, %d, %d, %d) ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d;",userid,status,gameid,roomid,status,gameid,roomid)
+        sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr) VALUES (%d, %d, %d, %d,'%s') ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d,addr='%s';",userid,status,gameid,roomid,addr,status,gameid,roomid,addr)
     end
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))

@@ -11,8 +11,8 @@ local svrRobot = CONFIG.CLUSTER_SVR_NAME.ROBOT
 local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 local matchOnSure = require("match.matchOnSure")
 
-local function setUserStatus(userid, status, gameid, roomid)
-    send(svrUser , "setUserStatus", userid, status, gameid, roomid)
+local function setUserStatus(userid, status, gameid, roomid, addr)
+    send(svrUser , "setUserStatus", userid, status, gameid, roomid, addr)
 end
 
 local function getUserStatus(userid)
@@ -75,7 +75,7 @@ local function enterQueue(userid, gameid, queueid, rate)
     end
     table.insert(queueUserids[gameid][queueid], index, {userid = userid, rate = rate, checkNum = 0})
     inMatchList[userid] = true
-    setUserStatus(userid, gConfig.USER_STATUS.MATCHING, 0, 0)
+    setUserStatus(userid, gConfig.USER_STATUS.MATCHING, 0, 0, "")
     return true
 end
 

@@ -55,15 +55,15 @@ end
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     local roomid = snowflake.generate()
-    log.info("createGame %d", roomid)
+    local addr = skynet.getenv("clientAddr")
     local name = "games/" .. gameid .. "/room"
     local game = skynet.newservice(name)
-    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid , gameManager = skynet.self()})
+    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid, addr = addr, gameManager = skynet.self()})
     if not allGames[gameid] then
         allGames[gameid] = {}
     end
     allGames[gameid][roomid] = game
-    local addr = skynet.getenv("clientAddr")
+    
     return roomid,addr
 end
 
