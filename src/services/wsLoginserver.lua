@@ -63,7 +63,7 @@ local function handle_ws_connection(fd, addr, ip, conf)
         return
     end
     -- 调用登录逻辑
-    local ok, subid,svr = pcall(conf.login_after_handler, srv, uid, secret, loginType)
+    local ok, subid, svr = pcall(conf.login_after_handler, srv, uid, secret, loginType)
     if not ok then
         websocket.write(fd, "406 Not Acceptable", "binary")
         websocket.close(fd)
