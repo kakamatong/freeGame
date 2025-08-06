@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 local allGames = {}
-local roomid = os.time() * 100000
+local snowflake = require "snowflake"
 local config = require "games.config"
 local sharedata = require "skynet.sharedata"
 local parser = require "sprotoparser"
@@ -54,7 +54,7 @@ end
 
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
-    roomid = roomid + 1
+    local roomid = snowflake.generate()
     log.info("createGame %d", roomid)
     local name = "games/" .. gameid .. "/room"
     local game = skynet.newservice(name)
