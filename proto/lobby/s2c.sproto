@@ -37,6 +37,7 @@ gameRoomReady 4 {
     request {
         gameid 0 : integer
         roomid 1 : integer
+        addr 2 : string
     }
 }
 

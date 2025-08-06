@@ -34,8 +34,9 @@ end
 
 -- 创建游戏
 local function createGame(gameid, playerids, gameData)
-    local roomid = call(svrGame, "createGame", gameid, playerids, gameData)
-    return roomid
+    local roomid,addr = call(svrGame, "createGame", gameid, playerids, gameData)
+    log.info("-----createGame %d %s", roomid, addr)
+    return roomid,addr
 end
 
 local function returnRobot( userids)
@@ -129,14 +130,14 @@ function matchOnSure.checkOnSure()
     for i, v in ipairs(waitingOnSure) do
         if #v.readys == #v.playerids then
             --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            local roomid = onSureSuccess(i, v)
+            local roomid,addr = onSureSuccess(i, v)
             i = i - 1
             if roomid then
                 for _, userid in ipairs(v.playerids) do
                     setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid)
                     if v.data.robots and isRobot(userid, v.data.robots) then
                     else
-                        sendSvrMsg(userid, "gameRoomReady", {roomid = roomid, gameid = v.gameid})
+                        sendSvrMsg(userid, "gameRoomReady", {roomid = roomid, gameid = v.gameid, addr = addr})
                     end
                 end
             else

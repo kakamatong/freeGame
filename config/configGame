@@ -20,3 +20,4 @@ game = true
 gateAddress = "0.0.0.0"
 gatePort = 9003
 gateMaxclient = 4096
+clientAddr = "192.168.1.140:9003"

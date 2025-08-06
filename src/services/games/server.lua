@@ -63,8 +63,8 @@ function CMD.createGame(gameid, players, gameData)
         allGames[gameid] = {}
     end
     allGames[gameid][roomid] = game
-
-    return roomid
+    local addr = skynet.getenv("clientAddr")
+    return roomid,addr
 end
 
 -- 销毁游戏
