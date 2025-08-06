@@ -99,7 +99,8 @@ skynet.register_protocol {
 					send_package(result)
 				end
 			else
-				log.error(result)
+				local name = ...
+				log.error(name .. " " .. result)
 			end
 		else
 			assert(type == "RESPONSE")

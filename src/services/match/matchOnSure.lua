@@ -163,7 +163,7 @@ function matchOnSure.onSure(userid, id, sure)
     -- end
     for _, value in pairs(item.readys) do
         if value == userid then
-            log.warn("matchOnSure onSure %d %d", userid, id)
+            log.warn("matchOnSure onSure agreed %d %d", userid, id)
             return {code = 0, msg = "已同意"}
         end
     end
@@ -171,6 +171,7 @@ function matchOnSure.onSure(userid, id, sure)
         --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
         table.insert(item.readys, userid)
         sendMatchOnSure(item)
+        return {code = 1, msg = "成功"}
     else
         log.info("match fail %d", userid)
         destroyOnSureItem(index, "玩家拒绝")
