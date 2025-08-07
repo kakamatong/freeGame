@@ -90,7 +90,7 @@ end
 function server.login_after_handler(server, userid, secret, loginType)
 	log.info(string.format("%d@%s is login, secret is %s", userid, server, crypt.hexencode(secret)))
 	local clusterManager = skynet.localname(CONFIG.SVR_NAME.CLUSTER)
-	local check = skynet.call(clusterManager, "lua", "checkHaveSvr", server)
+	local check = skynet.call(clusterManager, "lua", "checkHaveNode", server)
 	assert(check, "gameserver not started")
 	-- 只允许一个用户在线
 	-- local last = user_online[numid]
