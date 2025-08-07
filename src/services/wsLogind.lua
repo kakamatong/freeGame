@@ -101,7 +101,7 @@ function server.login_after_handler(server, userid, secret, loginType)
 	-- 	error(string.format("user %d is already online", numid))
 	-- end
 
-	local subid = tostring(callTo(server, "gate","login", userid, crypt.hexencode(secret), loginType))
+	local subid = tostring(callTo(server, "gate1","login", userid, crypt.hexencode(secret), loginType))
 	-- user_online[numid] = { address = gameserver, subid = subid , secret = crypt.hexencode(secret)}
 	return subid, server
 end

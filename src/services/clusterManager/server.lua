@@ -73,7 +73,7 @@ function CMD.start()
 end
 
 function CMD.checkHaveSvr(name)
-    return list2[name]
+    return svrNodes[name]
 end
 
 function CMD.call(svrName, funcName, ...)

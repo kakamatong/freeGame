@@ -17,8 +17,6 @@ daemon = "./skynetGame2.pid" -- 启动服务时，会生成一个 skynet.pid 文
 clusterName = "game2"
 nodeid = 2
 
-game = true
-
 gateAddress = "0.0.0.0"
 gatePort = 9006
 gateMaxclient = 4096

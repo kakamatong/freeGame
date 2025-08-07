@@ -24,7 +24,7 @@ local function sendSvrMsg(userid,xyName, data)
 	local pack = send_request(xyName, data, 1)
     local name = skynet.call(getDB(), "lua", "dbRedis", "get", string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid))
     if name and name ~= "" then
-        sendTo(name, "gate","sendSvrMsg", userid, pack)
+        sendTo(name, "gate1","sendSvrMsg", userid, pack)
     end
 end
 
