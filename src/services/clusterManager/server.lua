@@ -13,6 +13,52 @@ local list2 = {}
 -- 新增全局变量
 local svrNodes = {}
 local svrServices = {}
+local bopen = false
+
+local function createGateSvr()
+	-- 启动协议加载服务（用于sproto协议）
+	skynet.newservice("protoloader")
+	local data = {
+		address = skynet.getenv("gateAddress"),
+    	port = skynet.getenv("gatePort"),
+    	maxclient = skynet.getenv("gateMaxclient"),
+	}
+	-- 启动网关服务
+	local svr = skynet.newservice("wsWatchdog")
+	skynet.call(svr, "lua", "start", data)
+	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
+	cluster.register(CONFIG.CLUSTER_SVR_NAME.GATE, gate)
+end
+
+local function createGameSvr()
+	local svr = skynet.newservice("wsGameGate")
+	local data = {
+		address = skynet.getenv("gateAddress"),
+    	port = skynet.getenv("gatePort"),
+    	maxclient = skynet.getenv("gateMaxclient"),
+	}
+	skynet.call(svr, "lua", "open", data)
+	local svrGame = skynet.newservice("games/server")
+	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAME, svrGame)
+end
+
+local function createCommonSvr(path, name)
+	local svr = skynet.newservice(path)
+	if name then
+		cluster.register(name, svr)
+	end
+end
+
+local function createSvr()
+    local name = skynet.getenv("clusterName")
+    local nodeInfo = svrNodes[name]
+
+    if not bopen then
+        cluster.open(name)
+        bopen = true
+    end
+	
+end
 
 local function dealList(data)
     local list = {}
