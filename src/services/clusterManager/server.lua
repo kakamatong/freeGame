@@ -14,6 +14,8 @@ local list2 = {}
 local svrNodes = {}
 local svrServices = {}
 local bopen = false
+-- 添加一个全局变量来跟踪每种类型服务的创建数量
+local createdServicesCount = {}
 
 local function createGateSvr()
 	-- 启动协议加载服务（用于sproto协议）
@@ -28,6 +30,7 @@ local function createGateSvr()
 	skynet.call(svr, "lua", "start", data)
 	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
 	cluster.register(CONFIG.CLUSTER_SVR_NAME.GATE, gate)
+    return gate
 end
 
 local function createGameSvr()
@@ -40,6 +43,7 @@ local function createGameSvr()
 	skynet.call(svr, "lua", "open", data)
 	local svrGame = skynet.newservice("games/server")
 	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAME, svrGame)
+	return svrGame
 end
 
 local function createCommonSvr(path, name)
@@ -47,6 +51,8 @@ local function createCommonSvr(path, name)
 	if name then
 		cluster.register(name, svr)
 	end
+
+    return svr
 end
 
 local function createSvr()
@@ -73,15 +79,30 @@ local function createSvr()
         return
     end
     
-    -- 根据服务类型创建对应数量的服务
-    log.info("Creating %d services of type %s on node %s", nodeInfo.cnt, serviceType, nodeName)
+    -- 初始化该类型服务的创建计数（如果不存在）
+    createdServicesCount[serviceType] = createdServicesCount[serviceType] or 0
+    
+    -- 检查是否已经创建足够的服务
+    if createdServicesCount[serviceType] >= nodeInfo.cnt then
+        log.info("Already created enough services of type %s on node %s", serviceType, nodeName)
+        return
+    end
+    
+    -- 计算需要补充创建的服务数量
+    local needCreateCount = nodeInfo.cnt - createdServicesCount[serviceType]
+    log.info("Need to create %d more services of type %s on node %s", needCreateCount, serviceType, nodeName)
     
     -- 根据服务类型选择不同的创建函数
     if serviceType == "gate" then-- gate只会创建一个
-        -- 启动协议加载服务（用于sproto协议）
-        createGateSvr()
+        if createdServicesCount[serviceType] == 0 then
+            createGateSvr()
+            createdServicesCount[serviceType] = 1
+        end
     elseif serviceType == "game" then-- game只会创建一个
-        createGameSvr()
+        if createdServicesCount[serviceType] == 0 then
+            createGameSvr()
+            createdServicesCount[serviceType] = 1
+        end
     else
         -- 对于其他类型的服务，使用通用创建函数
         local servicePathMap = {
@@ -96,10 +117,14 @@ local function createSvr()
         
         local servicePath = servicePathMap[serviceType] or serviceType.."/server"
         
-        for i = 1, nodeInfo.cnt do
+        -- 只创建需要的数量
+        for i = createdServicesCount[serviceType] + 1, nodeInfo.cnt do
             local serviceName = string.format("%s%d", serviceType, i)
             createCommonSvr(servicePath, serviceName)
         end
+        
+        -- 更新创建计数
+        createdServicesCount[serviceType] = nodeInfo.cnt
     end
 
     if not bopen then
@@ -149,6 +174,7 @@ local function checkClusterConfigUp()
         local clusterConfig = dealList(list)
         log.info("clusterConfig: %s", UTILS.tableToString(clusterConfig))
         cluster.reload(clusterConfig)
+        createSvr()
     end
 end
 
