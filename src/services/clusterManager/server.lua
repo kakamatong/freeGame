@@ -50,14 +50,62 @@ local function createCommonSvr(path, name)
 end
 
 local function createSvr()
-    local name = skynet.getenv("clusterName")
-    local nodeInfo = svrNodes[name]
+    local nodeName = skynet.getenv("clusterName")
+    local serviceType = nil
+    local nodeInfo = nil
+    
+    -- 查找节点名称对应的服务类型
+    for type, nodes in pairs(svrNodes) do
+        for _, node in ipairs(nodes) do
+            if node.name == nodeName then
+                serviceType = type
+                nodeInfo = node
+                break
+            end
+        end
+        if serviceType then
+            break
+        end
+    end
+    
+    if not serviceType or not nodeInfo then
+        log.error("Cannot find service type for node: %s", nodeName)
+        return
+    end
+    
+    -- 根据服务类型创建对应数量的服务
+    log.info("Creating %d services of type %s on node %s", nodeInfo.cnt, serviceType, nodeName)
+    
+    -- 根据服务类型选择不同的创建函数
+    if serviceType == "gate" then-- gate只会创建一个
+        -- 启动协议加载服务（用于sproto协议）
+        createGateSvr()
+    elseif serviceType == "game" then-- game只会创建一个
+        createGameSvr()
+    else
+        -- 对于其他类型的服务，使用通用创建函数
+        local servicePathMap = {
+            match = "match/server",
+            robot = "robot/server",
+            login = "wsLogind",
+            user = "user/server",
+            activity = "activity/server",
+            auth = "auth/server"
+            -- 可以根据需要添加更多服务类型的路径映射
+        }
+        
+        local servicePath = servicePathMap[serviceType] or serviceType.."/server"
+        
+        for i = 1, nodeInfo.cnt do
+            local serviceName = string.format("%s%d", serviceType, i)
+            createCommonSvr(servicePath, serviceName)
+        end
+    end
 
     if not bopen then
-        cluster.open(name)
+        cluster.open(nodeName)
         bopen = true
     end
-	
 end
 
 local function dealList(data)
@@ -86,8 +134,6 @@ local function dealList(data)
             end
         end
     end
-    
-    list2 = list
     return list
 end
 
