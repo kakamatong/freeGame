@@ -32,6 +32,8 @@ local dTime = 100
 local svrUser = gConfig.CLUSTER_SVR_NAME.USER
 local svrDB = nil
 local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
+local spc2s = nil
+local sps2c = nil
 -- 更新玩家状态
 -- 收发协议
 -- 游戏逻辑
@@ -41,12 +43,13 @@ local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
 -- 加载sproto
 local function loadSproto()
     local t = sharedata.query(config.SPROTO.C2S)
-    local sp = core.newproto(t.str)
-    host = sproto.sharenew(sp):host "package"
+    spc2s = core.newproto(t.str)
+    host = sproto.sharenew(spc2s):host "package"
+
 
     t = sharedata.query(config.SPROTO.S2C)
-    sp = core.newproto(t.str)
-    send_request = host:attach(sproto.sharenew(sp))
+    sps2c = core.newproto(t.str)
+    send_request = host:attach(sproto.sharenew(sps2c))
 end
 
 -- 房间日志，创建，销毁，开始，结束
@@ -392,6 +395,9 @@ function CMD.stop()
     end
 
     pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, roomInfo.gameid, roomInfo.roomid, "")
+    
+    core.deleteproto(spc2s)
+    core.deleteproto(sps2c)
     skynet.exit()
 end
 

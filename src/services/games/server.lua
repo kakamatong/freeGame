@@ -21,14 +21,18 @@ local function loadSproto()
         local data = {
             str = bin,
         }
-        sharedata.new("game" .. gameid .. "_c2s", data)
+        local c2s = "game" .. gameid .. "_c2s"
+        sharedata.new(c2s, data)
+        --sharedata.query(c2s)
 
         filename = "proto/" .. string.format("game%d", gameid) .. "/s2c.sproto"
         bin = loadfile(filename)
         data = {
             str = bin,
         }
-        sharedata.new("game" .. gameid .. "_s2c", data)
+        local s2c = "game" .. gameid .. "_s2c"
+        sharedata.new(s2c, data)
+        --sharedata.query(s2c)
     end
 end
 
