@@ -29,7 +29,7 @@ local function createGateSvr()
 	local svr = skynet.newservice("wsWatchdog")
 	skynet.call(svr, "lua", "start", data)
 	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
-	cluster.register(CONFIG.CLUSTER_SVR_NAME.GATE, gate)
+	cluster.register("gate1", gate)
     return gate
 end
 
@@ -42,7 +42,7 @@ local function createGameSvr()
 	}
 	skynet.call(svr, "lua", "open", data)
 	local svrGame = skynet.newservice("games/server")
-	cluster.register(CONFIG.CLUSTER_SVR_NAME.GAME, svrGame)
+	cluster.register("game1", svrGame)
 	return svrGame
 end
 
@@ -227,6 +227,7 @@ function CMD.call(svrName, funcName, ...)
 end
 
 function CMD.callTo(node, svrName, funcName, ...)
+    log.info("callTo node: %s, svrName: %s, funcName: %s", node, svrName, funcName)
     return cluster.call(node, "@" .. svrName, funcName, ...)
 end
 

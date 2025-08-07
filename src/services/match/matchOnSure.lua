@@ -8,9 +8,7 @@ local matchOnSure = {}
 local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
 local svrUser = gConfig.CLUSTER_SVR_NAME.USER
 local svrGame = gConfig.CLUSTER_SVR_NAME.GAME
-local sprotoloader = require "sprotoloader"
-local host = sprotoloader.load(1):host "package"
-local send_request = host:attach(sprotoloader.load(2))
+local send_request = nil
 local svrDB = nil
 
 local function getDB()
@@ -20,8 +18,17 @@ local function getDB()
     return svrDB
 end
 
+local function sendRequest(name, data)
+    if not send_request then
+        local sprotoloader = require "sprotoloader"
+        local host = sprotoloader.load(1):host "package"
+        send_request = host:attach(sprotoloader.load(2))
+    end
+    local pack = send_request(name, data, 1)
+end
+
 local function sendSvrMsg(userid,xyName, data)
-	local pack = send_request(xyName, data, 1)
+	local pack = sendRequest(xyName, data)
     local name = skynet.call(getDB(), "lua", "dbRedis", "get", string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid))
     if name and name ~= "" then
         sendTo(name, "gate1","sendSvrMsg", userid, pack)
