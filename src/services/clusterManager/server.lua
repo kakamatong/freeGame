@@ -139,7 +139,6 @@ local function dealList(data)
     svrServices = {}
     
     for key, value in pairs(data) do
-        list[key] = {}
         svrNodes[key] = {}
         
         for k, v in ipairs(value) do
@@ -149,12 +148,11 @@ local function dealList(data)
             
             -- 保存节点信息
             table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt })
-            
+            list[name] = addr
             -- 保存服务信息
             svrServices[name] = svrServices[name] or {}
             for i = 1, cnt do
                 local serviceName = string.format("%s%d", name, i)
-                list[serviceName] = addr
                 table.insert(svrServices[name], serviceName)
             end
         end
