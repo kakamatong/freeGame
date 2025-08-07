@@ -10,14 +10,37 @@ local clusterConfigVer = 0
 local list = {}
 local list2 = {}
 
+-- 新增全局变量
+local svrNodes = {}
+local svrServices = {}
+
 local function dealList(data)
     local list = {}
+    svrNodes = {}
+    svrServices = {}
+    
     for key, value in pairs(data) do
+        list[key] = {}
+        svrNodes[key] = {}
+        
         for k, v in ipairs(value) do
-            local name = string.format("%s%d", key, k)
-            list[name] = v
+            local name = v.name
+            local addr = v.addr
+            local cnt = v.cnt
+            
+            -- 保存节点信息
+            table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt })
+            
+            -- 保存服务信息
+            svrServices[name] = svrServices[name] or {}
+            for i = 1, cnt do
+                local serviceName = string.format("%s%d", name, i)
+                list[serviceName] = addr
+                table.insert(svrServices[name], serviceName)
+            end
         end
     end
+    
     list2 = list
     return list
 end
@@ -54,14 +77,27 @@ function CMD.checkHaveSvr(name)
 end
 
 function CMD.call(svrName, funcName, ...)
-    local svr = list[svrName]
-    if not svr or #svr <= 0 then
+    local nodes = svrNodes[svrName]
+    if not nodes or #nodes <= 0 then
         log.info("call fail svrName: %s", svrName)
         return nil
     end
-    local index = math.random(1, #svr)
-    local node = svrName .. tostring(index)
-    return cluster.call(node, "@" .. svrName, funcName, ...)
+    
+    -- 随机选择一个节点
+    local nodeIndex = math.random(1, #nodes)
+    local node = nodes[nodeIndex]
+    
+    -- 随机选择该节点上的一个服务
+    local services = svrServices[node.name]
+    if not services or #services <= 0 then
+        log.info("call fail no services on node: %s", node.name)
+        return nil
+    end
+    
+    local serviceIndex = math.random(1, #services)
+    local serviceName = services[serviceIndex]
+    
+    return cluster.call(node.name, "@" .. serviceName, funcName, ...)
 end
 
 function CMD.callTo(node, svrName, funcName, ...)
@@ -69,14 +105,27 @@ function CMD.callTo(node, svrName, funcName, ...)
 end
 
 function CMD.send(svrName, funcName, ...)
-    local svr = list[svrName]
-    if not svr or #svr <= 0  then
+    local nodes = svrNodes[svrName]
+    if not nodes or #nodes <= 0 then
         log.info("send fail svrName: %s", svrName)
         return nil
     end
-    local index = math.random(1, #svr)
-    local node = svrName .. tostring(index)
-    return cluster.send(node, "@" .. svrName, funcName, ...)
+    
+    -- 随机选择一个节点
+    local nodeIndex = math.random(1, #nodes)
+    local node = nodes[nodeIndex]
+    
+    -- 随机选择该节点上的一个服务
+    local services = svrServices[node.name]
+    if not services or #services <= 0 then
+        log.info("send fail no services on node: %s", node.name)
+        return nil
+    end
+    
+    local serviceIndex = math.random(1, #services)
+    local serviceName = services[serviceIndex]
+    
+    return cluster.send(node.name, "@" .. serviceName, funcName, ...)
 end
 
 function CMD.sendTo(node, svrName, funcName, ...)
