@@ -152,11 +152,13 @@ local function dealList(data)
             -- 保存服务信息
             svrServices[name] = svrServices[name] or {}
             for i = 1, cnt do
-                local serviceName = string.format("%s%d", name, i)
+                local serviceName = string.format("%s%d", key, i)
                 table.insert(svrServices[name], serviceName)
             end
         end
     end
+    log.info("svrNodes: %s", UTILS.tableToString(svrNodes))
+    log.info("svrServices: %s", UTILS.tableToString(svrServices))
     return list
 end
 
@@ -202,10 +204,11 @@ function CMD.checkHaveNode(name)
     return false
 end
 
-function CMD.call(svrName, funcName, ...)
-    local nodes = svrNodes[svrName]
+function CMD.call(svrType, funcName, ...)
+    --log.info("call svrType: %s, funcName: %s", svrType, funcName)
+    local nodes = svrNodes[svrType]
     if not nodes or #nodes <= 0 then
-        log.info("call fail svrName: %s", svrName)
+        log.info("call fail svrType: %s", svrType)
         return nil
     end
     
@@ -223,18 +226,20 @@ function CMD.call(svrName, funcName, ...)
     local serviceIndex = math.random(1, #services)
     local serviceName = services[serviceIndex]
     
+    --log.info("call svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
     return cluster.call(node.name, "@" .. serviceName, funcName, ...)
 end
 
 function CMD.callTo(node, svrName, funcName, ...)
-    log.info("callTo node: %s, svrName: %s, funcName: %s", node, svrName, funcName)
+    --log.info("callTo node: %s, svrName: %s, funcName: %s", node, svrName, funcName)
     return cluster.call(node, "@" .. svrName, funcName, ...)
 end
 
-function CMD.send(svrName, funcName, ...)
-    local nodes = svrNodes[svrName]
+function CMD.send(svrType, funcName, ...)
+    --log.info("send svrType: %s, funcName: %s", svrType, funcName)
+    local nodes = svrNodes[svrType]
     if not nodes or #nodes <= 0 then
-        log.info("send fail svrName: %s", svrName)
+        log.info("send fail svrType: %s", svrType)
         return nil
     end
     
@@ -252,6 +257,7 @@ function CMD.send(svrName, funcName, ...)
     local serviceIndex = math.random(1, #services)
     local serviceName = services[serviceIndex]
     
+    --log.info("send svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
     return cluster.send(node.name, "@" .. serviceName, funcName, ...)
 end
 
