@@ -34,15 +34,20 @@ end
 
 function REQUEST:userStatus(args)
 	local status = call(svrUser, "userStatus", userid)
-	
-	local b = call(svrGame, "checkHaveRoom", status.gameid, status.roomid)
-	if not b then
-		status.gameid = 0
-		status.roomid = 0
-		status.status = CONFIG.USER_STATUS.ONLINE
+	log.info("userStatus %s", cjson.encode(status))
 
-		send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "")
+	if status.roomid ~= 0 then
+		local b = callTo(status.addr, "game1", "checkHaveRoom", status.gameid, status.roomid)
+		if not b then
+			status.gameid = 0
+			status.roomid = 0
+			status.addr = ""
+			status.status = CONFIG.USER_STATUS.ONLINE
+
+			send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "")
+		end
 	end
+	
 	status.roomid = tostring(status.roomid)
 	return status
 end
