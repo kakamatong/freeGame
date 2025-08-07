@@ -219,7 +219,7 @@ function db.getRobots(mysql,...)
     local idbegin,idend =...
     local sql = string.format("SELECT * FROM userData WHERE userid >= %d and userid <= %d;",idbegin,idend)
     local res = mysql:query(sql)
-    log.info(UTILS.tableToString(res))
+    --log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
     
     if #res == 0 then

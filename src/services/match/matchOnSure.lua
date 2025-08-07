@@ -24,7 +24,7 @@ local function sendRequest(name, data)
         local host = sprotoloader.load(1):host "package"
         send_request = host:attach(sprotoloader.load(2))
     end
-    local pack = send_request(name, data, 1)
+    return send_request(name, data, 1)
 end
 
 local function sendSvrMsg(userid,xyName, data)
