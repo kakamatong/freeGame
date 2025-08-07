@@ -59,7 +59,7 @@ end
 -- 创建游戏
 function CMD.createGame(gameid, players, gameData)
     local roomid = snowflake.generate()
-    local addr = skynet.getenv("clientAddr")
+    local addr = skynet.getenv("clusterName")
     local name = "games/" .. gameid .. "/room"
     local game = skynet.newservice(name)
     skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid, addr = addr, gameManager = skynet.self()})

@@ -34,6 +34,7 @@ end
 
 function REQUEST:userStatus(args)
 	local status = call(svrUser, "userStatus", userid)
+	
 	local b = call(svrGame, "checkHaveRoom", status.gameid, status.roomid)
 	if not b then
 		status.gameid = 0
