@@ -192,16 +192,7 @@ end
 
 function CMD.checkHaveNode(name)
     -- 遍历所有服务类型的节点
-    for _, nodes in pairs(svrNodes) do
-        for _, node in ipairs(nodes) do
-            -- 如果找到匹配的节点名称
-            if node.name == name then
-                return true
-            end
-        end
-    end
-    -- 没有找到匹配的节点
-    return false
+    return list[name]
 end
 
 function CMD.call(svrType, funcName, ...)
