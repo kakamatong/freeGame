@@ -50,7 +50,7 @@ function server.login_handler(token, ip)
 	server = crypt.base64decode(server)
 	password = crypt.base64decode(password)
 	loginType = crypt.base64decode(loginType)
-	log.info(string.format("user %s login, server is %s, password is %s, loginType is %s", user, server, password, loginType))
+	log.info(string.format("user %s login, server is %s, loginType is %s", user, server, loginType))
 
 	local dbserver = skynet.localname(CONFIG.SVR_NAME.DB)
 	if not dbserver then
@@ -100,7 +100,7 @@ function server.login_after_handler(server, userid, secret, loginType)
 	-- if user_online[numid] then
 	-- 	error(string.format("user %d is already online", numid))
 	-- end
-
+	log.info("login server is %s", server)
 	local subid = tostring(callTo(server, "gate1","login", userid, crypt.hexencode(secret), loginType))
 	-- user_online[numid] = { address = gameserver, subid = subid , secret = crypt.hexencode(secret)}
 	return subid, server

@@ -159,6 +159,8 @@ local function dealList(data)
     end
     log.info("svrNodes: %s", UTILS.tableToString(svrNodes))
     log.info("svrServices: %s", UTILS.tableToString(svrServices))
+    log.info("list: %s", UTILS.tableToString(list))
+    list2 = list
     return list
 end
 
@@ -192,7 +194,7 @@ end
 
 function CMD.checkHaveNode(name)
     -- 遍历所有服务类型的节点
-    return list[name]
+    return list2[name]
 end
 
 function CMD.call(svrType, funcName, ...)
