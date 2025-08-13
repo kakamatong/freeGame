@@ -9,3 +9,4 @@
 ./skynet/skynet config/configGate
 ./skynet/skynet config/configGate2
 ./skynet/skynet config/configMatch
+./skynet/skynet config/configWeb

@@ -46,6 +46,14 @@ local function createGameSvr()
 	return svrGame
 end
 
+local function createWebSvr()
+	local svr = skynet.newservice("web/server")
+	local port = skynet.getenv("port")
+	skynet.call(svr, "lua", "open", port)
+	cluster.register("web1", svr)
+	return svr
+end
+
 local function createCommonSvr(path, name)
 	local svr = skynet.newservice(path)
 	if name then
@@ -101,6 +109,11 @@ local function createSvr()
     elseif serviceType == "game" then-- game只会创建一个
         if createdServicesCount[serviceType] == 0 then
             createGameSvr()
+            createdServicesCount[serviceType] = 1
+        end
+    elseif serviceType == "web" then-- web只会创建一个
+        if createdServicesCount[serviceType] == 0 then
+            createWebSvr()
             createdServicesCount[serviceType] = 1
         end
     else

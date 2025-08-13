@@ -93,8 +93,11 @@ local function onRequest(protocol, id)
 end
 
 local function start()
+    
+end
+
+function CMD.open(port)
     local protocol = "http"
-    local port = skynet.getenv("port")
 	local id = socket.listen("0.0.0.0", port)
 	skynet.error(string.format("Listen web port 8001 protocol:%s", protocol))
 	socket.start(id , function(id, addr)
