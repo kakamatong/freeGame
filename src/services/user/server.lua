@@ -51,6 +51,27 @@ function CMD.setUserStatus(userid, status, gameid, roomid, addr)
 	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid, addr)
 end
 
+-- 奖励通知
+function CMD.awardNotice(userid,awardMessage)
+    assert(userid)
+    assert(awardMessage)
+    skynet.send(dbSvr, "lua", "db", "insertAwardNotice", userid, awardMessage)
+end
+
+-- 获取奖励通知
+function CMD.getAwardNotice(userid,time)
+    assert(userid)
+    assert(time)
+    local res = skynet.call(dbSvr, "lua", "db", "getAwardNotice", userid, time)
+    return res
+end
+
+-- 设置奖励通知为已读
+function CMD.setAwardNoticeRead(id)
+    assert(id)
+    skynet.send(dbSvr, "lua", "db", "setAwardNoticeRead", id)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
