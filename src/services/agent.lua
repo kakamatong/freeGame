@@ -84,7 +84,7 @@ function REQUEST:getAwardNotice(args)
 end
 
 function REQUEST:setAwardNoticeRead(args)
-	return call(svrUser, "setAwardNoticeRead", args.id)
+	call(svrUser, "setAwardNoticeRead", args.id)
 end
 
 -- 客户端请求分发

@@ -153,8 +153,5 @@ setAwardNoticeRead 12 {
     request {
         id 0 : integer
     }
-    response {
-        code 0 : *integer
-    }
 }
 
