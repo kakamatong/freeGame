@@ -306,11 +306,11 @@ end
 
 function db.insertAwardNotice(mysql,...)
     local userid,awardMessage =...
-    local sql = string.format("INSERT INTO awardNotices (userid,status,awardMessage) VALUES (%d,%d,'%s') RETURNING id;",userid,0,awardMessage)
+    local sql = string.format("INSERT INTO awardNotices (userid,status,awardMessage) VALUES (%d,%d,'%s');",userid,0,awardMessage)
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
-    return res[1].id
+    return res.insert_id
 end
 
 -- 获取奖励通知
