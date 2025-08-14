@@ -148,26 +148,23 @@ function daySignIn.signIn(userid, args)
         signInData.status[signInIndex] = STATUS_SIGN.SIGNIN
         setSignInData(userid, signInData, oneDay * (8 - signInIndex))
         -- 发奖
-        local richTypes = signInConfig[signInIndex].richTypes
-        local richNums = signInConfig[signInIndex].richNums
-        local allRichNums = {}
+        local awardData = signInConfig[signInIndex]
+        local richTypes = awardData.richTypes
+        local richNums = awardData.richNums
         for i = 1, #richTypes do
             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
                 return tools.result({error = "发奖失败"})
             end
-
-            local all = tools.callMysql("getUserRichesByType", userid, richTypes[i])
-            if not res then
-                table.insert(allRichNums, 0)
-            else
-                table.insert(allRichNums, all.richNums)
-            end
         end
         tools.callRedis("unlock", lockKey)
-        -- 更新财富通知
-        tools.reportAward(userid, richTypes, richNums, allRichNums)
-        return tools.result(signInConfig[signInIndex])
+        local strData = cjson.encode(awardData)
+        local id = call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, strData)
+        local res = {
+            noticeid = id,
+            awards = awardData
+        }
+        return tools.result(res)
     end
 end
 
@@ -182,40 +179,36 @@ function daySignIn.fillSignIn(userid, args)
     if signInData.status[fillIndex] > STATUS_SIGN.NOT_SIGNIN then
         return tools.result({error = "已经签到过了"})
     else
-         -- redis 锁
-         local lockKey = string.format("signInLock:%d", userid)
-         local lockValue = os.time()
-         local lockExpire = 2000
-         local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
-         if not lock then
-             return tools.result({error = "签到失败"})
-         end
- 
-         -- 更新签到状态
-         signInData.status[fillIndex] = STATUS_SIGN.FILL_SIGNIN
-         setSignInData(userid, signInData, oneDay * (8 - fillIndex))
-         -- 发奖
-         local richTypes = signInConfig[fillIndex].richTypes
-         local richNums = signInConfig[fillIndex].richNums
-         local allRichNums = {}
-         for i = 1, #richTypes do
-             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
-             if not res then
-                 return tools.result({error = "发奖失败"})
-             end
+        -- redis 锁
+        local lockKey = string.format("signInLock:%d", userid)
+        local lockValue = os.time()
+        local lockExpire = 2000
+        local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
+        if not lock then
+            return tools.result({error = "签到失败"})
+        end
 
-             
-            local all = tools.callMysql("getUserRichesByType", userid, richTypes[i])
+        -- 更新签到状态
+        signInData.status[fillIndex] = STATUS_SIGN.FILL_SIGNIN
+        setSignInData(userid, signInData, oneDay * (8 - fillIndex))
+        -- 发奖
+        local awardData = signInConfig[fillIndex]
+        local richTypes = awardData.richTypes
+        local richNums = awardData.richNums
+        for i = 1, #richTypes do
+            local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
-                table.insert(allRichNums, 0)
-            else
-                table.insert(allRichNums, all.richNums)
+                return tools.result({error = "发奖失败"})
             end
-         end
-         tools.callRedis("unlock", lockKey)
-         -- 更新财富通知
-         tools.reportAward(userid, richTypes, richNums, allRichNums)
-         return tools.result(signInConfig[fillIndex])
+        end
+        tools.callRedis("unlock", lockKey)
+        local strData = cjson.encode(awardData)
+        local id = call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, strData)
+        local res = {
+            noticeid = id,
+            awards = awardData
+        }
+         return tools.result(res)
     end
 end
 

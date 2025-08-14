@@ -55,7 +55,7 @@ end
 function CMD.awardNotice(userid,awardMessage)
     assert(userid)
     assert(awardMessage)
-    skynet.send(dbSvr, "lua", "db", "insertAwardNotice", userid, awardMessage)
+    return skynet.call(dbSvr, "lua", "db", "insertAwardNotice", userid, awardMessage)
 end
 
 -- 获取奖励通知

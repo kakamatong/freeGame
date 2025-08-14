@@ -15,14 +15,6 @@ local function getDB()
     return svrDB
 end
 
-local function sendSvrMsg(userid, typeName, data)
-	local pack = send_request(typeName, data, 1)
-    local name = skynet.call(getDB(), "lua", "dbRedis", "get", string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid))
-    if name and name ~= "" then
-        sendTo(name, "gate1","sendSvrMsg", userid, pack)
-    end
-end
-
 function tools.result(info)
     if info then
         if type(info) == "table" or type(info) == "number" then
@@ -44,16 +36,6 @@ end
 function tools.callMysql(func,...)
     return skynet.call(getDB(), "lua", "db", func, ...)
 end
-
--- 下发财富变更信息
-function tools.reportAward(userid, richTypes, richNums, allRichNums)
-    local data = {
-        richTypes = richTypes,
-        richNums = richNums,
-        allRichNums = allRichNums
-    }
-    sendSvrMsg(userid, "updateRich", data)
-end 
 
 function tools.userData(userid)
     return call(svrUser, "userData", userid)
