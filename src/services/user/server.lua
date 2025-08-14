@@ -61,7 +61,10 @@ end
 -- 获取奖励通知
 function CMD.getAwardNotice(userid,time)
     assert(userid)
-    assert(time)
+    if not time then
+		-- 最近30天
+        time = os.date("%Y-%m-%d 00:00:00", os.time() - 30 * 24 * 60 * 60)
+    end
     local res = skynet.call(dbSvr, "lua", "db", "getAwardNotice", userid, time)
     return res
 end

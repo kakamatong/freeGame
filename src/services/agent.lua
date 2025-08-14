@@ -76,6 +76,17 @@ function REQUEST:callActivityFunc(args)
 	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
 
+function REQUEST:getAwardNotice(args)
+	local res = {
+		list = call(svrUser, "getAwardNotice", userid) or {}
+	}
+	return res
+end
+
+function REQUEST:setAwardNoticeRead(args)
+	return call(svrUser, "setAwardNoticeRead", args.id)
+end
+
 -- 客户端请求分发
 local function request(name, args, response)
 	assert(REQUEST[name])
