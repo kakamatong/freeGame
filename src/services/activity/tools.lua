@@ -2,9 +2,6 @@ local tools = {}
 local skynet = require "skynet"
 local cjson = require "cjson"
 local log = require "log"
-local sprotoloader = require "sprotoloader"
-local host = sprotoloader.load(1):host "package"
-local send_request = host:attach(sprotoloader.load(2))
 local svrDB = nil
 local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 
