@@ -128,3 +128,33 @@ matchTestStop 10 {
         msg 1 : string
     }
 }
+
+# 奖励通知
+.AwardNotice {
+    id 0 : integer
+    userid 1 : integer
+    status 2 : integer
+    awardMessage 3 : string
+    create_at 4 : string
+}
+
+# 获取奖励通知
+getAwardNotice 11 {
+    request {
+        userid 0 : integer
+    }
+    response {
+        list 0 : *AwardNotice
+    }
+}
+
+# 设置奖励通知已读
+setAwardNoticeRead 12 {
+    request {
+        id 0 : integer
+    }
+    response {
+        code 0 : *integer
+    }
+}
+
