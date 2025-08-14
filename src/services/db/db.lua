@@ -290,5 +290,47 @@ function db.insertUserGameRecords(mysql,...)
     return true
 end
 
+-- 奖励通知表
+-- CREATE TABLE `awardNotices` (
+--   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+--   `userid` bigint DEFAULT '0' COMMENT '用户id',
+--   `status` tinyint DEFAULT '0' COMMENT '0:未读 1:已读',
+--   `awardMessage` text COMMENT '奖励消息',
+--   `create_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+--   `update_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+--   PRIMARY KEY (`id`),
+--   KEY `idx_create_at` (`create_at`),
+--   KEY `idx_userid` (`userid`),
+--   KEY `idx_userid_status` (`userid`, `status`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='奖励通知表';
+
+function db.insertAwardNotice(mysql,...)
+    local userid,awardMessage =...
+    local sql = string.format("INSERT INTO awardNotices (userid,status,awardMessage) VALUES (%d,%d,'%s');",userid,0,awardMessage)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 获取奖励通知
+function db.getAwardNotice(mysql,...)
+    local userid,time =...
+    local sql = string.format("SELECT * FROM awardNotices WHERE userid = %d AND status = 0 AND create_at > '%s';",userid,time)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return res
+end
+
+function db.setAwardNoticeRead(mysql,...)
+    local id =...
+    local sql = string.format("UPDATE awardNotices SET status = 1 WHERE id = %d;",id)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 返回db表，供外部调用
 return db
