@@ -4,9 +4,20 @@ local httpd = require "http.httpd"
 local sockethelper = require "http.sockethelper"
 local urllib = require "http.url"
 local log = require "log"
+local cjson = require "cjson"
 local CMD = {}
 require "skynet.manager"
 
+local function awardNotice(bodyData)
+	local data = cjson.decode(bodyData)
+	local userid = data.userid
+	local awardMessage = cjson.encode(data.awardMessage)
+    assert(userid)
+    assert(awardMessage)
+    return call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, awardMessage)
+end
+
+----------------------------------------------------------
 local function response(id, write, ...)
 	local ok, err = httpd.write_response(write, ...)
 	if not ok then
@@ -77,7 +88,14 @@ local function onRequest(protocol, id)
 					table.insert(tmp, string.format("%s = %s",k,v))
 				end
 				table.insert(tmp, "-----body----\n" .. body)
-				response(id, interface.write, code, table.concat(tmp,"\n"))
+				--response(id, interface.write, code, table.concat(tmp,"\n"))
+				if path == "/awardnotice" then
+					local ret = awardNotice(body)
+					local res = {
+						noticeid = ret,
+					}
+					response(id, interface.write, code, cjson.encode(res))
+				end
 			end
 		else
 			if url == sockethelper.socket_error then
