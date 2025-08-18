@@ -159,9 +159,10 @@ local function dealList(data)
             local name = v.name
             local addr = v.addr
             local cnt = v.cnt
+            local hide = v.hide
             
             -- 保存节点信息
-            table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt })
+            table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt, hide = hide })
             list[name] = addr
             -- 保存服务信息
             svrServices[name] = svrServices[name] or {}
