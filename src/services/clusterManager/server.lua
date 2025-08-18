@@ -194,6 +194,31 @@ local function checkClusterConfigUp()
     end
 end
 
+local function getNode(svrType, callCnt)
+    callCnt = callCnt or 0
+    if callCnt > 10 then
+        return nil
+    end
+    local nodes = svrNodes[svrType]
+    local cntNode = #nodes
+    if not nodes or cntNode <= 0 then
+        return nil
+    end
+    local nodeIndex = nodeIndexs[svrType] or 1
+    nodeIndexs[svrType] = (nodeIndex + 1) % cntNode
+    if nodeIndexs[svrType] == 0 then
+        nodeIndexs[svrType] = 1
+    end
+    local node = nodes[nodeIndex]
+    
+    if node.hide then
+        callCnt = callCnt + 1
+        getNode(svrType, callCnt)
+    end
+
+    return node
+end
+
 -- "{"ver":1,"list":{"lobby":"127.0.0.1:13006","match":"127.0.0.1:13001","robot":"127.0.0.1:13007","gate":"127.0.0.1:13005","game":"127.0.0.1:13002","login":"127.0.0.1:13004"}}"
 function CMD.start()
     checkClusterConfigUp()
@@ -213,20 +238,12 @@ end
 
 function CMD.call(svrType, funcName, ...)
     --log.info("call svrType: %s, funcName: %s", svrType, funcName)
-    local nodes = svrNodes[svrType]
-    local cntNode = #nodes
-    if not nodes or cntNode <= 0 then
-        log.info("call fail svrType: %s", svrType)
+    local node = getNode(svrType)
+    if not node then    
+        log.info("call fail no node: %s", svrType)
         return nil
     end
-    local nodeIndex = nodeIndexs[svrType] or 1
-    local node = nodes[nodeIndex]
-    nodeIndexs[svrType] = (nodeIndex + 1) % cntNode
-    if nodeIndexs[svrType] == 0 then
-        nodeIndexs[svrType] = 1
-    end
 
-    -- 随机选择该节点上的一个服务
     local services = svrServices[node.name]
     local cntSvr = #services
     if not services or cntSvr <= 0 then
