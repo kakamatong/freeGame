@@ -88,6 +88,7 @@ local function onRequest(protocol, id)
 					table.insert(tmp, string.format("%s = %s",k,v))
 				end
 				table.insert(tmp, "-----body----\n" .. body)
+				log.info("body: %s", body)
 				--response(id, interface.write, code, table.concat(tmp,"\n"))
 				if path == "/awardnotice" then
 					local ret = awardNotice(body)

@@ -16,6 +16,7 @@ local svrServices = {}
 local bopen = false
 -- 添加一个全局变量来跟踪每种类型服务的创建数量
 local createdServicesCount = {}
+local nodeIndexs = {}
 
 local function createGateSvr()
 	-- 启动协议加载服务（用于sproto协议）
@@ -217,20 +218,26 @@ function CMD.call(svrType, funcName, ...)
         log.info("call fail svrType: %s", svrType)
         return nil
     end
-    
-    -- 随机选择一个节点
-    local nodeIndex = math.random(1, #nodes)
+    local nodeIndex = nodeIndexs[svrType] or 1
     local node = nodes[nodeIndex]
-    
+    nodeIndexs[svrType] = (nodeIndex + 1) % #nodes
+    if nodeIndexs[svrType] == 0 then
+        nodeIndexs[svrType] = 1
+    end
+
     -- 随机选择该节点上的一个服务
     local services = svrServices[node.name]
     if not services or #services <= 0 then
         log.info("call fail no services on node: %s", node.name)
         return nil
     end
-    
-    local serviceIndex = math.random(1, #services)
+
+    local serviceIndex = nodeIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
+    nodeIndexs[node.name] = (serviceIndex + 1) % #services
+    if nodeIndexs[node.name] == 0 then
+        nodeIndexs[node.name] = 1
+    end
     
     --log.info("call svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
     return cluster.call(node.name, "@" .. serviceName, funcName, ...)
