@@ -214,27 +214,29 @@ end
 function CMD.call(svrType, funcName, ...)
     --log.info("call svrType: %s, funcName: %s", svrType, funcName)
     local nodes = svrNodes[svrType]
-    if not nodes or #nodes <= 0 then
+    local cntNode = #nodes
+    if not nodes or cntNode <= 0 then
         log.info("call fail svrType: %s", svrType)
         return nil
     end
     local nodeIndex = nodeIndexs[svrType] or 1
     local node = nodes[nodeIndex]
-    nodeIndexs[svrType] = (nodeIndex + 1) % #nodes
+    nodeIndexs[svrType] = (nodeIndex + 1) % cntNode
     if nodeIndexs[svrType] == 0 then
         nodeIndexs[svrType] = 1
     end
 
     -- 随机选择该节点上的一个服务
     local services = svrServices[node.name]
-    if not services or #services <= 0 then
+    local cntSvr = #services
+    if not services or cntSvr <= 0 then
         log.info("call fail no services on node: %s", node.name)
         return nil
     end
 
     local serviceIndex = nodeIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
-    nodeIndexs[node.name] = (serviceIndex + 1) % #services
+    nodeIndexs[node.name] = (serviceIndex + 1) % cntSvr
     if nodeIndexs[node.name] == 0 then
         nodeIndexs[node.name] = 1
     end
