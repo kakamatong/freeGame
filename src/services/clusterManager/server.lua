@@ -205,15 +205,18 @@ local function getNode(svrType, callCnt)
         return nil
     end
     local nodeIndex = nodeIndexs[svrType] or 1
-    nodeIndexs[svrType] = (nodeIndex + 1) % cntNode
-    if nodeIndexs[svrType] == 0 then
-        nodeIndexs[svrType] = 1
+    if cntNode > 1 then
+        nodeIndexs[svrType] = (nodeIndex + 1) % (cntNode + 1)
+        if nodeIndexs[svrType] == 0 then
+            nodeIndexs[svrType] = 1
+        end
     end
+    
     local node = nodes[nodeIndex]
     
     if node.hide then
         callCnt = callCnt + 1
-        getNode(svrType, callCnt)
+        return getNode(svrType, callCnt)
     end
 
     return node
@@ -253,9 +256,11 @@ function CMD.call(svrType, funcName, ...)
 
     local serviceIndex = nodeIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
-    nodeIndexs[node.name] = (serviceIndex + 1) % cntSvr
-    if nodeIndexs[node.name] == 0 then
-        nodeIndexs[node.name] = 1
+    if cntSvr > 1 then
+        nodeIndexs[node.name] = (serviceIndex + 1) % (cntSvr + 1)
+        if nodeIndexs[node.name] == 0 then
+            nodeIndexs[node.name] = 1
+        end
     end
     
     --log.info("call svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
