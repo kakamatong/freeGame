@@ -17,7 +17,8 @@ local roomInfo = {
     gameStatus = config.GAME_STATUS.NONE,
     canDestroy = false, -- 是否可以销毁
     gameData = {}, -- 游戏数据
-    playerids = {} -- 玩家id列表,index 表示座位
+    playerids = {}, -- 玩家id列表,index 表示座位
+    robotCnt = 0, -- 机器人数量
 }
 
 local players = {}
@@ -102,10 +103,18 @@ local function getOnLineCnt()
     return cnt
 end
 
+-- 在初始化游戏之前，所有游戏逻辑相关配置均可以修改
+local function initLogic()
+    logicHandler.init(roomInfo.playerNum, roomInfo.gameData.rule, roomHandler)
+    aiHandler.init(roomHandlerAi, roomInfo.robotCnt)
+end
+
 -- 开始游戏
 local function startGame()
     roomInfo.gameStatus = config.GAME_STATUS.START
     roomInfo.gameStartTime = os.time()
+    -- 初始化逻辑，本局游戏规则，不可再改变
+    initLogic()
     logicHandler.startGame()
     pushLog(config.LOG_TYPE.GAME_START, 0, roomInfo.gameid, roomInfo.roomid, "")
     log.info("game start")
@@ -186,6 +195,9 @@ end
 -- 游戏结束
 local function roomEnd(code)
     roomInfo.gameStatus = config.GAME_STATUS.END
+    -- 清理逻辑，如果要换取相关逻辑数据，请在清理之前获取
+    logicHandler.clear()
+
     roomInfo.canDestroy = true
 
     if roomInfo.canDestroy then
@@ -347,8 +359,7 @@ function CMD.start(data)
         }
     end
     gameManager = data.gameManager
-    logicHandler.init(roomInfo.playerNum, roomInfo.gameData.rule, roomHandler)
-    aiHandler.init(roomHandlerAi, robotCnt)
+    roomInfo.robotCnt = robotCnt
     roomInfo.createRoomTime = os.time()
     skynet.fork(function()
         while true do

@@ -8,6 +8,7 @@ logic.stepBeginTime = 0 -- 步骤开始时间
 logic.outHandNum = 0 -- 出招次数
 logic.stepid = 0 -- 步骤id
 logic.roomHandler = nil -- 房间处理
+logic.binit = false -- 每次开始一局游戏前必须初始化
 
 local logicHandler = {}
 
@@ -20,6 +21,7 @@ local function tableLength(t)
 end
 
 function logic.init(playerNum, rule, roomHandler)
+    logic.binit = true
     logic.playerNum = playerNum
     logic.roomHandler = roomHandler
 end
@@ -338,6 +340,10 @@ end
 -- 定时器每0.1s调用一次
 function logic.update()
     --log.info("update")
+    if not logic.binit then
+        return
+    end
+
     local stepid = logic.getStepId()
     if stepid == config.GAME_STEP.NONE then
         return
@@ -362,6 +368,17 @@ function logic.sendToOneClient(seat, name, data)
     if logic.roomHandler then
         logic.roomHandler.logicMsg(seat, name, data)
     end
+end
+
+function logic.clear()
+    logic.binit = false
+    logic.stepid = 0
+    logic.outHandNum = 0
+    logic.stepBeginTime = 0
+    logic.outHandInfo = {}
+    logic.playerAttitude = {}
+    logic.playerNum = 0
+    logic.roomHandler = nil
 end
 
 ------------------------------------------------------------------------------------------------------------
@@ -390,5 +407,11 @@ end
 function logicHandler.update()
     logic.update()
 end
+
+-- 清除
+function logicHandler.clear()
+    logic.clear()
+end
+
 
 return logicHandler
