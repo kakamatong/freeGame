@@ -163,22 +163,6 @@ function CMD.connectGame(userid,gameid,roomid,client_fd)
 end
 
 --[[
-玩家断线处理
-@param userid 用户ID
-@param gameid 游戏ID
-@param roomid 房间ID
-@return 成功返回true，失败返回false
-]]
-function CMD.offLine(userid,gameid,roomid)
-    local b, room = checkHaveRoom(gameid, roomid)
-    if not b or not room then
-        log.error("game not found %s %s", gameid, roomid)
-        return false
-    end
-    skynet.send(room, "lua", "offLine", userid)
-end
-
---[[
 Skynet服务启动入口
 注册服务、设置消息分发、初始化
 ]]
