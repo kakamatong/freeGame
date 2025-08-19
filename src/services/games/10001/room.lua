@@ -81,6 +81,16 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
     skynet.send(svrDB, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
+-- 是否是匹配房间
+local function isMatchRoom()
+    return roomInfo.roomType == gConfig.ROOM_TYPE.MATCH
+end
+
+-- 是否是私人房间
+local function isPrivateRoom()
+    return roomInfo.roomType == gConfig.ROOM_TYPE.PRIVATE
+end
+
 local function setUserStatus(userid, status, gameid, roomid, addr)
     send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr)
 end
