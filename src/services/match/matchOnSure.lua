@@ -40,9 +40,9 @@ local function setUserStatus(userid, status, gameid, roomid, addr)
 end
 
 -- 创建游戏
-local function createGame(gameid, playerids, gameData)
-    local roomid,addr = call(svrGame, "createGame", gameid, playerids, gameData)
-    log.info("-----createGame %d %s", roomid, addr)
+local function createMatchGameRoom(gameid, playerids, gameData)
+    local roomid,addr = call(svrGame, "createMatchGameRoom", gameid, playerids, gameData)
+    log.info("-----createMatchGameRoom %d %s", roomid, addr)
     return roomid,addr
 end
 
@@ -105,7 +105,7 @@ end
 local function onSureSuccess(index, item)
     log.info("onSureSuccess %d", index)
     table.remove(waitingOnSure, index)
-    return createGame(item.gameid, item.playerids, item.data)
+    return createMatchGameRoom(item.gameid, item.playerids, item.data)
 end
 
 local function getOnSureItem(id)

@@ -10,6 +10,7 @@ local snowflake = require "snowflake"  -- 雪花算法，用于生成唯一房�
 local config = require "games.config"  -- 游戏配置
 local sharedata = require "skynet.sharedata"  -- 共享数据模块
 local parser = require "sprotoparser"  -- sproto协议解析器
+local gConfig = CONFIG
 require "skynet.manager"          -- 服务注册模块
 
 --[[
@@ -88,21 +89,41 @@ end
 @param gameData 游戏数据
 @return roomid 房间ID, addr 服务地址
 ]]
-function CMD.createGame(gameid, players, gameData)
+local function createGameRoom(roomType, gameid, players, gameData)
     local roomid = snowflake.generate()  -- 使用雪花算法生成唯一房间ID
     local addr = skynet.getenv("clusterName")
     local name = "games/" .. gameid .. "/room"
     -- 创建新的房间服务
-    local game = skynet.newservice(name)
+    local gameRoom = skynet.newservice(name)
+    local roomData = {
+        gameid = gameid, 
+        players = players, 
+        gameData = gameData, 
+        roomid = roomid, 
+        addr = addr, 
+        gameManager = skynet.self(),
+        roomType = roomType,
+    }
     -- 初始化房间服务
-    skynet.call(game, "lua", "start", {gameid = gameid, players = players, gameData = gameData, roomid = roomid, addr = addr, gameManager = skynet.self()})
+    skynet.call(gameRoom, "lua", "start", roomData)
     -- 保存房间信息
     if not allGames[gameid] then
         allGames[gameid] = {}
     end
-    allGames[gameid][roomid] = game
+    allGames[gameid][roomid] = gameRoom
     
     return roomid,addr
+end
+
+--[[
+创建匹配游戏房间
+@param gameid 游戏ID
+@param players 玩家列表
+@param gameData 游戏数据
+@return roomid 房间ID, addr 服务地址
+]]
+function CMD.createMatchGameRoom(gameid, players, gameData)
+    return createGameRoom(gConfig.ROOM_TYPE.MATCH, gameid, players, gameData)
 end
 
 --[[
