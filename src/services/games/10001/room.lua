@@ -21,6 +21,7 @@ local roomInfo = {
     robotCnt = 0, -- 机器人数量
     roomType = gConfig.ROOM_TYPE.MATCH, -- 房间类型
     owner = 0, -- 房主
+    battleCnt = 1 -- 对战次数
 }
 
 local players = {}
@@ -340,8 +341,16 @@ function CMD.start(data)
     roomInfo.gameid = data.gameid
     roomInfo.playerids = data.players
     roomInfo.gameData = data.gameData
-    roomInfo.playerNum = #roomInfo.playerids
     roomInfo.roomType = data.roomType or gConfig.ROOM_TYPE.MATCH
+    -- 区分匹配房间和私人房间
+    if isMatchRoom() then
+        roomInfo.playerNum = #roomInfo.playerids
+    elseif isPrivateRoom() then
+        roomInfo.playerNum = data.gameData.playerCnt or 2
+        roomInfo.owner = roomInfo.playerids[1]
+        roomInfo.battleCnt = data.gameData.battleCnt or 1
+    end
+    
 
     local robotCnt = 0
     local isRobotFunc = function (userid)
@@ -371,11 +380,6 @@ function CMD.start(data)
             isRobot = bRobot,
             info = info,
         }
-    end
-    
-    -- 私人房间，房主是第一个玩家
-    if isPrivateRoom() then
-        roomInfo.owner = roomInfo.playerids[1]
     end
 
     gameManager = data.gameManager
