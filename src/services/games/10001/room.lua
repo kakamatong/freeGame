@@ -20,6 +20,7 @@ local roomInfo = {
     playerids = {}, -- 玩家id列表,index 表示座位
     robotCnt = 0, -- 机器人数量
     roomType = gConfig.ROOM_TYPE.MATCH, -- 房间类型
+    owner = 0, -- 房主
 }
 
 local players = {}
@@ -341,6 +342,7 @@ function CMD.start(data)
     roomInfo.gameData = data.gameData
     roomInfo.playerNum = #roomInfo.playerids
     roomInfo.roomType = data.roomType or gConfig.ROOM_TYPE.MATCH
+
     local robotCnt = 0
     local isRobotFunc = function (userid)
         if data.gameData.robots and #data.gameData.robots > 0 and userid and userid > 0 then
@@ -370,6 +372,12 @@ function CMD.start(data)
             info = info,
         }
     end
+    
+    -- 私人房间，房主是第一个玩家
+    if isPrivateRoom() then
+        roomInfo.owner = roomInfo.playerids[1]
+    end
+
     gameManager = data.gameManager
     roomInfo.robotCnt = robotCnt
     roomInfo.createRoomTime = os.time()
@@ -397,12 +405,17 @@ end
 -- 连接游戏
 function CMD.connectGame(userid, client_fd)
     log.info("connectGame userid = %d",userid)
-    for i = 1, roomInfo.playerNum do
-        if roomInfo.playerids[i] == userid then
-            players[userid].clientFd = client_fd
-            return true
+    if isMatchRoom() then
+        for i = 1, roomInfo.playerNum do
+            if roomInfo.playerids[i] == userid then
+                players[userid].clientFd = client_fd
+                return true
+            end
         end
+    elseif isPrivateRoom() then
+
     end
+    
 end
 
 function CMD.stop()
