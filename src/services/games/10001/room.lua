@@ -19,6 +19,7 @@ local roomInfo = {
     gameData = {}, -- 游戏数据
     playerids = {}, -- 玩家id列表,index 表示座位
     robotCnt = 0, -- 机器人数量
+    roomType = gConfig.ROOM_TYPE.MATCH, -- 房间类型
 }
 
 local players = {}
@@ -329,6 +330,7 @@ function CMD.start(data)
     roomInfo.playerids = data.players
     roomInfo.gameData = data.gameData
     roomInfo.playerNum = #roomInfo.playerids
+    roomInfo.roomType = data.roomType or gConfig.ROOM_TYPE.MATCH
     local robotCnt = 0
     local isRobotFunc = function (userid)
         if data.gameData.robots and #data.gameData.robots > 0 and userid and userid > 0 then
@@ -407,6 +409,7 @@ function CMD.stop()
 
     pushLog(config.LOG_TYPE.DESTROY_ROOM, 0, roomInfo.gameid, roomInfo.roomid, "")
     
+    -- 必须删除，否则会导致内存泄漏
     core.deleteproto(spc2s)
     core.deleteproto(sps2c)
     skynet.exit()
