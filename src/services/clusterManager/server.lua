@@ -1,39 +1,57 @@
-local skynet = require "skynet"
-local log = require "log"
-local cluster = require "skynet.cluster"
-require "skynet.manager"
-local cjson = require "cjson"
-local CMD = {}
-local upTime = 60 * 2
-local key = "clusterConfig"
-local clusterConfigVer = 0
-local list = {}
-local list2 = {}
+--[[
+集群管理服务
+负责管理游戏服务端集群的节点和服务，包括：
+1. 集群节点的注册与发现
+2. 服务的创建与管理
+3. 集群配置的动态更新
+4. 跨节点服务调用的负载均衡
+]]
+local skynet = require "skynet"         -- 引入skynet框架
+local log = require "log"               -- 引入日志模块
+local cluster = require "skynet.cluster" -- 引入集群通信模块
+require "skynet.manager"                -- 引入服务管理模块
+local cjson = require "cjson"           -- 引入JSON解析模块
+local CMD = {}                           -- 定义命令表，用于处理外部调用
+local upTime = 60 * 2                    -- 配置检查间隔时间(秒)
+local key = "clusterConfig"             -- Redis中存储集群配置的键名
+local clusterConfigVer = 0               -- 当前集群配置版本
+local list = {}                          -- 集群节点列表
+local list2 = {}                         -- 集群节点列表副本
 
 -- 新增全局变量
-local svrNodes = {}
-local svrServices = {}
-local bopen = false
+local svrNodes = {}                      -- 按服务类型分类的节点信息
+local svrServices = {}                   -- 节点上的服务信息
+local bopen = false                      -- 集群是否已开启
 -- 添加一个全局变量来跟踪每种类型服务的创建数量
-local createdServicesCount = {}
-local nodeIndexs = {}
+local createdServicesCount = {}          -- 每种服务类型的创建计数
+local nodeIndexs = {}                    -- 节点索引，用于负载均衡
 
+--[[
+创建网关服务
+负责启动协议加载服务和网关服务，并注册到集群
+@return 网关服务句柄
+]]
 local function createGateSvr()
 	-- 启动协议加载服务（用于sproto协议）
 	skynet.newservice("protoloader")
 	local data = {
-		address = skynet.getenv("gateAddress"),
-    	port = skynet.getenv("gatePort"),
-    	maxclient = skynet.getenv("gateMaxclient"),
+		address = skynet.getenv("gateAddress"), -- 网关地址
+    	port = skynet.getenv("gatePort"),       -- 网关端口
+    	maxclient = skynet.getenv("gateMaxclient") -- 最大客户端连接数
 	}
 	-- 启动网关服务
 	local svr = skynet.newservice("wsWatchdog")
 	skynet.call(svr, "lua", "start", data)
 	local gate = skynet.localname(CONFIG.SVR_NAME.GATE)
-	cluster.register("gate1", gate)
+	cluster.register("gate1", gate)  -- 注册网关服务到集群
     return gate
 end
 
+--[[
+创建游戏服务
+负责启动游戏网关和游戏服务，并注册到集群
+@return 游戏服务句柄
+]]
 local function createGameSvr()
 	local svr = skynet.newservice("wsGameGate")
 	local data = {
@@ -43,31 +61,45 @@ local function createGameSvr()
 	}
 	skynet.call(svr, "lua", "open", data)
 	local svrGame = skynet.newservice("games/server")
-	cluster.register("game1", svrGame)
+	cluster.register("game1", svrGame)  -- 注册游戏服务到集群
 	return svrGame
 end
 
+--[[
+创建Web服务
+负责启动Web服务，并注册到集群
+@return Web服务句柄
+]]
 local function createWebSvr()
 	local svr = skynet.newservice("web/server")
 	local port = skynet.getenv("port")
 	skynet.call(svr, "lua", "open", port)
-	cluster.register("web1", svr)
+	cluster.register("web1", svr)  -- 注册Web服务到集群
 	return svr
 end
 
+--[[
+创建通用服务
+@param path 服务路径
+@param name 服务名称(可选)
+@return 服务句柄
+]]
 local function createCommonSvr(path, name)
 	local svr = skynet.newservice(path)
 	if name then
-		cluster.register(name, svr)
+		cluster.register(name, svr)  -- 注册服务到集群
 	end
-
     return svr
 end
 
+--[[
+创建服务
+根据当前节点类型和配置创建相应的服务
+]]
 local function createSvr()
-    local nodeName = skynet.getenv("clusterName")
-    local serviceType = nil
-    local nodeInfo = nil
+    local nodeName = skynet.getenv("clusterName") -- 当前节点名称
+    local serviceType = nil                       -- 服务类型
+    local nodeInfo = nil                          -- 节点信息
     
     -- 查找节点名称对应的服务类型
     for type, nodes in pairs(svrNodes) do
@@ -142,11 +174,16 @@ local function createSvr()
     end
 
     if not bopen then
-        cluster.open(nodeName)
+        cluster.open(nodeName)  -- 开启集群通信
         bopen = true
     end
 end
 
+--[[
+处理集群配置列表
+@param data 集群配置数据
+@return 处理后的集群配置
+]]
 local function dealList(data)
     local list = {}
     svrNodes = {}
@@ -179,22 +216,32 @@ local function dealList(data)
     return list
 end
 
+--[[
+检查集群配置更新
+从Redis获取最新配置，如果有更新则应用
+]]
 local function checkClusterConfigUp()
-    local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
-    local strClusterConfig = skynet.call(svrDB, "lua", "dbRedis", "get", key)
+    local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)  -- 获取数据库服务
+    local strClusterConfig = skynet.call(svrDB, "lua", "dbRedis", "get", key)  -- 从Redis获取配置
     log.info("strClusterConfig: %s", strClusterConfig)
-    local config = cjson.decode(strClusterConfig)
+    local config = cjson.decode(strClusterConfig)  -- 解析JSON配置
     if config.ver ~= clusterConfigVer then
-        cluster.reload({["__nowaiting"] = true})
+        cluster.reload({["__nowaiting"] = true})  -- 重新加载集群配置
         clusterConfigVer = config.ver
         list = config.list
         local clusterConfig = dealList(list)
         log.info("clusterConfig: %s", UTILS.tableToString(clusterConfig))
         cluster.reload(clusterConfig)
-        createSvr()
+        createSvr()  -- 创建服务
     end
 end
 
+--[[
+获取指定类型的节点
+@param svrType 服务类型
+@param callCnt 调用次数(用于防止死循环)
+@return 节点信息或nil
+]]
 local function getNode(svrType, callCnt)
     callCnt = callCnt or 0
     if callCnt > 10 then
@@ -207,6 +254,7 @@ local function getNode(svrType, callCnt)
     end
     local nodeIndex = nodeIndexs[svrType] or 1
     if cntNode > 1 then
+        -- 轮询选择节点
         nodeIndexs[svrType] = (nodeIndex + 1) % (cntNode + 1)
         if nodeIndexs[svrType] == 0 then
             nodeIndexs[svrType] = 1
@@ -216,6 +264,7 @@ local function getNode(svrType, callCnt)
     local node = nodes[nodeIndex]
     
     if node.hide then
+        -- 如果节点被隐藏，尝试获取下一个节点
         callCnt = callCnt + 1
         return getNode(svrType, callCnt)
     end
@@ -223,23 +272,37 @@ local function getNode(svrType, callCnt)
     return node
 end
 
--- "{"ver":1,"list":{"lobby":"127.0.0.1:13006","match":"127.0.0.1:13001","robot":"127.0.0.1:13007","gate":"127.0.0.1:13005","game":"127.0.0.1:13002","login":"127.0.0.1:13004"}}"
+--[[
+启动集群管理服务
+]]
 function CMD.start()
     checkClusterConfigUp()
     skynet.fork(function()
         while true do
-            -- 从redis获取clusterConfig
+            -- 定期检查集群配置更新
             skynet.sleep(upTime * 100)
             checkClusterConfigUp()
         end
     end)
 end
 
+--[[
+检查节点是否存在
+@param name 节点名称
+@return 节点地址或nil
+]]
 function CMD.checkHaveNode(name)
     -- 遍历所有服务类型的节点
     return list2[name]
 end
 
+--[[
+调用指定类型的服务
+@param svrType 服务类型
+@param funcName 函数名称
+@param ... 其他参数
+@return 调用结果
+]]
 function CMD.call(svrType, funcName, ...)
     --log.info("call svrType: %s, funcName: %s", svrType, funcName)
     local node = getNode(svrType)
@@ -258,6 +321,7 @@ function CMD.call(svrType, funcName, ...)
     local serviceIndex = nodeIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
     if cntSvr > 1 then
+        -- 轮询选择服务
         nodeIndexs[node.name] = (serviceIndex + 1) % (cntSvr + 1)
         if nodeIndexs[node.name] == 0 then
             nodeIndexs[node.name] = 1
@@ -268,11 +332,26 @@ function CMD.call(svrType, funcName, ...)
     return cluster.call(node.name, "@" .. serviceName, funcName, ...)
 end
 
+--[[
+调用指定节点上的指定服务
+@param node 节点名称
+@param svrName 服务名称
+@param funcName 函数名称
+@param ... 其他参数
+@return 调用结果
+]]
 function CMD.callTo(node, svrName, funcName, ...)
     --log.info("callTo node: %s, svrName: %s, funcName: %s", node, svrName, funcName)
     return cluster.call(node, "@" .. svrName, funcName, ...)
 end
 
+--[[
+发送消息到指定类型的服务
+@param svrType 服务类型
+@param funcName 函数名称
+@param ... 其他参数
+@return 发送结果
+]]
 function CMD.send(svrType, funcName, ...)
     --log.info("send svrType: %s, funcName: %s", svrType, funcName)
     local nodes = svrNodes[svrType]
@@ -299,10 +378,22 @@ function CMD.send(svrType, funcName, ...)
     return cluster.send(node.name, "@" .. serviceName, funcName, ...)
 end
 
+--[[
+发送消息到指定节点上的指定服务
+@param node 节点名称
+@param svrName 服务名称
+@param funcName 函数名称
+@param ... 其他参数
+@return 发送结果
+]]
 function CMD.sendTo(node, svrName, funcName, ...)
     return cluster.send(node, "@" .. svrName, funcName, ...)
 end
 
+--[[
+服务入口点
+注册命令处理函数并将服务注册到Skynet
+]]
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
