@@ -199,13 +199,15 @@ local function dealList(data)
             local hide = v.hide
             
             -- 保存节点信息
-            table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt, hide = hide })
             list[name] = addr
             -- 保存服务信息
-            svrServices[name] = svrServices[name] or {}
-            for i = 1, cnt do
-                local serviceName = string.format("%s%d", key, i)
-                table.insert(svrServices[name], serviceName)
+            if not hide then
+                table.insert(svrNodes[key], { name = name, addr = addr, cnt = cnt, hide = hide })
+                svrServices[name] = svrServices[name] or {}
+                for i = 1, cnt do
+                    local serviceName = string.format("%s%d", key, i)
+                    table.insert(svrServices[name], serviceName)
+                end
             end
         end
     end
@@ -242,11 +244,7 @@ end
 @param callCnt 调用次数(用于防止死循环)
 @return 节点信息或nil
 ]]
-local function getNode(svrType, callCnt)
-    callCnt = callCnt or 0
-    if callCnt > 10 then
-        return nil
-    end
+local function getNode(svrType)
     local nodes = svrNodes[svrType]
     local cntNode = #nodes
     if not nodes or cntNode <= 0 then
@@ -262,13 +260,6 @@ local function getNode(svrType, callCnt)
     end
     
     local node = nodes[nodeIndex]
-    
-    if node.hide then
-        -- 如果节点被隐藏，尝试获取下一个节点
-        callCnt = callCnt + 1
-        return getNode(svrType, callCnt)
-    end
-
     return node
 end
 
