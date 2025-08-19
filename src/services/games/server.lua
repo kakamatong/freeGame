@@ -127,6 +127,17 @@ function CMD.createMatchGameRoom(gameid, players, gameData)
 end
 
 --[[
+创建私人游戏房间
+@param gameid 游戏ID
+@param players 玩家列表
+@param gameData 游戏数据
+@return roomid 房间ID, addr 服务地址
+]]
+function CMD.createPrivateGameRoom(gameid, players, gameData)
+    return createGameRoom(gConfig.ROOM_TYPE.PRIVATE, gameid, players, gameData)
+end
+
+--[[
 销毁游戏房间
 @param gameid 游戏ID
 @param roomid 房间ID
