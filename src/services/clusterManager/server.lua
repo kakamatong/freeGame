@@ -13,7 +13,7 @@ require "skynet.manager"                -- 引入服务管理模块
 local cjson = require "cjson"           -- 引入JSON解析模块
 local CMD = {}                           -- 定义命令表，用于处理外部调用
 local upTime = 60 * 2                    -- 配置检查间隔时间(秒)
-local key = "clusterConfig"             -- Redis中存储集群配置的键名
+local key = CONFIG.KEY_REDIS.CLUSTER_CONFIG             -- Redis中存储集群配置的键名
 local clusterConfigVer = 0               -- 当前集群配置版本
 local list = {}                          -- 集群节点列表
 local list2 = {}                         -- 集群节点列表副本
