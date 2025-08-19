@@ -227,7 +227,7 @@ local function updateIndex()
     for svrType, nodes in pairs(svrNodes) do
         local cntNode = #nodes
         if cntNode > 1 then
-            local nodeIndex = nodeIndexs[svrType]
+            local nodeIndex = nodeIndexs[svrType] or 1
             nodeIndexs[svrType] = (nodeIndex + 1) % (cntNode + 1)
             if nodeIndexs[svrType] == 0 then
                 nodeIndexs[svrType] = 1
@@ -242,10 +242,10 @@ local function updateIndex()
             if services then
                 local cntSvr = #services
                 if cntSvr > 1 then
-                    local svrIndex = svrIndexs[nodeName]
-                    svrIndex[nodeName] = (svrIndex + 1) % (cntSvr + 1)
-                    if svrIndex[nodeName] == 0 then
-                        svrIndex[nodeName] = 1
+                    local svrIndex = svrIndexs[nodeName] or 1
+                    svrIndexs[nodeName] = (svrIndex + 1) % (cntSvr + 1)
+                    if svrIndexs[nodeName] == 0 then
+                        svrIndexs[nodeName] = 1
                     end
                 else
                     svrIndexs[nodeName] = 1
