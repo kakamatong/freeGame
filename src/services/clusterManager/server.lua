@@ -25,6 +25,8 @@ local bopen = false                      -- 集群是否已开启
 -- 添加一个全局变量来跟踪每种类型服务的创建数量
 local createdServicesCount = {}          -- 每种服务类型的创建计数
 local nodeIndexs = {}                    -- 节点索引，用于负载均衡
+local svrIndexs = {}                     -- 服务索引，用于负载均衡
+local indexUpTime = 0.1                  -- 索引更新时间间隔(秒),更小的时间间隔，更平均的负载均衡（如果瞬间负载压力过大，可以改小这个值）
 
 --[[
 创建网关服务
@@ -219,6 +221,42 @@ local function dealList(data)
 end
 
 --[[
+更新索引
+]]
+local function updateIndex()
+    for svrType, nodes in pairs(svrNodes) do
+        local cntNode = #nodes
+        if cntNode > 1 then
+            local nodeIndex = nodeIndexs[svrType]
+            nodeIndexs[svrType] = (nodeIndex + 1) % (cntNode + 1)
+            if nodeIndexs[svrType] == 0 then
+                nodeIndexs[svrType] = 1
+            end
+        else
+            nodeIndexs[svrType] = 1
+        end
+
+        for _, node in ipairs(nodes) do
+            local nodeName = node.name
+            local services = svrServices[nodeName]
+            if services then
+                local cntSvr = #services
+                if cntSvr > 1 then
+                    local svrIndex = svrIndexs[nodeName]
+                    svrIndex[nodeName] = (svrIndex + 1) % (cntSvr + 1)
+                    if svrIndex[nodeName] == 0 then
+                        svrIndex[nodeName] = 1
+                    end
+                else
+                    svrIndexs[nodeName] = 1
+                end
+            end
+
+        end
+    end
+end
+
+--[[
 检查集群配置更新
 从Redis获取最新配置，如果有更新则应用
 ]]
@@ -235,32 +273,8 @@ local function checkClusterConfigUp()
         log.info("clusterConfig: %s", UTILS.tableToString(clusterConfig))
         cluster.reload(clusterConfig)
         createSvr()  -- 创建服务
+        updateIndex()  -- 更新索引
     end
-end
-
---[[
-获取指定类型的节点
-@param svrType 服务类型
-@param callCnt 调用次数(用于防止死循环)
-@return 节点信息或nil
-]]
-local function getNode(svrType)
-    local nodes = svrNodes[svrType]
-    local cntNode = #nodes
-    if not nodes or cntNode <= 0 then
-        return nil
-    end
-    local nodeIndex = nodeIndexs[svrType] or 1
-    if cntNode > 1 then
-        -- 轮询选择节点
-        nodeIndexs[svrType] = (nodeIndex + 1) % (cntNode + 1)
-        if nodeIndexs[svrType] == 0 then
-            nodeIndexs[svrType] = 1
-        end
-    end
-    
-    local node = nodes[nodeIndex]
-    return node
 end
 
 --[[
@@ -273,6 +287,14 @@ function CMD.start()
             -- 定期检查集群配置更新
             skynet.sleep(upTime * 100)
             checkClusterConfigUp()
+        end
+    end)
+
+    skynet.fork(function()
+        while true do
+            -- 定期更新索引
+            skynet.sleep(indexUpTime * 100)
+            updateIndex()
         end
     end)
 end
@@ -296,7 +318,8 @@ end
 ]]
 function CMD.call(svrType, funcName, ...)
     --log.info("call svrType: %s, funcName: %s", svrType, funcName)
-    local node = getNode(svrType)
+    local nodeIndex = nodeIndexs[svrType] or 1
+    local node = svrNodes[svrType][nodeIndex]
     if not node then    
         log.info("call fail no node: %s", svrType)
         return nil
@@ -309,15 +332,8 @@ function CMD.call(svrType, funcName, ...)
         return nil
     end
 
-    local serviceIndex = nodeIndexs[node.name] or 1
+    local serviceIndex = svrIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
-    if cntSvr > 1 then
-        -- 轮询选择服务
-        nodeIndexs[node.name] = (serviceIndex + 1) % (cntSvr + 1)
-        if nodeIndexs[node.name] == 0 then
-            nodeIndexs[node.name] = 1
-        end
-    end
     
     --log.info("call svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
     return cluster.call(node.name, "@" .. serviceName, funcName, ...)
@@ -345,24 +361,22 @@ end
 ]]
 function CMD.send(svrType, funcName, ...)
     --log.info("send svrType: %s, funcName: %s", svrType, funcName)
-    local nodes = svrNodes[svrType]
-    if not nodes or #nodes <= 0 then
-        log.info("send fail svrType: %s", svrType)
+    local nodeIndex = nodeIndexs[svrType] or 1
+    local node = svrNodes[svrType][nodeIndex]
+    if not node then    
+        log.info("call fail no node: %s", svrType)
         return nil
     end
-    
-    -- 随机选择一个节点
-    local nodeIndex = math.random(1, #nodes)
-    local node = nodes[nodeIndex]
     
     -- 随机选择该节点上的一个服务
     local services = svrServices[node.name]
-    if not services or #services <= 0 then
-        log.info("send fail no services on node: %s", node.name)
+    local cntSvr = #services
+    if not services or cntSvr <= 0 then
+        log.info("call fail no services on node: %s", node.name)
         return nil
     end
-    
-    local serviceIndex = math.random(1, #services)
+
+    local serviceIndex = svrIndexs[node.name] or 1
     local serviceName = services[serviceIndex]
     
     --log.info("send svrType: %s, funcName: %s, node: %s, serviceName: %s", svrType, funcName, node.name, serviceName)
