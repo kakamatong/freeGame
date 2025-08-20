@@ -12,7 +12,7 @@ local sharedata = require "skynet.sharedata"  -- 共享数据模块
 local parser = require "sprotoparser"  -- sproto协议解析器
 local gConfig = CONFIG
 require "skynet.manager"          -- 服务注册模块
-
+local svrDB = nil
 --[[
 加载文件内容
 @param filename 文件名
@@ -93,6 +93,17 @@ local function createGameRoom(roomType, gameid, players, gameData)
     local roomid = snowflake.generate()  -- 使用雪花算法生成唯一房间ID
     local addr = skynet.getenv("clusterName")
     local name = "games/" .. gameid .. "/room"
+
+    local shortRoomid = 0
+    if roomType == gConfig.ROOM_TYPE.PRIVATE then
+        for i = 1,3 do
+            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1])
+            if shortRoomid then
+                break
+            end
+        end
+    end
+
     -- 创建新的房间服务
     local gameRoom = skynet.newservice(name)
     local roomData = {
@@ -103,7 +114,9 @@ local function createGameRoom(roomType, gameid, players, gameData)
         addr = addr, 
         gameManager = skynet.self(),
         roomType = roomType,
+        shortRoomid = shortRoomid,
     }
+    
     -- 初始化房间服务
     skynet.call(gameRoom, "lua", "start", roomData)
     -- 保存房间信息
@@ -112,7 +125,7 @@ local function createGameRoom(roomType, gameid, players, gameData)
     end
     allGames[gameid][roomid] = gameRoom
     
-    return roomid,addr
+    return roomid,addr,shortRoomid
 end
 
 --[[
@@ -210,4 +223,5 @@ skynet.start(function()
     skynet.register(CONFIG.SVR_NAME.GAMES)
     -- 启动服务
     start()
+    svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 end)
