@@ -334,7 +334,7 @@ end
 ------------------------------------------------------------------------------------------------------------ 命令接口
 local CMD = {}
 
--- 初始化游戏逻辑
+-- 初始化房间逻辑
 function CMD.start(data)
     log.info("game10001 start %s", UTILS.tableToString(data))
     roomInfo.roomid = data.roomid
@@ -417,7 +417,12 @@ function CMD.connectGame(userid, client_fd)
             end
         end
     elseif isPrivateRoom() then
-
+        for _, value in pairs(roomInfo.playerids) do
+            if value == userid then
+                players[userid].clientFd = client_fd
+                return true
+            end
+        end
     end
     
 end
