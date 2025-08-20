@@ -21,7 +21,8 @@ local roomInfo = {
     robotCnt = 0, -- 机器人数量
     roomType = gConfig.ROOM_TYPE.MATCH, -- 房间类型
     owner = 0, -- 房主
-    battleCnt = 1 -- 对战次数
+    battleCnt = 1, -- 对战次数
+    shortRoomid = 0, -- 短房间id
 }
 
 local players = {}
@@ -93,8 +94,8 @@ local function isPrivateRoom()
     return roomInfo.roomType == gConfig.ROOM_TYPE.PRIVATE
 end
 
-local function setUserStatus(userid, status, gameid, roomid, addr)
-    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr)
+local function setUserStatus(userid, status, gameid, roomid, addr, shortRoomid)
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr, shortRoomid)
 end
 
 local function getUserStatus(userid)
@@ -219,7 +220,7 @@ local function roomEnd(code)
         skynet.send(gameManager, "lua","destroyGame", roomInfo.gameid, roomInfo.roomid)
         for _, userid in pairs(roomInfo.playerids) do
             if not isRobotByUserid(userid) then
-                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0, "")
+                setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
             end
         end
     end
@@ -342,6 +343,7 @@ function CMD.start(data)
     roomInfo.playerids = data.players
     roomInfo.gameData = data.gameData
     roomInfo.roomType = data.roomType or gConfig.ROOM_TYPE.MATCH
+    roomInfo.shortRoomid = data.shortRoomid or 0
     -- 区分匹配房间和私人房间
     if isMatchRoom() then
         roomInfo.playerNum = #roomInfo.playerids
@@ -370,7 +372,7 @@ function CMD.start(data)
             status = config.PLAYER_STATUS.ONLINE
             robotCnt = robotCnt + 1
         else
-            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, roomInfo.addr)
+            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, roomInfo.addr, roomInfo.shortRoomid)
         end
         local info = call(svrUser, "userData", userid)
         players[userid] = {

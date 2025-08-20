@@ -36,7 +36,7 @@ local function sendSvrMsg(userid,xyName, data)
 end
 
 local function setUserStatus(userid, status, gameid, roomid, addr)
-    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr)
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr, 0)
 end
 
 -- 创建游戏

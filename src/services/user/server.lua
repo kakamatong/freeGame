@@ -39,16 +39,17 @@ function CMD.userStatus(userid)
 		status.status = CONFIG.USER_STATUS.ONLINE
 		status.gameid = 0
 		status.roomid = 0
+		status.shortRoomid = 0
 		status.addr = ""
 	end
     --assert(status)
 	return status
 end
 
-function CMD.setUserStatus(userid, status, gameid, roomid, addr)  
+function CMD.setUserStatus(userid, status, gameid, roomid, addr, shortRoomid)  
     assert(userid)
     assert(status)
-	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid, addr)
+	skynet.send(dbSvr, "lua", "db", "setUserStatus", userid, status, gameid, roomid, addr, shortRoomid)
 end
 
 -- 奖励通知

@@ -12,7 +12,7 @@ local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 local matchOnSure = require("match.matchOnSure")
 
 local function setUserStatus(userid, status, gameid, roomid, addr)
-    send(svrUser , "setUserStatus", userid, status, gameid, roomid, addr)
+    send(svrUser , "setUserStatus", userid, status, gameid, roomid, addr, 0)
 end
 
 local function getUserStatus(userid)

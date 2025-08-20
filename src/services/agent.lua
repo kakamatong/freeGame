@@ -41,10 +41,12 @@ function REQUEST:userStatus(args)
 		if not b then
 			status.gameid = 0
 			status.roomid = 0
+			status.shortRoomid = 0
 			status.addr = ""
 			status.status = CONFIG.USER_STATUS.ONLINE
 
-			send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "")
+			send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "", status.shortRoomid)
+
 		end
 	end
 	
