@@ -332,5 +332,61 @@ function db.setAwardNoticeRead(mysql,...)
     return true
 end
 
+-- CREATE TABLE privateRoomid(
+--     shortRoomid INT UNSIGNED PRIMARY KEY COMMENT '6位数字短房间ID',
+--     roomid BIGINT NOT NULL DEFAULT 0 COMMENT '关联的长房间ID，未分配时为NULL',
+--     status TINYINT NOT NULL DEFAULT 0 COMMENT '状态：0-未分配，1-已分配',
+--     owner BIGINT NOT NULL DEFAULT 0 COMMENT '房主id',
+--     available_at BIGINT NOT NULL DEFAULT 0 COMMENT '可用时间戳',
+--     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+
+-- 	INDEX idx_shortRoomid (shortRoomid) COMMENT 'shortRoomid索引',
+-- 	INDEX idx_status_available (status, available_at) COMMENT '状态和可用时间组合索引'
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='私有房间ID映射表';
+-- 获取并分配私有房间短ID
+-- 参数: roomid(长房间ID), owner(房主ID)
+-- 返回: shortRoomid(成功) 或 nil(失败)
+function db.getPrivateShortRommid(mysql, ...)
+    local roomid, owner = ...
+    local now = os.time()
+    
+    -- 开始事务
+    mysql:query("START TRANSACTION;")
+    
+    -- 查询状态为0(未分配)且可用时间<=当前时间的短ID，并加锁
+    local sql = string.format(
+        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d LIMIT 1 FOR UPDATE;",
+        now
+    )
+    
+    local res = mysql:query(sql)
+    if not sqlResult(res) or #res == 0 then
+        mysql:query("ROLLBACK;")
+        log.error("没有可用的私有房间短ID")
+        return nil
+    end
+    
+    local shortRoomid = res[1].shortRoomid
+    
+    -- 更新为已分配状态，并记录房间ID和房主
+    local updateSql = string.format(
+        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, available_at = %d WHERE shortRoomid = %d;",
+        roomid, owner, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
+    )
+    
+    local updateRes = mysql:query(updateSql)
+    if not sqlResult(updateRes) then
+        mysql:query("ROLLBACK;")
+        log.error("更新私有房间短ID状态失败")
+        return nil
+    end
+    
+    -- 提交事务
+    mysql:query("COMMIT;")
+    log.info(string.format("成功分配私有房间短ID: %d 到房间: %d 房主: %d", shortRoomid, roomid, owner))
+    
+    return shortRoomid
+end
+
 -- 返回db表，供外部调用
 return db
