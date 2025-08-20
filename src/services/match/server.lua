@@ -47,7 +47,6 @@ skynet.start(function()
 		local f = CMD[command]
 		skynet.ret(skynet.pack(f(...)))
 	end)
-    skynet.newservice("protoloader")
     start()
     skynet.register(CONFIG.SVR_NAME.MATCH)
 end)
