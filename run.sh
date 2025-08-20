@@ -10,3 +10,4 @@
 ./skynet/skynet config/configGate2
 ./skynet/skynet config/configMatch
 ./skynet/skynet config/configWeb
+./skynet/skynet config/configPrivateRoom

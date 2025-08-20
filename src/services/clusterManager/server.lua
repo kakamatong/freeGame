@@ -159,7 +159,8 @@ local function createSvr()
             login = "wsLogind",
             user = "user/server",
             activity = "activity/server",
-            auth = "auth/server"
+            auth = "auth/server",
+            privateRoom = "privateRoom/server",
             -- 可以根据需要添加更多服务类型的路径映射
         }
         

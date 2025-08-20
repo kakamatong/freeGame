@@ -6,6 +6,18 @@ local CMD = {}
 require "skynet.manager"
 -- 启动匹配服务，定时检查所有队列
 
+-- 创建私人房间
+function CMD.createPrivateRoom(...)
+	local userid,gameid,createData = ...
+	local players = {}
+	table.insert(players,userid)
+	return call(CONFIG.CLUSTER_SVR_NAME.GAME, "createPrivateGameRoom", gameid,players,createData)
+end
+
+function CMD.joinPrivateRoom(...)
+	local userid,shortRoomid = ...
+	-- todo:
+end
 
 -----------------------------------------------------------------------------------------
 
