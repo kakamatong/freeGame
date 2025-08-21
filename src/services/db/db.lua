@@ -353,10 +353,10 @@ function db.getPrivateShortRommid(mysql, ...)
     -- 开始事务
     mysql:query("START TRANSACTION;")
     
-    -- 查询状态为0(未分配)且可用时间<=当前时间的短ID，并加锁
+    -- 使用子查询生成随机偏移量，避免单独查询总数
     local sql = string.format(
-        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d LIMIT 1 FOR UPDATE;",
-        now
+        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d ORDER BY shortRoomid LIMIT 1 OFFSET FLOOR(RAND() * (SELECT COUNT(*) FROM privateRoomid WHERE status = 0 AND available_at <= %d)) FOR UPDATE;",
+        now, now
     )
     
     local res = mysql:query(sql)
