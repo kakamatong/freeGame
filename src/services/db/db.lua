@@ -348,7 +348,6 @@ function db.getPrivateShortRommid(mysql, ...)
         now
     )
     
-    log.info(sql)
     local res = mysql:query(sql)
     if not sqlResult(res) or #res == 0 then
         mysql:query("ROLLBACK;")
@@ -356,7 +355,6 @@ function db.getPrivateShortRommid(mysql, ...)
         return nil
     end
 
-    log.info(UTILS.tableToString(res))
     local total = res[1].total
     if total == 0 then
         mysql:query("ROLLBACK;")
@@ -383,9 +381,15 @@ function db.getPrivateShortRommid(mysql, ...)
         "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', available_at = %d WHERE shortRoomid = %d and status = 0;",
         roomid, owner, gameid, addr, rule, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
     )
-    
+    log.info(sql)
     local updateRes = mysql:query(updateSql)
     if not sqlResult(updateRes) then
+        mysql:query("ROLLBACK;")
+        log.error("更新私有房间短ID状态失败")
+        return nil
+    end
+    
+    if updateRes.affected_rows == 0 then
         mysql:query("ROLLBACK;")
         log.error("更新私有房间短ID状态失败")
         return nil
