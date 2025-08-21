@@ -336,7 +336,7 @@ end
 -- 参数: roomid(长房间ID), owner(房主ID)
 -- 返回: shortRoomid(成功) 或 nil(失败)
 function db.getPrivateShortRommid(mysql, ...)
-    local roomid, owner, addr, gameid = ...
+    local roomid, owner, addr, gameid, rule = ...
     local now = os.time()
     
     -- 开始事务
@@ -359,8 +359,8 @@ function db.getPrivateShortRommid(mysql, ...)
     
     -- 更新为已分配状态，并记录房间ID和房主
     local updateSql = string.format(
-        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', available_at = %d WHERE shortRoomid = %d;",
-        roomid, owner, gameid, addr, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
+        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', available_at = %d WHERE shortRoomid = %d;",
+        roomid, owner, gameid, addr, rule, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
     )
     
     local updateRes = mysql:query(updateSql)

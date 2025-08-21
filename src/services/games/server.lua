@@ -96,7 +96,7 @@ local function createGameRoom(roomType, gameid, players, gameData)
     local shortRoomid = 0
     if roomType == gConfig.ROOM_TYPE.PRIVATE then
         for i = 1,5 do
-            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1], addr, gameid)
+            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1], addr, gameid, gameData.rule or "")
             if shortRoomid then
                 break
             end
