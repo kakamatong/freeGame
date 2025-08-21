@@ -344,10 +344,26 @@ function db.getPrivateShortRommid(mysql, ...)
     
     -- 使用子查询生成随机偏移量，避免单独查询总数
     local sql = string.format(
-        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d ORDER BY shortRoomid LIMIT 1 OFFSET FLOOR(RAND() * (SELECT COUNT(*) FROM privateRoomid WHERE status = 0 AND available_at <= %d)) FOR UPDATE;",
-        now, now
+        "SELECT shortRoomid \
+            FROM privateRoomid \
+            WHERE status = 0 \
+            AND available_at <= %d \
+            AND shortRoomid >= ( \
+                SELECT FLOOR( \
+                (SELECT MIN(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) +  \
+                RAND() * ( \
+                    (SELECT MAX(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) -  \
+                    (SELECT MIN(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) + 1 \
+                ) \
+                ) \
+            ) \
+            ORDER BY shortRoomid \
+            LIMIT 1 \
+            FOR UPDATE;",
+        now, now, now, now
     )
     
+    log.info(sql)
     local res = mysql:query(sql)
     if not sqlResult(res) or #res == 0 then
         mysql:query("ROLLBACK;")
