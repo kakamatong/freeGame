@@ -344,27 +344,32 @@ function db.getPrivateShortRommid(mysql, ...)
     
     -- 使用子查询生成随机偏移量，避免单独查询总数
     local sql = string.format(
-        "SELECT shortRoomid \
-            FROM privateRoomid \
-            WHERE status = 0 \
-            AND available_at <= %d \
-            AND shortRoomid >= ( \
-                SELECT FLOOR( \
-                (SELECT MIN(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) +  \
-                RAND() * ( \
-                    (SELECT MAX(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) -  \
-                    (SELECT MIN(shortRoomid) FROM privateRoomid WHERE status = 0 AND available_at <= %d) + 1 \
-                ) \
-                ) \
-            ) \
-            ORDER BY shortRoomid \
-            LIMIT 1 \
-            FOR UPDATE;",
-        now, now, now, now
+        "SELECT COUNT(*) AS total FROM privateRoomid WHERE status = 0 AND available_at <= %d;",
+        now
     )
     
     log.info(sql)
     local res = mysql:query(sql)
+    if not sqlResult(res) or #res == 0 then
+        mysql:query("ROLLBACK;")
+        log.error("没有可用的私有房间短ID")
+        return nil
+    end
+
+    log.info(UTILS.tableToString(res))
+    local total = res[1].total
+    if total == 0 then
+        mysql:query("ROLLBACK;")
+        log.error("没有可用的私有房间短ID")
+        return nil
+    end
+    local offset = math.random(0, total - 1)
+
+    local sql = string.format(
+        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d LIMIT 1 OFFSET %d;",
+        now, offset
+    )
+    res = mysql:query(sql)
     if not sqlResult(res) or #res == 0 then
         mysql:query("ROLLBACK;")
         log.error("没有可用的私有房间短ID")
@@ -375,7 +380,7 @@ function db.getPrivateShortRommid(mysql, ...)
     
     -- 更新为已分配状态，并记录房间ID和房主
     local updateSql = string.format(
-        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', available_at = %d WHERE shortRoomid = %d;",
+        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', available_at = %d WHERE shortRoomid = %d and status = 0;",
         roomid, owner, gameid, addr, rule, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
     )
     
