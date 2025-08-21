@@ -23,6 +23,7 @@ local roomInfo = {
     owner = 0, -- 房主
     battleCnt = 1, -- 对战次数
     shortRoomid = 0, -- 短房间id
+    privateRule = nil, -- 私人房间规则
 }
 
 local players = {}
@@ -348,7 +349,8 @@ function CMD.start(data)
     if isMatchRoom() then
         roomInfo.playerNum = #roomInfo.playerids
     elseif isPrivateRoom() then
-        roomInfo.playerNum = data.gameData.playerCnt or 2
+        roomInfo.privateRule = cjson.decode(data.gameData.rule or "")
+        roomInfo.playerNum = roomInfo.privateRule.playerCnt or 2
         roomInfo.owner = roomInfo.playerids[1]
         roomInfo.battleCnt = data.gameData.battleCnt or 1
     end
