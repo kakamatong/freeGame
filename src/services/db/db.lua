@@ -338,14 +338,15 @@ end
 function db.getPrivateShortRommid(mysql, ...)
     local roomid, owner, addr, gameid, rule = ...
     local now = os.time()
-    
+    local limitRoomID = 5000 -- 先限制10000条数据，提升性能
+    STAT.timing_start("db1")
     -- 开始事务
     mysql:query("START TRANSACTION;")
     
     -- 使用子查询生成随机偏移量，避免单独查询总数
     local sql = string.format(
-        "SELECT COUNT(*) AS total FROM privateRoomid WHERE status = 0 AND available_at <= %d;",
-        now
+        "SELECT COUNT(*) AS total FROM privateRoomid WHERE shortRoomid < %d AND status = 0 AND available_at <= %d;",
+        limitRoomID, now
     )
     
     local res = mysql:query(sql)
@@ -364,8 +365,8 @@ function db.getPrivateShortRommid(mysql, ...)
     local offset = math.random(0, total - 1)
 
     local sql = string.format(
-        "SELECT shortRoomid FROM privateRoomid WHERE status = 0 AND available_at <= %d LIMIT 1 OFFSET %d;",
-        now, offset
+        "SELECT shortRoomid FROM privateRoomid WHERE shortRoomid < %d AND status = 0 AND available_at <= %d LIMIT 1 OFFSET %d;",
+        limitRoomID, now, offset
     )
     res = mysql:query(sql)
     if not sqlResult(res) or #res == 0 then
@@ -373,6 +374,7 @@ function db.getPrivateShortRommid(mysql, ...)
         log.error("没有可用的私有房间短ID")
         return nil
     end
+
     
     local shortRoomid = res[1].shortRoomid
     
@@ -388,7 +390,7 @@ function db.getPrivateShortRommid(mysql, ...)
         log.error("更新私有房间短ID状态失败")
         return nil
     end
-    
+
     if updateRes.affected_rows == 0 then
         mysql:query("ROLLBACK;")
         log.error("更新私有房间短ID状态失败")
@@ -398,7 +400,8 @@ function db.getPrivateShortRommid(mysql, ...)
     -- 提交事务
     mysql:query("COMMIT;")
     log.info(string.format("成功分配私有房间短ID: %d 到房间: %d 房主: %d", shortRoomid, roomid, owner))
-    
+    local dt = STAT.timing_end("db1")
+    log.info(string.format("-----------------------db1耗时: %d", dt))
     return shortRoomid
 end
 
