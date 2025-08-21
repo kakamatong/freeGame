@@ -15,6 +15,8 @@ local svrMatch = CONFIG.CLUSTER_SVR_NAME.MATCH
 local svrActivity = CONFIG.CLUSTER_SVR_NAME.ACTIVITY
 local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 local svrGame = CONFIG.CLUSTER_SVR_NAME.GAME
+local svrPrivateRoom = CONFIG.CLUSTER_SVR_NAME.PRIVATE_ROOM
+
 -- 发送数据包给客户端
 local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
@@ -88,6 +90,15 @@ end
 function REQUEST:setAwardNoticeRead(args)
 	call(svrUser, "setAwardNoticeRead", args.id)
 end
+
+function REQUEST:createPrivateRoom(args)
+	local res = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
+	if not res then
+		return {code=0,msg="创建失败"}
+	end
+	return res
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)
