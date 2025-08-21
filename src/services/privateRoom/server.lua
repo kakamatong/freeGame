@@ -4,7 +4,7 @@ local skynet = require "skynet"
 local log = require "log"
 local CMD = {}
 require "skynet.manager"
--- 启动匹配服务，定时检查所有队列
+local svrDB = nil
 
 -- 创建私人房间
 function CMD.createPrivateRoom(...)
@@ -16,7 +16,7 @@ end
 
 function CMD.joinPrivateRoom(...)
 	local userid,shortRoomid = ...
-	-- todo:
+	return skynet.call(svrDB, "lua", "db", "getPrivateRoomid", shortRoomid)
 end
 
 -----------------------------------------------------------------------------------------
@@ -26,5 +26,6 @@ skynet.start(function()
 		local f = CMD[command]
 		skynet.ret(skynet.pack(f(...)))
 	end)
+	svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
     skynet.register(CONFIG.SVR_NAME.PRIVATE_ROOM)
 end)
