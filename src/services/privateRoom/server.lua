@@ -8,10 +8,13 @@ local svrDB = nil
 
 -- 创建私人房间
 function CMD.createPrivateRoom(...)
-	local userid,gameid,createData = ...
+	local userid,gameid,rule = ...
 	local players = {}
 	table.insert(players,userid)
-	return call(CONFIG.CLUSTER_SVR_NAME.GAME, "createPrivateGameRoom", gameid,players,createData)
+	local gameData = {
+		rule = rule,
+	}
+	return call(CONFIG.CLUSTER_SVR_NAME.GAME, "createPrivateGameRoom", gameid,players,gameData)
 end
 
 function CMD.joinPrivateRoom(...)
