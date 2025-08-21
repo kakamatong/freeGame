@@ -92,11 +92,21 @@ function REQUEST:setAwardNoticeRead(args)
 end
 
 function REQUEST:createPrivateRoom(args)
-	local res = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
-	if not res then
+	local roomid,addr,shortRoomid = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
+
+	if not roomid then
 		return {code=0,msg="创建失败"}
 	end
-	return res
+	return {
+		roomid = tostring(roomid),
+		addr = addr,
+		shortRoomid = shortRoomid,
+		gameid = args.gameid,
+		rule = args.rule,
+		code = 1,
+		msg = "创建成功"
+	}
+
 end
 
 

@@ -101,6 +101,11 @@ local function createGameRoom(roomType, gameid, players, gameData)
                 break
             end
         end
+
+        if not shortRoomid or shortRoomid == 0 then
+            log.error("createPrivateShortRommid error")
+            return
+        end
     end
 
     -- 创建新的房间服务
