@@ -156,3 +156,34 @@ setAwardNoticeRead 12 {
     }
 }
 
+# 加入私有房间
+joinPrivateRoom 13 {
+    request {
+        shortRoomid 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+        gameid 2 : integer
+        roomid 3 : string
+        addr 4 : string
+        rule 5 : string
+    }
+}
+
+# 创建私有房间
+createPrivateRoom 14 {
+    request {
+        gameid 0 : integer
+        rule 1 : string
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+        gameid 2 : integer
+        shortRoomid 3 : integer
+        roomid 4 : string
+        addr 5 : string
+        rule 6 : string
+    }
+}
