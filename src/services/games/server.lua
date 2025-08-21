@@ -13,6 +13,7 @@ local parser = require "sprotoparser"  -- sproto协议解析器
 local gConfig = CONFIG
 require "skynet.manager"          -- 服务注册模块
 local svrDB = nil
+local addr = ""
 --[[
 加载文件内容
 @param filename 文件名
@@ -91,13 +92,11 @@ end
 ]]
 local function createGameRoom(roomType, gameid, players, gameData)
     local roomid = snowflake.generate()  -- 使用雪花算法生成唯一房间ID
-    local addr = skynet.getenv("clusterName")
     local name = "games/" .. gameid .. "/room"
-
     local shortRoomid = 0
     if roomType == gConfig.ROOM_TYPE.PRIVATE then
         for i = 1,5 do
-            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1])
+            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1], addr, gameid)
             if shortRoomid then
                 break
             end
@@ -218,7 +217,7 @@ skynet.start(function()
         local f = assert(CMD[cmd])
         skynet.ret(skynet.pack(f(...)))
     end)
-
+    addr = skynet.getenv("clusterName")
     -- 注册服务名称
     skynet.register(CONFIG.SVR_NAME.GAMES)
     -- 启动服务
