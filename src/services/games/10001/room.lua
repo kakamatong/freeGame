@@ -24,6 +24,8 @@ local roomInfo = {
     battleCnt = 1, -- 对战次数
     shortRoomid = 0, -- 短房间id
     privateRule = nil, -- 私人房间规则
+    roomWaitingConnectTime = 0, -- 等待连接时间
+    roomGameTime = 0, -- 游戏时间
 }
 
 local players = {}
@@ -240,13 +242,13 @@ end
 local function checkRoomStatus()
     if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
         local timeNow = os.time()
-        if timeNow - roomInfo.createRoomTime > config.WAITTING_CONNECT_TIME then
+        if timeNow - roomInfo.createRoomTime > roomInfo.roomWaitingConnectTime then
             --testStart()
             roomEnd(config.ROOM_END_FLAG.OUT_TIME_WAITING)
         end
     elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         local timeNow = os.time()
-        if timeNow - roomInfo.gameStartTime > config.GAME_TIME then
+        if timeNow - roomInfo.gameStartTime > roomInfo.roomGameTime then
             roomEnd(config.ROOM_END_FLAG.OUT_TIME_PLAYING)
         end
     end
@@ -352,11 +354,15 @@ function CMD.start(data)
     -- 区分匹配房间和私人房间
     if isMatchRoom() then
         roomInfo.playerNum = #roomInfo.playerids
+        roomInfo.roomWaitingConnectTime = config.MATCH_ROOM_WAITTING_CONNECT_TIME
+        roomInfo.roomGameTime = config.MATCH_ROOM_GAME_TIME
     elseif isPrivateRoom() then
         roomInfo.privateRule = cjson.decode(data.gameData.rule or "")
         roomInfo.playerNum = roomInfo.privateRule.playerCnt or 2
         roomInfo.owner = roomInfo.playerids[1]
         roomInfo.battleCnt = data.gameData.battleCnt or 1
+        roomInfo.roomWaitingConnectTime = config.PRIVATE_ROOM_WAITTING_CONNECT_TIME
+        roomInfo.roomGameTime = config.PRIVATE_ROOM_GAME_TIME
     end
     
 
