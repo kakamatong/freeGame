@@ -415,5 +415,16 @@ function db.getPrivateRoomid(mysql, ...)
     return res[1]
 end
 
+-- 清除私有房间短ID, 短id在后续规定时间内不能使用
+function db.clearPrivateRoomid(mysql, ...)
+    local shortRoomid = ...
+    local now = os.time()
+    local sql = string.format("UPDATE privateRoomid SET status = 0, roomid = 0, owner = 0, gameid = 0, addr = '', rule = '', available_at = %d WHERE shortRoomid = %d AND available_at <= %d;", now + CONFIG.PRIVATE_ROOM_SHORTID_TIME2, shortRoomid, now)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 返回db表，供外部调用
 return db

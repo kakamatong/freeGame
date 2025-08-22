@@ -224,6 +224,10 @@ local function roomEnd(code)
                 setUserStatus(userid, gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
             end
         end
+        -- 清除私有房间短ID
+        if isPrivateRoom() then
+            skynet.send(svrDB, "lua", "db", "clearPrivateRoomid", roomInfo.shortRoomid)
+        end
     end
 
     local data ={
