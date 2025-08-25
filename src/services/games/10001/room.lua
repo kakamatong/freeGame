@@ -303,6 +303,10 @@ local function gameReady(userid,ready)
     if status == config.PLAYER_STATUS.READY and ready == 0 then 
         player.status = config.PLAYER_STATUS.ONLINE
     elseif ready == 1 then
+        player.status = config.PLAYER_STATUS.READY
+        skynet.fork(function()
+            testStart()
+        end)
         return {code = 1, msg = "准备成功"}
     else
         return {code = 0, msg = "准备失败"}
