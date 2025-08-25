@@ -83,6 +83,15 @@ local function checkHaveRoom(gameid, roomid)
     return true, room
 end
 
+local function joinPrivateRoom(gameid, roomid, userid)
+    local b, room = checkHaveRoom(gameid, roomid)
+    if not b then
+        log.error("room not found %s %s", gameid, roomid)
+        return
+    end
+    return skynet.call(room, "lua", "joinPrivateRoom", userid)
+end
+
 --[[
 创建游戏房间
 @param gameid 游戏ID
@@ -152,6 +161,16 @@ end
 ]]
 function CMD.createPrivateGameRoom(gameid, players, gameData)
     return createGameRoom(gConfig.ROOM_TYPE.PRIVATE, gameid, players, gameData)
+end
+
+--[[
+加入私人游戏房间
+@param gameid 游戏ID
+@param roomid 房间ID
+@param userid 用户ID
+]]
+function CMD.joinPrivateRoom(gameid, roomid, userid)
+    return joinPrivateRoom(gameid, roomid, userid)
 end
 
 --[[

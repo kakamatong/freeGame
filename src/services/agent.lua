@@ -109,6 +109,27 @@ function REQUEST:createPrivateRoom(args)
 
 end
 
+function REQUEST:joinPrivateRoom(args)
+	local info = call(svrPrivateRoom, "joinPrivateRoom", userid, args.shortRoomid)
+	if not info then
+		return {code = 0,msg = "房间不存在"}
+	else
+		local b,msg = callTo(info.addr, "game1", "joinPrivateRoom", info.gameid, info.roomid, userid)
+		if not b then
+			return {code = 0,msg = msg}
+		else
+			return {
+				code = 1,
+				msg = "加入成功",
+				roomid = info.roomid,
+				gameid = info.gameid,
+				addr = info.addr,
+				rule = info.rule
+			}
+		end
+	end
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)

@@ -13,7 +13,8 @@ local roomInfo = {
     gameid = 0,
     gameStartTime = 0,
     createRoomTime = 0,
-    playerNum = 0,
+    playerNum = 0, -- 房间最大人数
+    nowPlayerNum = 0, -- 当前人数
     gameStatus = config.GAME_STATUS.NONE,
     canDestroy = false, -- 是否可以销毁
     gameData = {}, -- 游戏数据
@@ -110,19 +111,16 @@ local function isUserOnline(userid)
     return players[userid] and players[userid].status == config.PLAYER_STATUS.PLAYING
 end
 
--- 初始化玩家信息
-local function checkUserInfo(userid,seat,status,bRobot)
-    local bin = false
-    for key, value in pairs(roomInfo.playerids) do
-        if value == userid then
-            bin = true
+local function dispatchSeat()
+    for i = 1, roomInfo.playerNum do
+        if not roomInfo.playerids[i] then
+            return i
         end
     end
+end
 
-    if not bin then
-        roomInfo.playerids[seat] = userid
-    end
-
+-- 初始化玩家信息
+local function checkUserInfo(userid,seat,status,bRobot)
     if not players[userid] then
         local info = call(svrUser, "userData", userid)
         players[userid] = {
@@ -379,11 +377,13 @@ function CMD.start(data)
     -- 区分匹配房间和私人房间
     if isMatchRoom() then
         roomInfo.playerNum = #roomInfo.playerids
+        roomInfo.nowPlayerNum = roomInfo.playerNum
         roomInfo.roomWaitingConnectTime = config.MATCH_ROOM_WAITTING_CONNECT_TIME
         roomInfo.roomGameTime = config.MATCH_ROOM_GAME_TIME
     elseif isPrivateRoom() then
         roomInfo.privateRule = cjson.decode(data.gameData.rule or "")
         roomInfo.playerNum = roomInfo.privateRule.playerCnt or 2
+        roomInfo.nowPlayerNum = roomInfo.playerNum
         roomInfo.owner = roomInfo.playerids[1]
         roomInfo.battleCnt = data.gameData.battleCnt or 1
         roomInfo.roomWaitingConnectTime = config.PRIVATE_ROOM_WAITTING_CONNECT_TIME
@@ -456,7 +456,34 @@ function CMD.connectGame(userid, client_fd)
             end
         end
     end
-    
+end
+
+function CMD.joinPrivateRoom(userid)
+    if roomInfo.gameStatus == config.GAME_STATUS.START or roomInfo.gameStatus == config.GAME_STATUS.END then
+        return false, "游戏已开始"
+    end
+
+    if roomInfo.nowPlayerNum < roomInfo.playerNum then
+        local bin = false
+        for key, value in pairs(roomInfo.playerids) do
+            if value == userid then
+                bin = true
+            end
+        end
+
+        if not bin then
+            local seat = dispatchSeat()
+            if seat then
+                roomInfo.playerids[seat] = userid
+                roomInfo.nowPlayerNum = roomInfo.nowPlayerNum + 1
+                return true
+            else
+                return false,"分配座位错误"
+            end
+        end
+    else 
+        return false,"人已满"
+    end
 end
 
 function CMD.stop()
