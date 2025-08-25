@@ -143,6 +143,16 @@ local function getOnLineCnt()
     return cnt
 end
 
+local function getReadyCnt()
+    local cnt = 0
+    for _, player in pairs(players) do
+        if player.status == config.PLAYER_STATUS.READY then
+            cnt = cnt + 1
+        end
+    end
+    return cnt
+end
+
 -- 在初始化游戏之前，所有游戏逻辑相关配置均可以修改
 local function initLogic()
     logicHandler.init(roomInfo.playerNum, roomInfo.gameData.rule, roomHandler)
@@ -183,9 +193,9 @@ end
 -- 测试是否可以开始游戏
 local function testStart()
     log.info("testStart")
-    local onlineCount = getOnLineCnt()
+    local readyCount = getReadyCnt()
 
-    if onlineCount == roomInfo.playerNum then
+    if readyCount == roomInfo.playerNum then
         startGame()
         return true
     else
@@ -415,7 +425,7 @@ function CMD.start(data)
         local bRobot = isRobotFunc(userid)
         local status = config.PLAYER_STATUS.LOADING
         if bRobot then
-            status = config.PLAYER_STATUS.ONLINE
+            status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
             setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, data.addr, roomInfo.shortRoomid)
@@ -532,7 +542,12 @@ function REQUEST:clientReady(userid, args)
     log.info("clientReady userid = %d",userid)
     -- 私人房模式需要拉去玩家信息
     if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
-        players[userid].status = config.PLAYER_STATUS.ONLINE
+        if isPrivateRoom() then
+            players[userid].status = config.PLAYER_STATUS.ONLINE
+        else
+            players[userid].status = config.PLAYER_STATUS.READY
+        end
+        
     elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         players[userid].status = config.PLAYER_STATUS.PLAYING
     end

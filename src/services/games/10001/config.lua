@@ -14,6 +14,7 @@ local config = {
         OFFLINE = 2,
         ONLINE = 3,
         PLAYING = 4,
+        READY = 5
     },
 
     LOG_TYPE = {
