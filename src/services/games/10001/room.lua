@@ -110,6 +110,20 @@ local function isUserOnline(userid)
     return players[userid] and players[userid].status == config.PLAYER_STATUS.PLAYING
 end
 
+-- 初始化玩家信息
+local function checkUserInfo(userid,seat,status,bRobot)
+    if not players[userid] then
+        local info = call(svrUser, "userData", userid)
+        players[userid] = {
+            userid = userid,
+            seat = seat,
+            status = status,
+            isRobot = bRobot,
+            info = info,
+        }
+    end
+end
+
 local function getOnLineCnt()
     local cnt = 0
     for _, player in pairs(players) do
@@ -386,14 +400,7 @@ function CMD.start(data)
         else
             setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, roomInfo.addr, roomInfo.shortRoomid)
         end
-        local info = call(svrUser, "userData", userid)
-        players[userid] = {
-            userid = userid,
-            seat = seat,
-            status = status,
-            isRobot = bRobot,
-            info = info,
-        }
+        checkUserInfo(userid, seat, status, bRobot)
     end
 
     gameManager = data.gameManager
