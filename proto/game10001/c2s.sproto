@@ -39,3 +39,14 @@ outHand 5 {
         flag 0 : integer
     }
 }
+
+# 游戏准备
+gameReady 6 {
+    request {
+        ready 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

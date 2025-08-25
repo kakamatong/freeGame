@@ -287,6 +287,28 @@ local function checkRoomStatus()
     end
 end
 
+-- 玩家准备
+local function gameReady(userid,ready)
+    if not isPrivateRoom() then
+        return {code = 0, msg = "非私人房间"}
+    end
+
+    local player = players[userid]
+    if not player then
+        return {code = 0, msg = "玩家不存在"}
+    end
+
+    local status = player.status
+    -- 取消准备
+    if status == config.PLAYER_STATUS.READY and ready == 0 then 
+        player.status = config.PLAYER_STATUS.ONLINE
+    elseif ready == 1 then
+        return {code = 1, msg = "准备成功"}
+    else
+        return {code = 0, msg = "准备失败"}
+    end
+end
+
 -- 发送房间信息
 local function sendRoomInfo(userid)
     local info = {
@@ -563,6 +585,10 @@ end
 function REQUEST:outHand(userid, args)
     local seat = getPlayerSeat(userid)
     logicHandler.outHand(seat, args)
+end
+
+function REQUEST:gameReady(userid, args)
+    return gameReady(userid,args.ready)
 end
 
 -- 客户端请求分发
