@@ -92,6 +92,7 @@ function REQUEST:setAwardNoticeRead(args)
 end
 
 function REQUEST:createPrivateRoom(args)
+	log.info("createPrivateRoom %s", args.rule)
 	local roomid,addr,shortRoomid = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
 
 	if not roomid then
@@ -114,6 +115,7 @@ function REQUEST:joinPrivateRoom(args)
 	if not info then
 		return {code = 0,msg = "房间不存在"}
 	else
+		log.info("joinPrivateRoom %s", UTILS.tableToString(info))
 		local b,msg = callTo(info.addr, "game1", "joinPrivateRoom", info.gameid, info.roomid, userid)
 		if not b then
 			return {code = 0,msg = msg}
@@ -121,7 +123,7 @@ function REQUEST:joinPrivateRoom(args)
 			return {
 				code = 1,
 				msg = "加入成功",
-				roomid = info.roomid,
+				roomid = tostring(info.roomid),
 				gameid = info.gameid,
 				addr = info.addr,
 				rule = info.rule

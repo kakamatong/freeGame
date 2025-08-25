@@ -390,8 +390,8 @@ function CMD.start(data)
         roomInfo.roomGameTime = config.MATCH_ROOM_GAME_TIME
     elseif isPrivateRoom() then
         roomInfo.privateRule = cjson.decode(data.gameData.rule or "")
-        roomInfo.playerNum = roomInfo.privateRule.playerCnt or 2
-        roomInfo.nowPlayerNum = roomInfo.playerNum
+        roomInfo.playerNum = roomInfo.privateRule.playerCnt
+        roomInfo.nowPlayerNum = 1
         roomInfo.owner = roomInfo.playerids[1]
         roomInfo.battleCnt = data.gameData.battleCnt or 1
         roomInfo.roomWaitingConnectTime = config.PRIVATE_ROOM_WAITTING_CONNECT_TIME
