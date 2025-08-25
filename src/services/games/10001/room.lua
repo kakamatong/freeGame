@@ -112,6 +112,17 @@ end
 
 -- 初始化玩家信息
 local function checkUserInfo(userid,seat,status,bRobot)
+    local bin = false
+    for key, value in pairs(roomInfo.playerids) do
+        if value == userid then
+            bin = true
+        end
+    end
+
+    if not bin then
+        roomInfo.playerids[seat] = userid
+    end
+
     if not players[userid] then
         local info = call(svrUser, "userData", userid)
         players[userid] = {
