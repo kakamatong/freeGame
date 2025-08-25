@@ -417,7 +417,7 @@ function CMD.start(data)
             status = config.PLAYER_STATUS.ONLINE
             robotCnt = robotCnt + 1
         else
-            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, roomInfo.addr, roomInfo.shortRoomid)
+            setUserStatus(userid, gConfig.USER_STATUS.GAMEING, roomInfo.gameid, roomInfo.roomid, data.addr, roomInfo.shortRoomid)
         end
         checkUserInfo(userid, seat, status, bRobot)
     end
