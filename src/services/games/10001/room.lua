@@ -303,6 +303,7 @@ end
 local function onPlayerJoin(userid)
     for key, value in pairs(roomInfo.playerids) do
         if value ~= userid then
+            sendRoomInfo(value)
             sendPlayerInfo(value)
         end
     end
