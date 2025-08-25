@@ -300,6 +300,14 @@ local function sendPlayerInfo(userid)
     sendToOneClient(userid, msgType, {infos = data})
 end
 
+local function onPlayerJoin(userid)
+    for key, value in pairs(roomInfo.playerids) do
+        if value ~= userid then
+            sendPlayerInfo(value)
+        end
+    end
+end
+
 ------------------------------------------------------------------------------------------------------------ ai消息处理
 -- 处理ai消息
 function roomHandlerAi.onAiMsg(seat, name, data)
@@ -477,6 +485,7 @@ function CMD.joinPrivateRoom(userid)
                 roomInfo.playerids[seat] = userid
                 roomInfo.nowPlayerNum = roomInfo.nowPlayerNum + 1
                 checkUserInfo(userid,seat,config.PLAYER_STATUS.LOADING,false)
+                onPlayerJoin(userid)
                 return true
             else
                 return false,"分配座位错误"
