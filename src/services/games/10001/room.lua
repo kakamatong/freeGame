@@ -481,8 +481,13 @@ end
 local REQUEST = {}
 function REQUEST:clientReady(userid, args)
     log.info("clientReady userid = %d",userid)
+    -- 私人房模式需要拉去玩家信息
     if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
-        players[userid].status = config.PLAYER_STATUS.ONLINE
+        if isPrivateRoom() then
+            checkUserInfo(userid, #players + 1, config.PLAYER_STATUS.ONLINE, false)
+        else
+            players[userid].status = config.PLAYER_STATUS.ONLINE
+        end
     elseif roomInfo.gameStatus == config.GAME_STATUS.START then
         players[userid].status = config.PLAYER_STATUS.PLAYING
     end
