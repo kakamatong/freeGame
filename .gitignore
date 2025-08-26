@@ -4,6 +4,7 @@
 *.dSYM
 .DS_Store
 .vscode
+.qoder
 src/config/gameConfig.lua
 *.pid
 /log/*
