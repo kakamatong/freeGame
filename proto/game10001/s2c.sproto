@@ -102,3 +102,11 @@ gameEnd 10 {
         roundData 3 : string
     }
 }
+
+# 玩家加入
+playerEnter 11 {
+    request {
+        userid 0 : integer
+        seat 1 : integer
+    }
+}

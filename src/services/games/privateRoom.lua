@@ -249,7 +249,7 @@ function PrivateRoom:onPlayerJoin(userid)
         userid = userid,
         seat = self:getPlayerSeat(userid)
     }
-    self:sendToAllClient("playerJoin", data)
+    self:sendToAllClient("onPlayerEnter", data)
 end
 
 -- 重写客户端准备方法
@@ -268,6 +268,7 @@ function PrivateRoom:clientReady(userid, args)
     
     self:sendRoomInfo(userid)
     self:sendPlayerInfo(userid)
+    self:sendPlayerEnter(userid)
     
     if self:isRoomStatusStarting() then
         self:relink(userid)

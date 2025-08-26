@@ -308,6 +308,16 @@ function BaseRoom:sendPlayerInfo(userid)
     self:sendToOneClient(userid, "playerInfos", {infos = data})
 end
 
+-- 发送玩家进入
+function BaseRoom:sendPlayerEnter(userid)
+    local data = {
+        userid = userid,
+        seat = self.players[userid].seat
+    }
+
+    self:sendToAllClient("playerEnter", data)
+end
+
 -- 检查房间超时
 function BaseRoom:checkRoomTimeout()
     if self:isRoomStatusWaittingConnect() then
@@ -392,7 +402,8 @@ function BaseRoom:clientReady(userid, args)
     
     self:sendRoomInfo(userid)
     self:sendPlayerInfo(userid)
-    
+    self:sendPlayerEnter(userid)
+
     if self:isRoomStatusStarting() then
         self:relink(userid)
     end
