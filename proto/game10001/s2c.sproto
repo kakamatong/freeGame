@@ -84,3 +84,21 @@ playerInfos 8 {
         infos 0 : *PlayerInfo
     }
 }
+
+# 游戏开始
+gameStart 9 {
+    request {
+        roundNum 0 : integer
+        startTime 1 : integer
+        roundData 3 : string
+    }
+}
+
+# 游戏结束
+gameEnd 10 {
+    request {
+        roundNum 0 : integer
+        endTime 1 : integer
+        roundData 3 : string
+    }
+}

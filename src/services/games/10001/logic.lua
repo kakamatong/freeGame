@@ -9,6 +9,8 @@ logic.outHandNum = 0 -- 出招次数
 logic.stepid = 0 -- 步骤id
 logic.roomHandler = nil -- 房间处理
 logic.binit = false -- 每次开始一局游戏前必须初始化
+logic.startTime = 0 -- 游戏开始时间
+logic.endTime = 0 -- 游戏结束时间
 
 local logicHandler = {}
 
@@ -148,6 +150,38 @@ function logic.sendOutHandInfo(toseat, seatid, flag)
     
 end
 
+function logic.sendGameStart(toseat, roundData)
+    if toseat == config.SEAT_FLAG.SEAT_ALL then
+        logic.sendToAllClient("gameStart", {
+            roundNum = logic.roundNum,
+            startTime = logic.startTime,
+            roundData = roundData or ""
+        })
+    else
+        logic.sendToOneClient(toseat, "gameStart", {
+            roundNum = logic.roundNum,
+            startTime = logic.startTime,
+            roundData = roundData or ""
+        })
+    end
+end
+
+function logic.sendGameEnd(toseat, roundData)
+    if toseat == config.SEAT_FLAG.SEAT_ALL then
+        logic.sendToAllClient("gameEnd", {
+            roundNum = logic.roundNum,
+            endTime = logic.startTime,
+            roundData = roundData or ""
+        })
+    else
+        logic.sendToOneClient(toseat, "gameEnd", {
+            roundNum = logic.roundNum,
+            endTime = logic.startTime,
+            roundData = roundData or ""
+        })
+    end
+end
+
 -- 获取当前步骤id
 function logic.getStepId()
     return logic.stepid
@@ -168,9 +202,11 @@ function logic.startStepStartGame()
     logic.sendToAllClient("stepId", {
         stepid = config.GAME_STEP.START,
     })
-
+    logic.startTime = os.time()
     logic.roundNum = logic.roundNum + 1
     -- 下发roundNum
+
+    logic.sendGameStart(config.SEAT_FLAG.SEAT_ALL)
 end
 
 -- 停止步骤开始游戏
