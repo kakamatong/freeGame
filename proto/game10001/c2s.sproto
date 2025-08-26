@@ -50,3 +50,25 @@ gameReady 6 {
         msg 1 : string
     }
 }
+
+# 离开房间
+leaveRoom 7 {
+    request {
+        flag 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 解散房间
+disbandRoom 8 {
+    request {
+        flag 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
