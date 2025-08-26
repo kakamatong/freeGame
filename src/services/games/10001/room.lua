@@ -108,6 +108,21 @@ local function isPrivateRoom()
     return roomInfo.roomType == gConfig.ROOM_TYPE.PRIVATE
 end
 
+-- 是否是房主
+local function isOwner(userid)
+    return userid == roomInfo.owner
+end
+
+-- 设置玩家状态
+local function setPlayerStatusByUserid(userid, status)
+    players[userid].status = status
+end
+
+local function setPlayerStatusBySeat(seat, status)
+    local userid = roomInfo.playerids[seat]
+    players[userid].status = status
+end
+
 local function setUserStatus(userid, status, gameid, roomid, addr, shortRoomid)
     send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr, shortRoomid)
 end
@@ -198,6 +213,19 @@ local function getPlayerSeat(userid)
             return i
         end
     end
+end
+
+-- 玩家离开
+local function playerLeave(userid)
+    local player = players[userid]
+    if not player then
+        return
+    end
+    local seat = players.seat
+    roomInfo.playerids[seat] = nil
+    roomInfo.nowPlayerNum = roomInfo.nowPlayerNum - 1
+    players[userid] = nil
+    log.info("userid:%s leave s", userid)
 end
 
 -- 测试是否可以开始游戏
@@ -565,6 +593,10 @@ end
 
 function CMD.socketClose(fd)
     local userid = getUseridByFd(fd)
+    if not players[userid] then
+        return
+    end
+
     if isRoomStatusWaittingConnect() then
         players[userid].status = config.PLAYER_STATUS.LOADING
     else
@@ -604,6 +636,25 @@ end
 -- 游戏准备
 function REQUEST:gameReady(userid, args)
     return gameReady(userid,args.ready)
+end
+
+-- 离开房间
+function REQUEST:leaveRoom(userid, args)
+    log.info("leaveRoom userid = %d",userid)
+    if isMatchRoom() then
+        return {code = 0, msg = "匹配房目前不支持此功能"}
+    elseif isPrivateRoom() then
+        if isRoomStatusWaittingConnect() then
+            if isOwner(userid) then
+                return {code = 1, msg = "房主离开，保留房间"}
+            else
+                playerLeave(userid)
+                return {code = 1, msg = "离开成功"}
+            end
+        end
+    else
+        return {code = 0, msg = "未知错误"}
+    end
 end
 
 -- 客户端请求分发
