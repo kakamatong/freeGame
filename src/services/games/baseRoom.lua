@@ -318,6 +318,21 @@ function BaseRoom:sendPlayerEnter(userid)
     self:sendToAllClient("playerEnter", data)
 end
 
+-- 发送房间里其他玩家进入
+function BaseRoom:sendPlayerOtherEnter(userid)
+    for key, value in pairs(self.roomInfo.playerids) do
+        if value ~= userid then
+            local data = {
+                userid = value,
+                seat = key
+            }
+
+            self:sendToOneClient(userid, "playerEnter", data)
+        end
+    end
+    
+end
+
 -- 检查房间超时
 function BaseRoom:checkRoomTimeout()
     if self:isRoomStatusWaittingConnect() then
