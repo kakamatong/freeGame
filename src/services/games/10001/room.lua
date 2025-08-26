@@ -88,6 +88,16 @@ local function pushUserGameRecords(userid, gameid, addType, addNums)
     skynet.send(svrDB, "lua", "db", "insertUserGameRecords", userid, gameid, addType, addNums)
 end
 
+-- 是否是房间等待状态
+local function isRoomStatusWaittingConnect()
+    return roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT
+end
+
+-- 是否游戏中
+local function isRoomStatusStarting()
+    return roomInfo.gameStatus == config.GAME_STATUS.START
+end
+
 -- 是否是匹配房间
 local function isMatchRoom()
     return roomInfo.roomType == gConfig.ROOM_TYPE.MATCH
@@ -273,13 +283,13 @@ end
 
 -- 检查桌子状态，如果超时，则销毁桌子
 local function checkRoomStatus()
-    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+    if isRoomStatusWaittingConnect() then
         local timeNow = os.time()
         if timeNow - roomInfo.createRoomTime > roomInfo.roomWaitingConnectTime then
             --testStart()
             roomEnd(config.ROOM_END_FLAG.OUT_TIME_WAITING)
         end
-    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
+    elseif isRoomStatusStarting() then
         local timeNow = os.time()
         if timeNow - roomInfo.gameStartTime > roomInfo.roomGameTime then
             roomEnd(config.ROOM_END_FLAG.OUT_TIME_PLAYING)
@@ -555,7 +565,7 @@ end
 
 function CMD.socketClose(fd)
     local userid = getUseridByFd(fd)
-    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+    if isRoomStatusWaittingConnect() then
         players[userid].status = config.PLAYER_STATUS.LOADING
     else
         players[userid].status = config.PLAYER_STATUS.OFFLINE
@@ -567,21 +577,21 @@ local REQUEST = {}
 function REQUEST:clientReady(userid, args)
     log.info("clientReady userid = %d",userid)
     -- 私人房模式需要拉去玩家信息
-    if roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+    if isRoomStatusWaittingConnect() then
         if isPrivateRoom() then
             players[userid].status = config.PLAYER_STATUS.ONLINE
         else
             players[userid].status = config.PLAYER_STATUS.READY
         end
         
-    elseif roomInfo.gameStatus == config.GAME_STATUS.START then
+    elseif isRoomStatusStarting() then
         players[userid].status = config.PLAYER_STATUS.PLAYING
     end
     sendRoomInfo(userid)
     sendPlayerInfo(userid)
-    if roomInfo.gameStatus == config.GAME_STATUS.START then
+    if isRoomStatusStarting() then
         relink(userid)
-    elseif roomInfo.gameStatus == config.GAME_STATUS.WAITTING_CONNECT then
+    elseif isRoomStatusWaittingConnect() then
         testStart()
     end
 end
@@ -591,6 +601,7 @@ function REQUEST:outHand(userid, args)
     logicHandler.outHand(seat, args)
 end
 
+-- 游戏准备
 function REQUEST:gameReady(userid, args)
     return gameReady(userid,args.ready)
 end
@@ -607,7 +618,6 @@ local function request(fd, name, args, response)
     if response then
         return response(res)
     end
-	
 end
 
 -- 注册客户端协议，处理客户端消息
