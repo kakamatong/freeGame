@@ -109,7 +109,7 @@ function Room:_initMatchRoomPlayers(data)
             status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
-            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, data.addr, self.roomInfo.shortRoomid)
+            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
         self:checkUserInfo(userid, seat, status, bRobot)
     end

@@ -80,7 +80,7 @@ function PrivateRoom:_initPrivateRoomPlayers(data)
             status = self.config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
-            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, data.addr, self.roomInfo.shortRoomid)
+            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
         self:checkUserInfo(userid, seat, status, bRobot)
     end
@@ -115,6 +115,7 @@ function PrivateRoom:joinPrivateRoom(userid)
             if seat then
                 self.roomInfo.playerids[seat] = userid
                 self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum + 1
+                self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
                 self:checkUserInfo(userid, seat, self.config.PLAYER_STATUS.LOADING, false)
                 self:onPlayerJoin(userid)
                 return true

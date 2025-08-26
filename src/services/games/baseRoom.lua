@@ -45,6 +45,7 @@ function BaseRoom:_init()
         roomType = 0, -- 房间类型 (MATCH, PRIVATE)
         roomWaitingConnectTime = 0, -- 等待连接时间
         roomGameTime = 0, -- 游戏时间
+        addr = "",
     }
     
     -- 玩家信息
@@ -79,6 +80,7 @@ function BaseRoom:init(data)
     self.roomInfo.playerids = data.players
     self.roomInfo.gameData = data.gameData
     self.roomInfo.roomType = data.roomType or self.gConfig.ROOM_TYPE.MATCH
+    self.roomInfo.addr = data.addr
     self.gameManager = data.gameManager
     self.roomInfo.createRoomTime = os.time()
     
