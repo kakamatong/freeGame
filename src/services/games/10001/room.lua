@@ -221,7 +221,7 @@ local function playerLeave(userid)
     if not player then
         return
     end
-    local seat = players.seat
+    local seat = player.seat
     roomInfo.playerids[seat] = nil
     roomInfo.nowPlayerNum = roomInfo.nowPlayerNum - 1
     players[userid] = nil
