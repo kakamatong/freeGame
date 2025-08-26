@@ -110,3 +110,11 @@ playerEnter 11 {
         seat 1 : integer
     }
 }
+
+# 更新玩家状态
+playerStatusUpdate 12 {
+    request {
+        userid 0 : integer
+        status 1 : integer
+    }
+}
