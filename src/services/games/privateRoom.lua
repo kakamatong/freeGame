@@ -9,6 +9,7 @@
     5. 游戏准备逻辑
 ]]
 
+local skynet = require "skynet"
 local BaseRoom = require "games.baseRoom"
 local log = require "log"
 local cjson = require "cjson"
