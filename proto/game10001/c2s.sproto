@@ -72,3 +72,26 @@ disbandRoom 8 {
         msg 1 : string
     }
 }
+
+# 发起投票解散
+voteDisbandRoom 9 {
+    request {
+        reason 0 : string  # 解散原因(可选)
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# 投票解散响应
+voteDisbandResponse 10 {
+    request {
+        voteId 0 : integer  # 投票ID
+        agree 1 : integer   # 1:同意, 0:拒绝
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}

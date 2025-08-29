@@ -309,6 +309,22 @@ function REQUEST:leaveRoom(userid, args)
     return {code = 0, msg = "房间未初始化"}
 end
 
+-- 发起投票解散
+function REQUEST:voteDisbandRoom(userid, args)
+    if roomInstance then
+        return roomInstance:voteDisbandRoom(userid, args.reason)
+    end
+    return {code = 0, msg = "房间未初始化"}
+end
+
+-- 投票解散响应
+function REQUEST:voteDisbandResponse(userid, args)
+    if roomInstance then
+        return roomInstance:voteDisbandResponse(userid, args.voteId, args.agree)
+    end
+    return {code = 0, msg = "房间未初始化"}
+end
+
 -- 客户端请求分发
 local function request(fd, name, args, response)
     if not roomInstance then

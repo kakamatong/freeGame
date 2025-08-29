@@ -23,6 +23,8 @@ local config = {
         GAME_START = 2,
         GAME_END = 3,
         GAME_RESULT = 4,
+        VOTE_DISBAND_START = 5,  -- 投票解散开始
+        VOTE_DISBAND_END = 6,    -- 投票解散结束
     },
 
     LOG_RESULT_TYPE = {
@@ -47,6 +49,7 @@ local config = {
         GAME_END = 1,
         OUT_TIME_WAITING = 2,
         OUT_TIME_PLAYING = 3,
+        VOTE_DISBAND = 4,        -- 投票解散
     }
 }
 

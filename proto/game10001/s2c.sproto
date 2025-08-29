@@ -126,3 +126,43 @@ playerLeave 13 {
         seat 1 : integer
     }
 }
+
+.VoteInfo {
+    userid 0 : integer
+    vote 1 : integer     # 1:同意, 0:拒绝, -1:未投票
+}
+
+# 投票解散开始通知
+voteDisbandStart 14 {
+    request {
+        voteId 0 : integer       # 投票ID
+        initiator 1 : integer    # 发起人 userid
+        reason 2 : string        # 解散原因
+        timeLeft 3 : integer     # 剩余时间(秒)
+        playerCount 4 : integer  # 房间总人数
+        needAgreeCount 5 : integer # 需要同意人数(60%)
+    }
+}
+
+# 投票状态更新
+voteDisbandUpdate 15 {
+    request {
+        voteId 0 : integer       # 投票ID
+        votes 1 : *VoteInfo      # 投票状态列表
+        agreeCount 2 : integer   # 当前同意人数
+        refuseCount 3 : integer  # 当前拒绝人数
+        timeLeft 4 : integer     # 剩余时间(秒)
+    }
+}
+
+# 投票解散结果
+voteDisbandResult 16 {
+    request {
+        voteId 0 : integer       # 投票ID
+        result 1 : integer       # 结果: 1:解散成功, 0:解散失败
+        reason 2 : string        # 结果原因
+        agreeCount 3 : integer   # 最终同意人数
+        refuseCount 4 : integer  # 最终拒绝人数
+        votes 5 : *VoteInfo      # 最终投票状态
+    }
+}

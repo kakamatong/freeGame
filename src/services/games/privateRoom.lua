@@ -33,6 +33,19 @@ function PrivateRoom:_initPrivateRoom()
     self.roomInfo.battleCnt = 1      -- 对战次数
     self.roomInfo.shortRoomid = 0    -- 短房间ID
     self.roomInfo.privateRule = nil  -- 私人房间规则
+    
+    -- 投票解散相关状态
+    self.voteDisbandInfo = {
+        inProgress = false,          -- 是否正在投票
+        voteId = 0,                  -- 投票ID
+        initiator = 0,               -- 发起人
+        reason = "",                 -- 解散原因
+        startTime = 0,               -- 开始时间
+        timeLimit = 120,             -- 时间限制(秒)
+        votes = {},                  -- 投票记录 {userid = vote} vote: 1=同意, 0=拒绝, nil=未投票
+        needAgreeCount = 0,          -- 需要同意的人数
+        timer = nil                  -- 定时器
+    }
 end
 
 -- 初始化私人房数据
@@ -308,6 +321,12 @@ end
 
 -- 停止房间
 function PrivateRoom:stop()
+    -- 清理投票解散定时器
+    if self.voteDisbandInfo.timer then
+        skynet.cancel(self.voteDisbandInfo.timer)
+        self.voteDisbandInfo.timer = nil
+    end
+    
     -- 归还机器人
     if self.roomInfo.gameData.robots and #self.roomInfo.gameData.robots > 0 then
         send(self.svrRobot, "returnRobots", self.roomInfo.gameData.robots)
@@ -315,6 +334,274 @@ function PrivateRoom:stop()
 
     -- 调用父类销毁方法
     self:destroy()
+end
+
+-- ==================== 投票解散功能 ====================
+
+-- 发起投票解散
+function PrivateRoom:voteDisbandRoom(userid, reason)
+    log.info("PrivateRoom:voteDisbandRoom userid=%d, reason=%s", userid, reason or "")
+    
+    -- 1. 基础检查
+    if not self:isPrivateRoom() then
+        return {code = 0, msg = "非私人房间不支持投票解散"}
+    end
+    
+    if not self:isRoomStatusStarting() then
+        return {code = 0, msg = "游戏未开始，无法发起投票解散"}
+    end
+    
+    if not self.players[userid] then
+        return {code = 0, msg = "玩家不在房间中"}
+    end
+    
+    if self.voteDisbandInfo.inProgress then
+        return {code = 0, msg = "当前有投票解散正在进行中"}
+    end
+    
+    -- 2. 初始化投票信息
+    local voteId = self:generateVoteId()
+    local playerCount = self.roomInfo.nowPlayerNum
+    local needAgreeCount = math.ceil(playerCount * 0.6) -- 60%向上取整
+    
+    self.voteDisbandInfo = {
+        inProgress = true,
+        voteId = voteId,
+        initiator = userid,
+        reason = reason or "",
+        startTime = os.time(),
+        timeLimit = 120,
+        votes = {},
+        needAgreeCount = needAgreeCount,
+        timer = nil
+    }
+    
+    -- 3. 发起人自动投同意票
+    self.voteDisbandInfo.votes[userid] = 1
+    
+    -- 4. 启动倒计时定时器
+    self:startVoteDisbandTimer()
+    
+    -- 5. 广播投票开始消息
+    local startData = {
+        voteId = voteId,
+        initiator = userid,
+        reason = self.voteDisbandInfo.reason,
+        timeLeft = self.voteDisbandInfo.timeLimit,
+        playerCount = playerCount,
+        needAgreeCount = needAgreeCount
+    }
+    self:sendToAllClient("voteDisbandStart", startData)
+    
+    -- 6. 立即发送第一次状态更新
+    self:broadcastVoteDisbandUpdate()
+    
+    -- 7. 记录日志
+    self:pushLog(self.config.LOG_TYPE.VOTE_DISBAND_START, userid, 
+        cjson.encode({reason = reason, needAgreeCount = needAgreeCount}))
+    
+    return {code = 1, msg = "投票解散发起成功"}
+end
+
+-- 投票解散响应
+function PrivateRoom:voteDisbandResponse(userid, voteId, agree)
+    log.info("PrivateRoom:voteDisbandResponse userid=%d, voteId=%d, agree=%d", userid, voteId, agree)
+    
+    -- 1. 基础检查
+    if not self.voteDisbandInfo.inProgress then
+        return {code = 0, msg = "当前没有投票解散进行中"}
+    end
+    
+    if self.voteDisbandInfo.voteId ~= voteId then
+        return {code = 0, msg = "投票ID无效"}
+    end
+    
+    if not self.players[userid] then
+        return {code = 0, msg = "玩家不在房间中"}
+    end
+    
+    if self.voteDisbandInfo.votes[userid] ~= nil then
+        return {code = 0, msg = "已经投过票"}
+    end
+    
+    -- 2. 记录投票
+    self.voteDisbandInfo.votes[userid] = agree
+    
+    -- 3. 检查是否有拒绝票 - 立即结束
+    if agree == 0 then
+        self:endVoteDisband(0, "有玩家拒绝，投票失败")
+        return {code = 1, msg = "投票成功"}
+    end
+    
+    -- 4. 广播状态更新
+    self:broadcastVoteDisbandUpdate()
+    
+    -- 5. 检查是否达到同意票数要求
+    local agreeCount = self:getVoteAgreeCount()
+    if agreeCount >= self.voteDisbandInfo.needAgreeCount then
+        self:endVoteDisband(1, "投票通过，房间解散")
+        return {code = 1, msg = "投票成功"}
+    end
+    
+    return {code = 1, msg = "投票成功"}
+end
+
+-- 生成投票ID
+function PrivateRoom:generateVoteId()
+    -- 使用房间ID + 时间戳 + 随机数生成唯一ID
+    local timestamp = os.time()
+    local random = math.random(1000, 9999)
+    return timestamp * 10000 + random
+end
+
+-- 启动投票解散定时器
+function PrivateRoom:startVoteDisbandTimer()
+    self.voteDisbandInfo.timer = skynet.fork(function()
+        local timeLeft = self.voteDisbandInfo.timeLimit
+        
+        while timeLeft > 0 and self.voteDisbandInfo.inProgress do
+            skynet.sleep(100) -- 1秒
+            timeLeft = timeLeft - 1
+            
+            -- 每10秒广播一次时间更新
+            if timeLeft % 10 == 0 or timeLeft <= 10 then
+                self:broadcastVoteDisbandUpdate()
+            end
+        end
+        
+        -- 超时处理
+        if self.voteDisbandInfo.inProgress then
+            self:endVoteDisband(0, "投票超时，自动取消")
+        end
+    end)
+end
+
+-- 广播投票状态更新
+function PrivateRoom:broadcastVoteDisbandUpdate()
+    if not self.voteDisbandInfo.inProgress then
+        return
+    end
+    
+    local timeLeft = self.voteDisbandInfo.timeLimit - (os.time() - self.voteDisbandInfo.startTime)
+    timeLeft = math.max(0, timeLeft)
+    
+    -- 构建投票状态列表
+    local voteInfos = {}
+    for _, userid in pairs(self.roomInfo.playerids) do
+        if userid and userid > 0 then
+            table.insert(voteInfos, {
+                userid = userid,
+                vote = self.voteDisbandInfo.votes[userid] or -1  -- -1表示未投票
+            })
+        end
+    end
+    
+    local updateData = {
+        voteId = self.voteDisbandInfo.voteId,
+        votes = voteInfos,
+        agreeCount = self:getVoteAgreeCount(),
+        refuseCount = self:getVoteRefuseCount(),
+        timeLeft = timeLeft
+    }
+    
+    self:sendToAllClient("voteDisbandUpdate", updateData)
+end
+
+-- 结束投票解散
+function PrivateRoom:endVoteDisband(result, reason)
+    if not self.voteDisbandInfo.inProgress then
+        return
+    end
+    
+    log.info("PrivateRoom:endVoteDisband result=%d, reason=%s", result, reason)
+    
+    -- 1. 停止定时器
+    if self.voteDisbandInfo.timer then
+        skynet.cancel(self.voteDisbandInfo.timer)
+        self.voteDisbandInfo.timer = nil
+    end
+    
+    -- 2. 构建最终投票状态
+    local finalVotes = {}
+    for _, userid in pairs(self.roomInfo.playerids) do
+        if userid and userid > 0 then
+            table.insert(finalVotes, {
+                userid = userid,
+                vote = self.voteDisbandInfo.votes[userid] or -1
+            })
+        end
+    end
+    
+    -- 3. 广播投票结果
+    local resultData = {
+        voteId = self.voteDisbandInfo.voteId,
+        result = result,
+        reason = reason,
+        agreeCount = self:getVoteAgreeCount(),
+        refuseCount = self:getVoteRefuseCount(),
+        votes = finalVotes
+    }
+    self:sendToAllClient("voteDisbandResult", resultData)
+    
+    -- 4. 记录日志
+    self:pushLog(self.config.LOG_TYPE.VOTE_DISBAND_END, self.voteDisbandInfo.initiator,
+        cjson.encode({
+            result = result,
+            reason = reason,
+            agreeCount = resultData.agreeCount,
+            refuseCount = resultData.refuseCount
+        }))
+    
+    -- 5. 清理投票状态
+    self.voteDisbandInfo.inProgress = false
+    
+    -- 6. 如果投票通过，解散房间
+    if result == 1 then
+        -- 延迟3秒解散房间，让客户端有时间处理结果
+        skynet.fork(function()
+            skynet.sleep(300) -- 3秒
+            self:roomEnd(self.config.ROOM_END_FLAG.VOTE_DISBAND)
+        end)
+    end
+end
+
+-- 获取同意票数
+function PrivateRoom:getVoteAgreeCount()
+    local count = 0
+    for _, vote in pairs(self.voteDisbandInfo.votes) do
+        if vote == 1 then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- 获取拒绝票数
+function PrivateRoom:getVoteRefuseCount()
+    local count = 0
+    for _, vote in pairs(self.voteDisbandInfo.votes) do
+        if vote == 0 then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- 检查玩家是否可以投票
+function PrivateRoom:canPlayerVote(userid)
+    if not self.voteDisbandInfo.inProgress then
+        return false, "当前没有投票进行中"
+    end
+    
+    if not self.players[userid] then
+        return false, "玩家不在房间中"
+    end
+    
+    if self.voteDisbandInfo.votes[userid] ~= nil then
+        return false, "已经投过票"
+    end
+    
+    return true
 end
 
 return PrivateRoom
