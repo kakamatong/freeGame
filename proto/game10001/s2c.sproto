@@ -118,3 +118,11 @@ playerStatusUpdate 12 {
         status 1 : integer
     }
 }
+
+# 玩家离开
+playerLeave 13 {
+    request {
+        userid 0 : integer
+        seat 1 : integer
+    }
+}
