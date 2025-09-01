@@ -116,6 +116,9 @@ function REQUEST:joinPrivateRoom(args)
 		return {code = 0,msg = "房间不存在"}
 	else
 		log.info("joinPrivateRoom %s", UTILS.tableToString(info))
+		if info.gameid == 0 or info.addr == "" or info.roomid == 0 then
+			return {code = 0,msg = "房间不存在"}
+		end
 		local b,msg = callTo(info.addr, "game1", "joinPrivateRoom", info.gameid, info.roomid, userid)
 		if not b then
 			return {code = 0,msg = msg}
