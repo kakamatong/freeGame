@@ -283,6 +283,9 @@ function PrivateRoom:clientReady(userid, args)
     self:sendPlayerOtherEnter(userid)
     
     if self:isRoomStatusStarting() then
+        if self.voteDisbandInfo.inProgress then
+            self:relinkInDisband(userid)
+        end
         self:relink(userid)
     elseif self:isRoomStatusWaittingConnect() then
         if not self:isPrivateRoom() then
@@ -404,6 +407,25 @@ function PrivateRoom:voteDisbandRoom(userid, reason)
         cjson.encode({reason = reason, needAgreeCount = needAgreeCount}))
     
     return {code = 1, msg = "投票解散发起成功"}
+end
+
+function PrivateRoom:relinkInDisband(userid)
+    self:sendVoteDisbandStart(userid)
+    self:broadcastVoteDisbandUpdate()
+
+end
+
+-- 发送投票解散开始，单个玩家，主要用户断线重连
+function PrivateRoom:sendVoteDisbandStart(userid) 
+    local startData = {
+        voteId = self.voteDisbandInfo.voteId,
+        initiator = self.voteDisbandInfo.initiator,
+        reason = self.voteDisbandInfo.reason,
+        timeLeft = self.voteDisbandInfo.timeLimit,
+        playerCount = self.roomInfo.nowPlayerNum,
+        needAgreeCount = self.voteDisbandInfo.needAgreeCount
+    }
+    self:sendToOneClient(userid, "voteDisbandStart", startData)
 end
 
 -- 投票解散响应
