@@ -64,8 +64,8 @@ function PrivateRoom:init(data)
         self.roomInfo.battleCnt = data.gameData.battleCnt or 1
         
         if self.config then
-            self.roomInfo.roomWaitingConnectTime = self.config.PRIVATE_ROOM_WAITTING_CONNECT_TIME
-            self.roomInfo.roomGameTime = self.config.PRIVATE_ROOM_GAME_TIME
+            self.roomInfo.roomWaitingConnectTime = configPrivateRoom.PRIVATE_ROOM_WAITTING_CONNECT_TIME
+            self.roomInfo.roomGameTime = configPrivateRoom.PRIVATE_ROOM_GAME_TIME
         end
     end
     
