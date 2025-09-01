@@ -205,6 +205,8 @@ function PrivateRoom:gameReady(userid, ready)
     -- 取消准备
     if status == self.config.PLAYER_STATUS.READY and ready == 0 then 
         player.status = self.config.PLAYER_STATUS.ONLINE
+        -- 通知其他玩家状态变化
+        self:broadcastPlayerStatus(userid, player.status)
         return {code = 1, msg = "取消准备成功"}
     elseif ready == 1 then
         player.status = self.config.PLAYER_STATUS.READY
@@ -220,15 +222,6 @@ function PrivateRoom:gameReady(userid, ready)
     else
         return {code = 0, msg = "准备失败"}
     end
-end
-
--- 广播玩家状态
-function PrivateRoom:broadcastPlayerStatus(userid, status)
-    local data = {
-        userid = userid,
-        status = status
-    }
-    self:sendToAllClient("playerStatusUpdate", data)
 end
 
 -- 测试是否可以开始游戏

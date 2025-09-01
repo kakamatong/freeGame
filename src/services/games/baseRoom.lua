@@ -289,6 +289,15 @@ function BaseRoom:sendToAllClient(name, data)
     end
 end
 
+-- 广播玩家状态
+function BaseRoom:broadcastPlayerStatus(userid, status)
+    local data = {
+        userid = userid,
+        status = status
+    }
+    self:sendToAllClient("playerStatusUpdate", data)
+end
+
 -- 发送房间信息
 function BaseRoom:sendRoomInfo(userid)
     local info = {
@@ -405,6 +414,7 @@ function BaseRoom:socketClose(fd)
     else
         self.players[userid].status = self.config.PLAYER_STATUS.OFFLINE
     end
+    self:broadcastPlayerStatus(userid, self.players[userid].status)
 end
 
 -- 客户端准备 (基础实现)
