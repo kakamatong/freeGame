@@ -12,6 +12,7 @@ logic.binit = false -- 每次开始一局游戏前必须初始化
 logic.startTime = 0 -- 游戏开始时间
 logic.endTime = 0 -- 游戏结束时间
 logic.rule = {}
+logic.stepTime = {}
 
 local logicHandler = {}
 
@@ -25,6 +26,13 @@ end
 
 function logic.dealRule()
     logic.playerNum = logic.rule.playerCnt
+    -- 阶段时间
+    logic.stepTime = config.STIP_TIME_LEN
+    if logic.rule.STIP_TIME_LEN then
+        for key, value in pairs(logic.rule.STIP_TIME_LEN) do
+            logic.stepTime[key] = value
+        end
+    end
 end
 
 function logic.init(rule, roomHandler)
@@ -421,6 +429,7 @@ function logic.clear()
     logic.playerAttitude = {}
     logic.playerNum = 0
     logic.roomHandler = nil
+    logic.rule = {}
 end
 
 ------------------------------------------------------------------------------------------------------------
