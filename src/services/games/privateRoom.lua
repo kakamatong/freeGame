@@ -13,7 +13,7 @@ local skynet = require "skynet"
 local BaseRoom = require "games.baseRoom"
 local log = require "log"
 local cjson = require "cjson"
-
+local configPrivateRoom = require "games.configPrivateRoom"
 local PrivateRoom = {}
 setmetatable(PrivateRoom, {__index = BaseRoom})
 PrivateRoom.__index = PrivateRoom
@@ -37,6 +37,7 @@ function PrivateRoom:_initPrivateRoom()
     -- 投票解散相关状态
     self.voteDisbandInfo = {
         inProgress = false,          -- 是否正在投票
+        stopTimer = false,            -- 是否停止倒计时
         voteId = 0,                  -- 投票ID
         initiator = 0,               -- 发起人
         reason = "",                 -- 解散原因
@@ -323,7 +324,8 @@ end
 function PrivateRoom:stop()
     -- 清理投票解散定时器
     if self.voteDisbandInfo.timer then
-        skynet.cancel(self.voteDisbandInfo.timer)
+        self.voteDisbandInfo.stopTimer = true
+        skynet.wakeup(self.voteDisbandInfo.timer)
         self.voteDisbandInfo.timer = nil
     end
     
@@ -366,11 +368,12 @@ function PrivateRoom:voteDisbandRoom(userid, reason)
     
     self.voteDisbandInfo = {
         inProgress = true,
+        stopTimer = false,
         voteId = voteId,
         initiator = userid,
         reason = reason or "",
         startTime = os.time(),
-        timeLimit = 120,
+        timeLimit = configPrivateRoom.DISMISS_TIME_LIMIT + os.time(),
         votes = {},
         needAgreeCount = needAgreeCount,
         timer = nil
@@ -457,16 +460,11 @@ end
 -- 启动投票解散定时器
 function PrivateRoom:startVoteDisbandTimer()
     self.voteDisbandInfo.timer = skynet.fork(function()
-        local timeLeft = self.voteDisbandInfo.timeLimit
+        skynet.sleep(configPrivateRoom.DISMISS_TIME_LIMIT * 100)
         
-        while timeLeft > 0 and self.voteDisbandInfo.inProgress do
-            skynet.sleep(100) -- 1秒
-            timeLeft = timeLeft - 1
-            
-            -- 每10秒广播一次时间更新
-            if timeLeft % 10 == 0 or timeLeft <= 10 then
-                self:broadcastVoteDisbandUpdate()
-            end
+        -- 停止
+        if self.voteDisbandInfo.stopTimer then
+            return
         end
         
         -- 超时处理
@@ -517,7 +515,8 @@ function PrivateRoom:endVoteDisband(result, reason)
     
     -- 1. 停止定时器
     if self.voteDisbandInfo.timer then
-        skynet.cancel(self.voteDisbandInfo.timer)
+        self.voteDisbandInfo.stopTimer = true
+        skynet.wakeup(self.voteDisbandInfo.timer)
         self.voteDisbandInfo.timer = nil
     end
     
