@@ -11,6 +11,7 @@ logic.roomHandler = nil -- 房间处理
 logic.binit = false -- 每次开始一局游戏前必须初始化
 logic.startTime = 0 -- 游戏开始时间
 logic.endTime = 0 -- 游戏结束时间
+logic.rule = {}
 
 local logicHandler = {}
 
@@ -22,10 +23,15 @@ local function tableLength(t)
     return count
 end
 
-function logic.init(playerNum, rule, roomHandler)
+function logic.dealRule()
+    logic.playerNum = logic.rule.playerCnt
+end
+
+function logic.init(rule, roomHandler)
     logic.binit = true
-    logic.playerNum = playerNum
+    logic.rule = rule
     logic.roomHandler = roomHandler
+    logic.dealRule()
 end
 
 -- 设置玩家数量
@@ -435,8 +441,8 @@ function logicHandler.outHand(seatid, args)
 end
 
 -- 初始化
-function logicHandler.init(playerNum, rule, roomHandler)
-    logic.init(playerNum, rule, roomHandler)
+function logicHandler.init(rule, roomHandler)
+    logic.init(rule, roomHandler)
 end
 
 -- 定时器每0.1s调用一次

@@ -135,7 +135,17 @@ end
 
 -- 初始化游戏逻辑
 function Room:initLogic()
-    self.logicHandler.init(self.roomInfo.playerNum, self.roomInfo.gameData.rule, self.roomHandler)
+    local ruleData = {
+        playerCnt = self.roomInfo.playerNum,
+    }
+    if self:isPrivateRoom() then
+        ruleData.STIP_TIME_LEN = {
+            [2] = 9999;
+        }
+        ruleData.rule = self.roomInfo.privateRule
+    end
+    
+    self.logicHandler.init(ruleData, self.roomHandler)
     self.aiHandler.init(self.roomHandlerAi, self.roomInfo.robotCnt)
 end
 
