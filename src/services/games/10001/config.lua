@@ -48,6 +48,7 @@ local config = {
         OUT_TIME_WAITING = 2,
         OUT_TIME_PLAYING = 3,
         VOTE_DISBAND = 4,        -- 投票解散
+        OWNER_DISBAND = 5,        -- 房主解散
     }
 }
 

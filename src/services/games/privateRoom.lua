@@ -346,7 +346,7 @@ function PrivateRoom:voteDisbandRoom(userid, reason)
     end
     
     if not self:isRoomStatusStarting() then
-        return {code = 0, msg = "游戏未开始，无法发起投票解散"}
+        return self:voteDisbandNotStarting(userid, reason)
     end
     
     if not self.players[userid] then
@@ -400,6 +400,18 @@ function PrivateRoom:voteDisbandRoom(userid, reason)
         cjson.encode({reason = reason, needAgreeCount = needAgreeCount}))
     
     return {code = 1, msg = "投票解散发起成功"}
+end
+
+-- 游戏未开始，投票解散
+function PrivateRoom:voteDisbandNotStarting(userid, reason)
+    if self.roomInfo.owner and self.roomInfo.owner == userid then
+        skynet.fork(function()
+            self:roomEnd(self.config.ROOM_END_FLAG.OWNER_DISBAND)
+        end)
+        return {code = 1, msg = "解散成功"}
+    else
+        return {code = 0, msg = "游戏未开始，无法发起投票解散"}
+    end
 end
 
 function PrivateRoom:relinkInDisband(userid)
