@@ -31,20 +31,31 @@ local function getRankList()
     return dealRankList(rankList)
 end
 
-function gameRank.getRank(userid)
+local function getRank(userid)
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
     local rank = tools.callRedis("zrevrank", rankKey, userid) or 999999
     log.info("gameRank.getRank userid:%s rank:%s", userid, rank)
-    return tools.result(rank)
+    return rank
 end
 
-function gameRank.getRankList()
+function gameRank.getRank(userid)
+    return tools.result(getRank(userid))
+end
+
+function gameRank.getRankList(userid)
+    local userRank = getRank(userid)
+    local res = {
+        rank = userRank
+    }
     if not tools.callRedis("exists", redisRankKey) then
-        return tools.result(getRankList())
+        local rankList = getRankList()
+        res.rankList = rankList
+    else
+        res.rankList = tools.callRedis("get", redisRankKey)
     end
 
-    return tools.result(tools.callRedis("get", redisRankKey))
+    return tools.result(res)
 end
 
 return gameRank
