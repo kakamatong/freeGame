@@ -182,7 +182,7 @@ function matchOnSure.onSure(userid, id, sure)
     else
         log.info("match fail %d", userid)
         destroyOnSureItem(index, "玩家拒绝")
-        return {code = 0, msg = "拒绝成功"}
+        return {code = 1, msg = "拒绝成功"}
     end
 end
 
