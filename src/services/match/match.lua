@@ -180,6 +180,7 @@ local function leaveQueue(userid, gameid, queueid)
     for i, v in ipairs(que) do
         if v.userid == userid then
             table.remove(que, i)
+            inMatchList[userid] = false
             return true
         end
     end
