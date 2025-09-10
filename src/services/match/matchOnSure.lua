@@ -151,7 +151,7 @@ function matchOnSure.checkOnSure()
                 log.error("matchOnSure onSureSuccess roomid is nil")
             end
         else
-            if timeNow > v.endTime then
+            if timeNow >= v.endTime then
                 destroyOnSureItem(i, "游戏等待确认超时")
                 i = i - 1
             end
