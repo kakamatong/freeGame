@@ -409,7 +409,7 @@ function logic.update()
     local currentTime = os.time()
     --log.info("currentTime %d, logic.stepBeginTime %d", currentTime, logic.stepBeginTime)
     local timeLen = currentTime - logic.stepBeginTime
-    if timeLen > logic.getStepTimeLen(stepid) then
+    if timeLen >= logic.getStepTimeLen(stepid) then
         logic.onStepTimeout(stepid)
     end
 end
