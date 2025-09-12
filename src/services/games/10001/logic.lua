@@ -75,8 +75,7 @@ function logic.outHand(seatid, args)
         end
         logic.compare()
 
-        --test code
-        logic.stopStepGameEnd()
+        logic.startStep(config.GAME_STEP.GAME_END)
     else
         logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, seatid, config.PLAYER_ATTITUDE.READY)
         -- 下发自己的
@@ -184,13 +183,13 @@ function logic.sendGameEnd(toseat, roundData)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
         logic.sendToAllClient("gameEnd", {
             roundNum = logic.roundNum,
-            endTime = logic.startTime,
+            endTime = logic.endTime,
             roundData = roundData or ""
         })
     else
         logic.sendToOneClient(toseat, "gameEnd", {
             roundNum = logic.roundNum,
-            endTime = logic.startTime,
+            endTime = logic.endTime,
             roundData = roundData or ""
         })
     end
@@ -297,7 +296,14 @@ end
 
 -- 开始游戏结束步骤
 function logic.startStepGameEnd()
+    logic.endTime = os.time()
+    logic.sendToAllClient("stepId", {
+        stepid = config.GAME_STEP.GAME_END,
+    })
 
+    logic.sendGameEnd(config.SEAT_FLAG.SEAT_ALL)
+
+    logic.stopStep(config.GAME_STEP.GAME_END)
 end
 
 -- 停止游戏结束步骤
