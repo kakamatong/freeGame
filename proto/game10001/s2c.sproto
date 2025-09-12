@@ -166,3 +166,11 @@ voteDisbandResult 16 {
         votes 5 : *VoteInfo      # 最终投票状态
     }
 }
+
+# 游戏时钟
+gameClock 17 {
+    request {
+        time 0 : integer
+        seat 1 : integer # 0表示所有玩家
+    }
+}

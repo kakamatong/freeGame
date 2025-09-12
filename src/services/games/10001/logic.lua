@@ -235,10 +235,18 @@ end
 
 -- 开始步骤出招
 function logic.startStepOutHand()
+    -- 下发阶段id
     logic.sendToAllClient("stepId", {
         stepid = config.GAME_STEP.OUT_HAND,
     })
 
+    -- 下发时间
+    logic.sendToAllClient("gameClock",{
+        time = config.STIP_TIME_LEN[config.GAME_STEP.OUT_HAND],
+        seat = config.SEAT_FLAG.SEAT_ALL
+    })
+
+    -- 下发玩家状态
     for i = 1, logic.playerNum do
         logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, i, config.PLAYER_ATTITUDE.THINKING)
     end
