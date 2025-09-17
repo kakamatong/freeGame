@@ -112,11 +112,11 @@ function logic.sendResult(result)
     local playerResult = {}
     for seatid, flag in pairs(logic.outHandInfo) do
         local tmp = {}
-        local endflag = 0
+        local endflag = 0 -- 输
         if flag == result then
-            endflag = 1
+            endflag = 1 -- 赢
         elseif result == 0 then
-            endflag = 2
+            endflag = 2 -- 平
         end
         tmp.seat = seatid
         tmp.outHand = flag

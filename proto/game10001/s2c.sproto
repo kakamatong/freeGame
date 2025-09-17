@@ -56,6 +56,7 @@ roundResult 6 {
         outHandNum 1 : integer
         continue 2 : integer
         info 3 : *ResultInfo
+        score 4 : string
     }
 }
 
