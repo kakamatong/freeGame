@@ -1,5 +1,6 @@
 local config = require("games.10001.configLogic")
 local log = require "log"
+local cjson = require "cjson"
 local logic = {}
 logic.outHandInfo = {} -- 出招信息
 logic.roundid = 0 -- 轮次id
@@ -123,12 +124,13 @@ function logic.sendResult(result)
         tmp.endResult = endflag
         table.insert(playerResult, tmp)
     end
-    logic.roomHandler.gameResult(playerResult)
+    local scores = logic.roomHandler.gameResult(playerResult)
     local info = {
         roundNum = logic.roundNum,
         outHandNum = logic.outHandNum,
         continue = 0,
         info = playerResult,
+        score = cjson.encode(scores),
     }
 
     logic.sendToAllClient("roundResult", info)

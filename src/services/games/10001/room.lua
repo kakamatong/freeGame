@@ -203,7 +203,7 @@ function roomHandler.gameResult(data)
     
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
-    
+    local scores = {}
     for k, v in pairs(data) do
         local userid = roomInstance.roomInfo.playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
@@ -222,6 +222,8 @@ function roomHandler.gameResult(data)
             flag = config.RESULT_TYPE.LOSE
             addType = "lose"
         end
+
+        scores[v.seat] = score
         
         local totalScore = skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zscore", rankKey, userid) or 0
         totalScore = totalScore + score
@@ -235,6 +237,8 @@ function roomHandler.gameResult(data)
         roomInstance:pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
         roomInstance:pushUserGameRecords(userid, addType, 1)
     end
+
+    return scores
 end
 
 -- room接口，游戏结束
