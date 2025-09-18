@@ -98,7 +98,7 @@ end
 function REQUEST:createPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid}
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
     end
 
 	log.info("createPrivateRoom %s", args.rule)
@@ -122,7 +122,7 @@ end
 function REQUEST:joinPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid}
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
     end
 
 	local info = call(svrPrivateRoom, "joinPrivateRoom", userid, args.shortRoomid)
