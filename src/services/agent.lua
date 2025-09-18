@@ -22,19 +22,7 @@ local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
 end
 
-function REQUEST:userData(args)
-	return call(svrUser, "userData", args.userid)
-end
-
-function REQUEST:userRiches(args)
-	local richType, richNums = call(svrUser, "userRiches", userid)
-	return {
-		richType = richType,
-		richNums = richNums,
-	}
-end
-
-function REQUEST:userStatus(args)
+local function userStatus(userid)
 	local status = call(svrUser, "userStatus", userid)
 	log.info("userStatus %s", cjson.encode(status))
 
@@ -54,6 +42,22 @@ function REQUEST:userStatus(args)
 	
 	status.roomid = tostring(status.roomid)
 	return status
+end
+
+function REQUEST:userData(args)
+	return call(svrUser, "userData", args.userid)
+end
+
+function REQUEST:userRiches(args)
+	local richType, richNums = call(svrUser, "userRiches", userid)
+	return {
+		richType = richType,
+		richNums = richNums,
+	}
+end
+
+function REQUEST:userStatus(args)
+	return userStatus(userid)
 end
 
 function REQUEST:matchJoin(args)
@@ -92,6 +96,11 @@ function REQUEST:setAwardNoticeRead(args)
 end
 
 function REQUEST:createPrivateRoom(args)
+	local status = userStatus(userid)
+    if status and status.gameid > 0 and status.roomid ~= "" then
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid}
+    end
+
 	log.info("createPrivateRoom %s", args.rule)
 	local roomid,addr,shortRoomid = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
 
@@ -111,6 +120,11 @@ function REQUEST:createPrivateRoom(args)
 end
 
 function REQUEST:joinPrivateRoom(args)
+	local status = userStatus(userid)
+    if status and status.gameid > 0 and status.roomid ~= "" then
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid}
+    end
+
 	local info = call(svrPrivateRoom, "joinPrivateRoom", userid, args.shortRoomid)
 	if not info then
 		return {code = 0,msg = "房间不存在"}
