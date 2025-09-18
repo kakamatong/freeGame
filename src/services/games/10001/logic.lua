@@ -368,12 +368,25 @@ function logic.onRelinkStartGame(seat)
 end
 
 function logic.onRelinkOutHand(seat)
-    if logic.outHandInfo[seat] then
-        logic.sendOutHandInfo(seat, seat, logic.outHandInfo[seat])
-        logic.sendPlayerAttitude(seat,seat, config.PLAYER_ATTITUDE.READY)
-    else
-        logic.sendPlayerAttitude(seat,seat, config.PLAYER_ATTITUDE.THINKING)
+    for i = 1, logic.playerNum do
+        if logic.outHandInfo[i] then
+            if i == seat then
+                logic.sendOutHandInfo(seat, i, logic.outHandInfo[seat])
+            end
+            logic.sendPlayerAttitude(seat,i, config.PLAYER_ATTITUDE.READY)
+        else
+            logic.sendPlayerAttitude(seat,i, config.PLAYER_ATTITUDE.THINKING)
+        end
     end
+
+    local len = config.STIP_TIME_LEN[config.GAME_STEP.OUT_HAND]
+    local timeNow = os.time()
+    local leftTime = len + logic.stepBeginTime - timeNow
+    -- 下发时间
+    logic.sendToAllClient("gameClock",{
+        time = leftTime,
+        seat = config.SEAT_FLAG.SEAT_ALL
+    })
 end
 
 function logic.onRelinkRoundEnd(seat)
