@@ -192,14 +192,6 @@ local function join(userid, gameid, queueid)
         return {code = 0, msg = "已经在匹配队列中"}
     end
 
-    -- todo: 检查用户是否在游戏中
-    local status = getUserStatus(userid)
-    if status and status.gameid > 0 and status.roomid > 0 then
-        if checkInGame(status.gameid, status.roomid) then
-            return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid}
-        end
-    end
-
     -- 检查用户是否在匹配队列中
     if not enterQueue(userid, gameid, queueid) then
         return {code = 0, msg = "加入匹配队列失败"}

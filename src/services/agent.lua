@@ -61,6 +61,11 @@ function REQUEST:userStatus(args)
 end
 
 function REQUEST:matchJoin(args)
+	local status = userStatus(userid)
+    if status and status.gameid > 0 and status.roomid ~= "" then
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
+    end
+	
 	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 

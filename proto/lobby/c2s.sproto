@@ -68,6 +68,10 @@ matchJoin 5 {
     response {
         code 0 : integer
         msg 1 : string
+        gameid 2 : integer
+        shortRoomid 3 : integer
+        roomid 4 : string
+        addr 5 : string
     }
 }
 
