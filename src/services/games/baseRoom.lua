@@ -305,7 +305,8 @@ function BaseRoom:sendRoomInfo(userid)
         roomid = self.roomInfo.roomid,
         playerids = self.roomInfo.playerids,
         gameData = cjson.encode(self.roomInfo.gameData),
-        shortRoomid = self.roomInfo.shortRoomid or 0
+        shortRoomid = self.roomInfo.shortRoomid or 0,
+        owner = self.roomInfo.owner or 0
     }
     self:sendToOneClient(userid, "roomInfo", info)
 end
