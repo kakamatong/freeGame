@@ -17,6 +17,7 @@ roomInfo 2 {
         roomid 1 : integer
         playerids 2 : *integer
         gameData 3 : string
+        shortRoomid 4 : integer
     }
 }
 
