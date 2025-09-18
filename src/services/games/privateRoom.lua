@@ -176,7 +176,9 @@ function PrivateRoom:playerLeave(userid)
     self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum - 1
     self.players[userid] = nil
     log.info("userid:%s leave", userid)
-    
+
+    -- 设置用户状态
+    self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
     -- 通知其他玩家
     self:notifyPlayerLeave(userid, seat)
 end
@@ -345,6 +347,7 @@ function PrivateRoom:voteDisbandRoom(userid, reason)
         return {code = 0, msg = "非私人房间不支持投票解散"}
     end
     
+    -- 游戏未开始，房主可以直接解散
     if not self:isRoomStatusStarting() then
         return self:voteDisbandNotStarting(userid, reason)
     end
