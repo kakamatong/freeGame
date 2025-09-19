@@ -412,11 +412,10 @@ function BaseRoom:socketClose(fd)
     end
 
     if self:isRoomStatusWaittingConnect() then
-        self.players[userid].status = self.config.PLAYER_STATUS.LOADING
+        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.LOADING)
     else
-        self.players[userid].status = self.config.PLAYER_STATUS.OFFLINE
+        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.OFFLINE)
     end
-    self:broadcastPlayerStatus(userid, self.players[userid].status)
 end
 
 -- 客户端准备 (基础实现)
@@ -424,17 +423,25 @@ function BaseRoom:clientReady(userid, args)
     log.info("BaseRoom:clientReady userid = %d", userid)
     
     if self:isRoomStatusWaittingConnect() then
-        self.players[userid].status = self.config.PLAYER_STATUS.READY
+        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.READY)
     elseif self:isRoomStatusStarting() then
-        self.players[userid].status = self.config.PLAYER_STATUS.PLAYING
+        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.PLAYING)
     end
-    
+
     self:sendRoomInfo(userid)
     self:sendPlayerInfo(userid)
     self:sendPlayerEnter(userid)
 
     if self:isRoomStatusStarting() then
         self:relink(userid)
+    end
+end
+
+function BaseRoom:changePlayerStatus(userid, status)
+    local preStatus = self.players[userid].status
+    self.players[userid].status = status
+    if preStatus ~= status then
+        self:broadcastPlayerStatus(userid, status)
     end
 end
 
