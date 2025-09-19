@@ -157,6 +157,10 @@ function Room:startGame()
     -- 初始化逻辑，本局游戏规则，不可再改变
     self:initLogic()
     self.logicHandler.startGame()
+
+    for _, value in pairs(self.players) do
+        self:changePlayerStatus(value.userid, config.PLAYER_STATUS.PLAYING)
+    end
     
     self:pushLog(config.LOG_TYPE.GAME_START, 0, "")
     log.info("game start")

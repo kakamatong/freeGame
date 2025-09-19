@@ -423,9 +423,9 @@ function BaseRoom:clientReady(userid, args)
     log.info("BaseRoom:clientReady userid = %d", userid)
     
     if self:isRoomStatusWaittingConnect() then
-        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.READY)
+        self.players[userid].status = self.config.PLAYER_STATUS.READY
     elseif self:isRoomStatusStarting() then
-        self:changePlayerStatus(userid, self.config.PLAYER_STATUS.PLAYING)
+        self.players[userid].status = self.config.PLAYER_STATUS.PLAYING
     end
 
     self:sendRoomInfo(userid)
