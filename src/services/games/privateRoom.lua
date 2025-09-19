@@ -281,6 +281,8 @@ function PrivateRoom:clientReady(userid, args)
         if self.voteDisbandInfo.inProgress then
             self:relinkInDisband(userid)
         end
+        -- 重连广播玩家状态
+        self:broadcastPlayerStatus(userid, self.players[userid].status)
         self:relink(userid)
     elseif self:isRoomStatusWaittingConnect() then
         if not self:isPrivateRoom() then
