@@ -93,6 +93,7 @@ gameStart 9 {
     request {
         roundNum 0 : integer
         startTime 1 : integer
+        brelink 2 : integer
         roundData 3 : string
     }
 }

@@ -165,17 +165,19 @@ function logic.sendOutHandInfo(toseat, seatid, flag)
     
 end
 
-function logic.sendGameStart(toseat, roundData)
+function logic.sendGameStart(toseat, roundData, brelink)
     if toseat == config.SEAT_FLAG.SEAT_ALL then
         logic.sendToAllClient("gameStart", {
             roundNum = logic.roundNum,
             startTime = logic.startTime,
+            brelink = brelink or 0,
             roundData = roundData or ""
         })
     else
         logic.sendToOneClient(toseat, "gameStart", {
             roundNum = logic.roundNum,
             startTime = logic.startTime,
+            brelink = brelink or 0,
             roundData = roundData or ""
         })
     end
@@ -368,6 +370,7 @@ function logic.onRelinkStartGame(seat)
 end
 
 function logic.onRelinkOutHand(seat)
+    logic.sendGameStart(seat, nil, 1)
     for i = 1, logic.playerNum do
         if logic.outHandInfo[i] then
             if i == seat then
