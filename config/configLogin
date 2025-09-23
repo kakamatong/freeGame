@@ -17,3 +17,5 @@ daemon = "./skynetLogin.pid" -- 启动服务时，会生成一个 skynet.pid 文
 clusterName = "login1"
 
 enablessl = "true"
+certfile = "./cert/server-cert.pem"
+keyfile = "./cert/server-key.key"
