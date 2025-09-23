@@ -15,3 +15,5 @@ bootstrap = "snlua bootstrap"	-- The service for bootstrap
 cpath = root.."skynet/cservice/?.so"
 daemon = "./skynetLogin.pid" -- 启动服务时，会生成一个 skynet.pid 文件，用于保存服务进程的 PID， 并脱离控制台
 clusterName = "login1"
+
+enablessl = "true"

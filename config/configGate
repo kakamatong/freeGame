@@ -22,3 +22,4 @@ gateMaxclient = 4096
 protocol = "wss"
 certfile = "./cert/server-cert.pem"
 keyfile = "./cert/server-key.key"
+enablessl = "true"
