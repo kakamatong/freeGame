@@ -18,7 +18,7 @@ local connection = {} -- 连接状态表
 -- true : 已连接
 -- nil : 已关闭
 -- false : 关闭读取
-
+local SSLCTX_SERVER = nil
 local function getOptions(socket_id, protocol)
 	local options = nil
 	local read = nil
@@ -76,6 +76,9 @@ end
 function wsGateserver.openclient(fd, handler, protocol, addr, options)
 	log.info("options %s", UTILS.tableToString(options))
 	connection[fd] = {}
+	if not socket.invalid(fd) then
+		log.error("socket fd %d already invalid")
+	end
 	local ok, err = websocket.accept(fd, handler, protocol, addr, options)
 	if not ok then
 		log.error("wsGateserver.openclient error:%s", err)
@@ -133,6 +136,7 @@ function wsGateserver.start(handler, newName)
 				socket.close(id)
 				return
             end
+			log.info(string.format("auth success wssocket_id: %s addr:%s", id, addr))
 			handler.authSuccess(id, info, protocol, addr)
 			
         end)
