@@ -35,6 +35,8 @@ local function getOptions(socket_id, protocol)
 			SSLCTX_SERVER:set_cert(certfile, keyfile)
 		end
 		local tls_ctx = tls.newtls("server", SSLCTX_SERVER)
+		local init = tls.init_responsefunc(socket_id, tls_ctx)
+        init()
 		read = tls.readfunc(socket_id, tls_ctx)
 	else
 		error(string.format("invalid websocket protocol:%s", tostring(protocol)))
