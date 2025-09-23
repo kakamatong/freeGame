@@ -20,3 +20,6 @@ nodeid = 2
 gateAddress = "0.0.0.0"
 gatePort = 9006
 gateMaxclient = 4096
+protocol = "wss"
+certfile = "./cert/server-cert.pem"
+keyfile = "./cert/server-key.key"

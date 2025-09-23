@@ -39,7 +39,8 @@ local function createGateSvr()
 	local data = {
 		address = skynet.getenv("gateAddress"), -- 网关地址
     	port = skynet.getenv("gatePort"),       -- 网关端口
-    	maxclient = skynet.getenv("gateMaxclient") -- 最大客户端连接数
+    	maxclient = skynet.getenv("gateMaxclient"), -- 最大客户端连接数
+        protocol = skynet.getenv("protocol"),
 	}
 	-- 启动网关服务
 	local svr = skynet.newservice("wsWatchdog")
@@ -60,6 +61,7 @@ local function createGameSvr()
 		address = skynet.getenv("gateAddress"),
     	port = skynet.getenv("gatePort"),
     	maxclient = skynet.getenv("gateMaxclient"),
+        protocol = skynet.getenv("protocol"),
 	}
 	skynet.call(svr, "lua", "open", data)
 	local svrGame = skynet.newservice("games/server")

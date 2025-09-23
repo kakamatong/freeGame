@@ -120,7 +120,7 @@ function wsGateserver.start(handler, newName)
 		assert(socket)
 		local address = conf.address or "0.0.0.0"
 		local port = assert(conf.port)
-		local protocol = "ws"
+		local protocol = conf.protocol or "ws"
         local id = socket.listen(address, port)
         log.info(string.format("Listen websocket addr %s port %d protocol:%s", address, port, protocol))
         socket.start(id, function(id, addr)
