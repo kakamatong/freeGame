@@ -13,6 +13,7 @@ local server = {
 	port = gConfig.WS_ATTH_LISTEN.port,                -- 监听端口
 	multilogin = gConfig.WS_ATTH_LISTEN.multilogin,         -- 是否允许多端登录
 	name = CONFIG.SVR_NAME.LOGIN,  -- 服务名
+	protocol = gConfig.WS_ATTH_LISTEN.protocol, -- 协议
 }
 
 local server_list = {}    -- 注册的网关服务器列表

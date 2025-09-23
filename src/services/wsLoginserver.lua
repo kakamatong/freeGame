@@ -103,7 +103,7 @@ local function login(conf)
                 closed = function(fd)
                     websocket.close(fd)
                 end
-            })
+            },conf.protocol)
             
             if not ok then
                 log.error("WebSocket connection failed: "..tostring(err))
