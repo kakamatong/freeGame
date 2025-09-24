@@ -96,8 +96,8 @@ function handler.connect(fd)
 	log.info("wsgate connect")
 end
 
-function handler.auth(header, url)
-	log.info("wsgate auth %s", url)
+function handler.auth(fd, header, url)
+	log.info("wsgate auth %d %s",fd, url)
 	local data = urlTools.parse_query(url)
 	data.ip = url or "0.0.0.0"
 	data.uri = url

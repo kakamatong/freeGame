@@ -178,41 +178,15 @@ end
 @param addr 客户端地址
 @return 认证结果和用户ID
 ]]
-function handler.auth(fd, uri, addr)
-    log.info("wsgate auth %d, %s", fd, uri)
-    local data = urlTools.parse_query(uri)
-    data.ip = addr or "0.0.0.0"
-    data.uri = uri
+function handler.auth(fd, header, url)
+    log.info("wsgate auth %d, %s", fd, url)
+    local data = urlTools.parse_query(url)
+    data.ip = url or "0.0.0.0"
+    data.uri = url
     data.client_fd = fd
     local userid = tonumber(data.userid)
     -- 先连接游戏房间，再认证玩家
     return connectGame(data) and auth(data), userid
-end
-
---[[
-认证成功回调
-@param fd socket连接句柄
-@param options 连接参数
-@param protocol 协议
-@param addr 客户端地址
-]]
-function handler.authSuccess(fd, options, protocol, addr)
-    local data = urlTools.parse_query(options.upgrade.url)
-    local room = getRoom(tonumber(data.gameid), tonumber(data.roomid))
-    local c = {
-        fd = fd,
-        userid = options.userid,
-        addr = addr,
-        protocol = protocol,
-        room = room,
-        lastTime = skynet.time()  -- 记录最后活动时间
-    }
-
-    kickByUserid(options.userid) -- 踢掉已登录的同用户
-    logins[options.userid] = fd
-    connection[fd] = c
-
-    wsGateserver.openclient(fd, handler, protocol, addr, options)
 end
 
 --[[
@@ -221,7 +195,21 @@ end
 @param header 头信息
 @param uri 请求URI
 ]]
-function handler.handshake(fd, header, uri)
+function handler.handshake(fd, header, url)
+    local data = urlTools.parse_query(url)
+	local userid = tonumber(data.userid) or 0
+    local room = getRoom(tonumber(data.gameid), tonumber(data.roomid))
+    local c = {
+        fd = fd,
+        userid = userid,
+        addr = url,
+        room = room,
+        lastTime = skynet.time()  -- 记录最后活动时间
+    }
+
+    kickByUserid(userid) -- 踢掉已登录的同用户
+    logins[userid] = fd
+    connection[fd] = c
 end
 
 --[[

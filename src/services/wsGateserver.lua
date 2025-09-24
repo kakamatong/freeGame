@@ -4,8 +4,6 @@ local skynet = require "skynet"
 local netpack = require "skynet.netpack"
 local websocket = require "http.websocket"
 local socket = require "skynet.socket"
-local sockethelper = require "http.sockethelper"
-local internal = require "http.internal"
 
 require "skynet.manager"
 local wsGateserver = {}
