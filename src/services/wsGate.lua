@@ -96,35 +96,35 @@ function handler.connect(fd)
 	log.info("wsgate connect")
 end
 
-function handler.auth(fd, uri, addr)
-	log.info("wsgate auth %d, %s", fd, uri)
-	local data = urlTools.parse_query(uri)
-	data.ip = addr or "0.0.0.0"
-	data.uri = uri
+function handler.auth(header, url)
+	log.info("wsgate auth %s", url)
+	local data = urlTools.parse_query(url)
+	data.ip = url or "0.0.0.0"
+	data.uri = url
 	
 	local userid = tonumber(data.userid)
 	log.info("auth %s %d", UTILS.tableToString(data), userid)
 	return auth(data), userid
 end
 
-function handler.authSuccess(fd, options, protocol,addr)
+function handler.authSuccess(fd, options, protocol, addr)
+	
+end
+
+function handler.handshake(fd, header, url)
+	local data = urlTools.parse_query(url)
+	local userid = tonumber(data.userid) or 0
 	local c = {
 		fd = fd,
-		userid = options.userid,
-		addr = addr,
-		protocol = protocol,
-		options = options,
+		userid = userid,
+		addr = url,
 		lastTime = skynet.time()
 	}
 
-	kickByUserid(options.userid)
-	logins[options.userid] = fd
+	kickByUserid(userid)
+	logins[userid] = fd
 	connection[fd] = c
-	skynet.send(watchdog, "lua", "socket", "open", fd, options.userid)
-end
-
-function handler.handshake(fd, header, uri)
-
+	skynet.send(watchdog, "lua", "socket", "open", fd, userid)
 end
 
 function handler.close(fd)
@@ -156,7 +156,7 @@ function CMD.forward(source, fd, address)
 	local c = assert(connection[fd])
 	unforward(c)
 	c.agent = address or source
-	wsGateserver.openclient(fd, handler, c.protocol, c.addr, c.options)
+	wsGateserver.openclient(fd, handler)
 end
 
 function CMD.send(source, fd, msg)

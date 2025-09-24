@@ -15,75 +15,10 @@ local queue -- 消息队列
 local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local name = ".wsGateserver"
 local connection = {} -- 连接状态表
--- true : 已连接
--- nil : 已关闭
--- false : 关闭读取
-local SSLCTX_SERVER = nil
-local function getOptions(socket_id, protocol)
-	local options = nil
-	local read = nil
-	if protocol == "ws" then
-		read = sockethelper.readfunc(socket_id)
-	elseif protocol == "wss" then
-		local tls = require "http.tlshelper"
-		if not SSLCTX_SERVER then
-			SSLCTX_SERVER = tls.newctx()
-			-- gen cert and key
-			-- openssl req -x509 -newkey rsa:2048 -days 3650 -nodes -keyout server-key.pem -out server-cert.pem
-			local certfile = skynet.getenv("certfile") or "./server-cert.pem"
-			local keyfile = skynet.getenv("keyfile") or "./server-key.pem"
-			SSLCTX_SERVER:set_cert(certfile, keyfile)
-		end
-		local tls_ctx = tls.newtls("server", SSLCTX_SERVER)
-		local init = tls.init_responsefunc(socket_id, tls_ctx)
-        init()
-		read = tls.readfunc(socket_id, tls_ctx)
-	else
-		error(string.format("invalid websocket protocol:%s", tostring(protocol)))
-	end
-
-	if read then
-		local tmpline = {}
-        local payload = internal.recvheader(read, tmpline, "")
-        if not payload then
-            return options
-        end
-
-        local request = assert(tmpline[1])
-        local method, url, httpver = request:match "^(%a+)%s+(.-)%s+HTTP/([%d%.]+)$"
-        assert(method and url and httpver)
-        if method ~= "GET" then
-            return options
-        end
-
-        httpver = assert(tonumber(httpver))
-        if httpver < 1.1 then
-            return options  -- HTTP Version not supported
-        end
-        local header = internal.parseheader(tmpline, 2, {})
-		options = {
-			upgrade = {
-				header = header,
-				url = url,
-				method = method,
-			}
-		}
-	end
-	return options
-end
 
 -- 打开客户端连接，记录连接信息
 function wsGateserver.openclient(fd, handler, protocol, addr, options)
-	log.info("options %s", UTILS.tableToString(options))
 	connection[fd] = {}
-	if not socket.invalid(fd) then
-		log.error("socket fd %d already invalid")
-	end
-	local ok, err = websocket.accept(fd, handler, protocol, addr, options)
-	if not ok then
-		log.error("wsGateserver.openclient error:%s", err)
-		return 
-	end
 end
 
 -- 关闭客户端连接，释放资源
@@ -101,26 +36,6 @@ function wsGateserver.start(handler, newName)
 	assert(handler.connect) -- 确保有连接处理函数
 	assert(handler.auth) -- 确保有连接处理函数
 
-	local function auth(socket_id, protocol, addr)
-		local isok, err = socket.start(socket_id)
-        if not isok then
-            return false, err
-        end
-
-		local options = getOptions(socket_id, protocol)
-		if not options then
-			return false, "invalid websocket request"
-		end
-
-		local ok, userid = handler.auth(socket_id, options.upgrade.url, addr)
-		if not ok then
-			return false, "auth failed"
-		end
-		options.userid = userid
-
-		return true, options
-	end
-
 	function CMD.open(source, conf)
 		assert(socket)
 		local address = conf.address or "0.0.0.0"
@@ -128,18 +43,16 @@ function wsGateserver.start(handler, newName)
 		local protocol = conf.protocol or "ws"
         local id = socket.listen(address, port)
         log.info(string.format("Listen websocket addr %s port %d protocol:%s", address, port, protocol))
-        socket.start(id, function(id, addr)
-            log.info(string.format("accept client wssocket_id: %s addr:%s", id, addr))
-			local ok ,info = auth(id, protocol, addr)
-            if not ok then
-                log.error(info)
+        socket.start(id, function(fd, addr)
+            log.info(string.format("accept client wssocket_id: %s addr:%s", fd, addr))
+			local ok, err = websocket.accept(fd, handler, protocol, addr)
+			if not ok then
 				socket.close(id)
-				return
-            end
-			log.info(string.format("auth success wssocket_id: %s addr:%s", id, addr))
-			handler.authSuccess(id, info, protocol, addr)
-			
+				log.error("wsGateserver.websocket.accept error:%s", err)
+				return 
+			end
         end)
+
 		if handler.open then
 			return handler.open(source, conf)
 		end
