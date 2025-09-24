@@ -107,10 +107,6 @@ function handler.auth(header, url)
 	return auth(data), userid
 end
 
-function handler.authSuccess(fd, options, protocol, addr)
-	
-end
-
 function handler.handshake(fd, header, url)
 	local data = urlTools.parse_query(url)
 	local userid = tonumber(data.userid) or 0
