@@ -102,6 +102,9 @@ local function login(conf)
                 end,
                 closed = function(fd)
                     websocket.close(fd)
+                end,
+                auth = function (fd)
+                    return true
                 end
             },conf.protocol)
             
