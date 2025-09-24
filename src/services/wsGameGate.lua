@@ -181,7 +181,7 @@ end
 function handler.auth(fd, header, url)
     log.info("wsgate auth %d, %s", fd, url)
     local data = urlTools.parse_query(url)
-    data.ip = url or "0.0.0.0"
+    data.ip = header["x-real-ip"] or "0.0.0.0"
     data.uri = url
     data.client_fd = fd
     local userid = tonumber(data.userid)
