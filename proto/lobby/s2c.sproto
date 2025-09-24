@@ -49,3 +49,10 @@ updateRich 5 {
         allRichNums 2 : *integer
     }
 }
+
+# agent准备完成
+agentReady 6 {
+    request {
+        time 0 : integer
+    }
+}

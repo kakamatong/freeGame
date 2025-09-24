@@ -212,6 +212,10 @@ function CMD.start(conf)
 	local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 	local redisKey = string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid)
 	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name, 86400 * 3)
+	
+
+	local send_request = host:attach(sprotoloader.load(2))
+	send_package(send_request("agentReady", {time= os.time()}, 1))
 
 	-- 可以重构
 	-- local status = call(svrUser, "userStatus", userid)
