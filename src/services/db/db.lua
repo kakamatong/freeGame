@@ -290,6 +290,15 @@ function db.insertUserGameRecords(mysql,...)
     return true
 end
 
+function db.getUserGameRecords(mysql,...) 
+    local userid,gameid =...
+    local sql = string.format("SELECT * FROM userGameRecords WHERE userid = %d AND gameid = %d;",userid,gameid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return res[1]
+end
+
 -- 奖励通知表
 -- CREATE TABLE `awardNotices` (
 --   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',

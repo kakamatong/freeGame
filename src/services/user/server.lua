@@ -76,6 +76,11 @@ function CMD.setAwardNoticeRead(id)
     skynet.send(dbSvr, "lua", "db", "setAwardNoticeRead", id)
 end
 
+-- 获取用户游戏记录(输赢平)
+function CMD.getUserGameRecords(userid, gameid)
+	return skynet.call(dbSvr, "lua", "db", "getUserGameRecords", userid, gameid)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])

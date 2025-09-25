@@ -191,3 +191,17 @@ createPrivateRoom 14 {
         rule 6 : string
     }
 }
+
+# 获取用户游戏记录
+userGameRecord 15 {
+    request {
+        userid 0 : integer
+        gameid 1 : integer
+    }
+    response {
+        gameid 0 : integer
+        win 1 : integer
+        lose 2 : integer
+        draw 3 : integer
+    }
+}

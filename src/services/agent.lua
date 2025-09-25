@@ -154,6 +154,10 @@ function REQUEST:joinPrivateRoom(args)
 	end
 end
 
+function REQUEST:userGameRecord(args)
+	return call(svrUser, "getUserGameRecords", args.userid, args.gameid)
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)
