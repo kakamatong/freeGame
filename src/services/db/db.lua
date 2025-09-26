@@ -114,7 +114,7 @@ end
 -- 获取用户登录信息
 function db.getLoginInfo(mysql,...)
     local username,loginType = ...
-    local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType,username)
+    local sql = string.format("SELECT * FROM account WHERE username = '%s';",username)
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
@@ -258,7 +258,7 @@ function db.registerUser(mysql,...)
     end
 
     local userid = newAuth.insert_id
-    local sql = string.format("INSERT INTO %s (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",loginType,username,userid,password)
+    local sql = string.format("INSERT INTO account (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",username,userid,password)
     log.info(sql)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
