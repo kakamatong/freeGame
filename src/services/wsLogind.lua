@@ -19,6 +19,7 @@ local server = {
 local server_list = {}    -- 注册的网关服务器列表
 local login_type = {
 	account = true,           -- 允许的登录类型
+	wechatMiniGame = true,		-- 微信小游戏
 }
 local bRegister = false
 local register = "register"
