@@ -81,6 +81,13 @@ function CMD.getUserGameRecords(userid, gameid)
 	return skynet.call(dbSvr, "lua", "db", "getUserGameRecords", userid, gameid)
 end
 
+function CMD.updateUserNameAndHeadurl(userid, nickname, headurl)
+    assert(userid)
+    assert(nickname)
+    assert(headurl)
+    skynet.send(dbSvr, "lua", "db", "updateUserNameAndHeadurl", userid, nickname, headurl)
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])

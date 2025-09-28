@@ -214,6 +214,16 @@ function db.getUserStatus(mysql,...)
     return res[1] -- 返回用户状态
 end
 
+-- 更新用户昵称和头像
+function db.updateUserNameAndHeadurl(mysql,...)
+    local userid,nickname,headurl =...
+    local sql = string.format("UPDATE userData SET nickname = '%s', headurl = '%s' WHERE userid = %d;",nickname,headurl,userid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 获取机器人列表
 function db.getRobots(mysql,...)
     local idbegin,idend =...

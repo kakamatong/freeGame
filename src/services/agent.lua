@@ -100,6 +100,11 @@ function REQUEST:setAwardNoticeRead(args)
 	call(svrUser, "setAwardNoticeRead", args.id)
 end
 
+function REQUEST:updateUserNameAndHeadurl(args)
+	call(svrUser, "updateUserNameAndHeadurl", userid, args.nickname, args.headurl)
+	return {code = 1}
+end
+
 function REQUEST:createPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then

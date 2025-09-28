@@ -205,3 +205,14 @@ userGameRecord 15 {
         draw 3 : integer
     }
 }
+
+# 更新昵称和头像
+updateUserNameAndHeadurl 16 {
+    request {
+        nickname 0 : string
+        headurl 1 : string
+    }
+    response {
+        code 0 : integer
+    }
+}
