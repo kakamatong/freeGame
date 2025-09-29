@@ -238,7 +238,7 @@ function db.getRobots(mysql,...)
     return res
 end
 
--- 创建用户认证信息
+-- 创建用户认证信息,用户userid分配以auth表为准
 function db.makeAuth(mysql,...)
     local loginType =...
     local sql = string.format("INSERT INTO auth (secret,subid,type) VALUES ('',0,'%s');",loginType)
@@ -269,6 +269,7 @@ function db.insertUserLogin(mysql,...)
     return true
 end
 
+-- 更新用户登入数据
 function db.updateUserLogin(mysql,...)
     local userid, username, loginType =...
     local sql = string.format("UPDATE %s set userid = %d where username = '%s';",loginType, userid, username)
