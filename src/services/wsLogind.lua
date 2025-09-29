@@ -39,7 +39,7 @@ local function registerUser(user, password, loginType, server, ip)
 		log.error("wsgate login error: dbserver not started")
 		return
 	end
-	local userid = skynet.call(dbserver, "lua", "db", "registerUser", user,password,loginType)
+	local userid = skynet.call(dbserver, "lua", "db", "registerUser",loginType)
 	pushLog(userid, ip or "0.0.0.0", loginType, 2, '')
 	return server, userid, loginType
 end
@@ -70,7 +70,14 @@ function server.login_handler(token, ip)
 
 	assert(login_type[loginType])
 	if not userInfo or userInfo.userid == 0 then
-		return registerUser(user, password, loginType,server, ip)
+		local server, userid, loginType = registerUser(user, password, loginType,server, ip)
+		if not userInfo then
+			skynet.call(dbserver, "lua", "db", "insertUserLogin", userid, user, password, loginType)
+		end
+		if userInfo.userid == 0 then
+			skynet.call(dbserver, "lua", "db", "updateUserLogin", userid, user, loginType)
+		end
+		return server, userid, loginType
 	else
 		local spePassword = string.upper(md5.sumhexa(password))
 		log.info("spePassword is " .. spePassword)

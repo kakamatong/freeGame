@@ -258,24 +258,39 @@ function db.setUserData(mysql,...)
     return res
 end
 
--- 注册用户
-function db.registerUser(mysql,...)
-    local username,password,loginType =...
-    local newAuth = db.makeAuth(mysql,loginType)
-    if not newAuth then
-        log.error("makeAuth error")
-        return false
-    end
-
-    local userid = newAuth.insert_id
+-- 插入用户登入数据
+function db.insertUserLogin(mysql,...)
+    local userid, username,password,loginType =...
     local sql = string.format("INSERT INTO %s (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",loginType, username,userid,password)
     log.info(sql)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
+    return true
+end
+
+function db.updateUserLogin(mysql,...)
+    local userid, username, loginType =...
+    local sql = string.format("UPDATE %s set userid = %d where username = '%s';",loginType, userid, username)
+    log.info(sql)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 注册用户
+function db.registerUser(mysql,...)
+    local loginType =...
+    local newAuth = db.makeAuth(mysql,loginType)
+    if not newAuth then
+        log.error("makeAuth error")
+        return false
+    end
+    local userid = newAuth.insert_id
     local nickname = string.format("用户%d",userid)
     db.setUserData(mysql,userid,nickname,"",1,"","","0.0.0.0","")
-    return res.insert_id
+    return userid
 end
 
 -- CREATE TABLE userGameRecords (
