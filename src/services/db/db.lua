@@ -268,7 +268,7 @@ function db.registerUser(mysql,...)
     end
 
     local userid = newAuth.insert_id
-    local sql = string.format("INSERT INTO account (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",username,userid,password)
+    local sql = string.format("INSERT INTO %s (username,userid,password) VALUES ('%s',%d,UPPER(MD5('%s')));",loginType, username,userid,password)
     log.info(sql)
     local res, err = mysql:query(sql)
     log.info(UTILS.tableToString(res))
