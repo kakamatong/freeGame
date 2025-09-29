@@ -45,6 +45,9 @@ local function registerUser(user, password, loginType, server, ip)
 end
 
 -- 认证处理函数，校验token并返回用户信息
+-- 1. 账户表根据登入类型不同有多张，记录了每个登入类型（account,wechatMiniGame）的登入名，对应的userid，玩家登入的时候，
+--    会来这张表核对用户名和密码，然后返回对应的userid，如果userid为0，或者不存在，表示注册新账号
+-- 2. 新账号分配，根据auth表自增字段userid为准，分配userid后，会设置userData默认值，并更新账户表的userid(之前为0的情况)
 function server.login_handler(token, ip)
 	-- token格式：base64(user)@base64(server):base64(password)#base64(loginType)
 	local user, server, password, loginType = token:match("([^@]+)@([^:]+):([^#]+)#(.+)")
