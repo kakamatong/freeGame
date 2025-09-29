@@ -69,7 +69,7 @@ function server.login_handler(token, ip)
 	end
 
 	assert(login_type[loginType])
-	if not userInfo then
+	if not userInfo or userInfo.userid == 0 then
 		return registerUser(user, password, loginType,server, ip)
 	else
 		local spePassword = string.upper(md5.sumhexa(password))
