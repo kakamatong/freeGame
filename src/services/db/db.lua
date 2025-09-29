@@ -114,7 +114,7 @@ end
 -- 获取用户登录信息
 function db.getLoginInfo(mysql,...)
     local username,loginType = ...
-    local sql = string.format("SELECT * FROM account WHERE username = '%s';",username)
+    local sql = string.format("SELECT * FROM %s WHERE username = '%s';",loginType, username)
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
