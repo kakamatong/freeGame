@@ -60,7 +60,6 @@ function PrivateRoom:init(data)
         self.roomInfo.playerNum = self.roomInfo.privateRule.playerCnt or 2
         self.roomInfo.nowPlayerNum = 1
         self.roomInfo.owner = self.roomInfo.playerids[1]
-        self.roomInfo.logicData = {}
         
         if self.config then
             self.roomInfo.roomWaitingConnectTime = configPrivateRoom.PRIVATE_ROOM_WAITTING_CONNECT_TIME

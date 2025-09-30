@@ -47,6 +47,7 @@ function BaseRoom:_init()
         roomGameTime = 0, -- 游戏时间
         addr = "",
         playedCnt = 0, -- 玩过的次数
+        logicData = {},
     }
     
     -- 玩家信息
@@ -84,6 +85,7 @@ function BaseRoom:init(data)
     self.roomInfo.addr = data.addr
     self.gameManager = data.gameManager
     self.roomInfo.createRoomTime = os.time()
+    self.roomInfo.logicData = {}
     
     -- 初始化服务引用
     self.svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
