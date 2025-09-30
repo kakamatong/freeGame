@@ -299,7 +299,7 @@ function PrivateRoom:sendPrivateInfo(userid)
         maxCnt = self.roomInfo.mode.maxCnt,
         ext = cjson.encode(self.roomInfo.logicData),
     }
-    self:sendToClient(userid, "privateInfo", data)
+    self:sendToOneClient(userid, "privateInfo", data)
 end
 
 function PrivateRoom:sendAllPrivateInfo()
