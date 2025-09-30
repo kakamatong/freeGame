@@ -183,7 +183,13 @@ end
 -- 重写开始游戏方法
 function Room:startGame()
     self.roomInfo.gameStatus = config.GAME_STATUS.START
+    self.roomInfo.playedCnt = self.roomInfo.playedCnt + 1
     self.roomInfo.gameStartTime = os.time()
+
+    -- 下发当前第几局的信息
+    if self:isPrivateRoom() then
+        self:sendAllPrivateInfo()
+    end
     
     -- 初始化逻辑，本局游戏规则，不可再改变
     self:initLogic()
@@ -282,7 +288,6 @@ end
 -- room接口，游戏结束
 function roomHandler.gameEnd()
     if roomInstance then
-        roomInstance.roomInfo.playedCnt = roomInstance.roomInfo.playedCnt + 1
         if checkCanEnd() then
             roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
         else

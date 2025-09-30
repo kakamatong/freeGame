@@ -178,3 +178,12 @@ gameClock 17 {
         seat 1 : integer # 0表示所有玩家
     }
 }
+
+# 私人房信息
+privateInfo 18 {
+    request {
+        nowCnt 0 :integer
+        maxCnt 1 :integer
+        ext 2 :string
+    }
+}

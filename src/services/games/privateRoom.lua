@@ -274,6 +274,9 @@ function PrivateRoom:clientReady(userid, args)
     self:sendPlayerInfo(userid)
     self:sendPlayerEnter(userid)
     self:sendPlayerOtherEnter(userid)
+    if self:isPrivateRoom() then
+        self:sendPrivateInfo(userid)
+    end
     
     if self:isRoomStatusStarting() then
         if self.voteDisbandInfo.inProgress then
@@ -286,6 +289,22 @@ function PrivateRoom:clientReady(userid, args)
         if not self:isPrivateRoom() then
             self:testStart()
         end
+    end
+end
+
+-- 发送私有房间信息(当前第几局，总共几局，玩家战绩等)
+function PrivateRoom:sendPrivateInfo(userid)
+    local data = {
+        nowCnt = self.roomInfo.playedCnt,
+        maxCnt = self.roomInfo.mode.maxCnt,
+        ext = cjson.encode(self.roomInfo.logicData),
+    }
+    self:sendToClient(userid, "privateInfo", data)
+end
+
+function PrivateRoom:sendAllPrivateInfo()
+    for _, userid in pairs(self.roomInfo.playerids) do
+        self:sendPrivateInfo(userid)
     end
 end
 
