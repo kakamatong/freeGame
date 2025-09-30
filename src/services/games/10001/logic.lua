@@ -37,6 +37,15 @@ function logic.dealRule()
 end
 
 function logic.init(rule, roomHandler)
+    logic.outHandInfo = {} -- 出招信息
+    logic.roundid = 0 -- 轮次id
+    logic.roundNum = 0 -- 轮次
+    logic.stepBeginTime = 0 -- 步骤开始时间
+    logic.outHandNum = 0 -- 出招次数
+    logic.stepid = 0 -- 步骤id
+    logic.startTime = 0 -- 游戏开始时间
+    logic.endTime = 0 -- 游戏结束时间
+
     logic.binit = true
     logic.rule = rule
     logic.roomHandler = roomHandler

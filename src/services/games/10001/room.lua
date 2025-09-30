@@ -285,6 +285,8 @@ function roomHandler.gameEnd()
         roomInstance.roomInfo.playedCnt = roomInstance.roomInfo.playedCnt + 1
         if checkCanEnd() then
             roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+        else
+            roomInstance:changeAllPlayerStatus(config.PLAYER_STATUS.ONLINE)
         end
     end
 end

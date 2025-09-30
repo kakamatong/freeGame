@@ -448,6 +448,12 @@ function BaseRoom:changePlayerStatus(userid, status)
     end
 end
 
+function BaseRoom:changeAllPlayerStatus(status)
+    for _, userid in pairs(self.roomInfo.playerids) do
+        self:changePlayerStatus(userid, status)
+    end
+end
+
 -- 玩家重连 (虚方法，由子类实现)
 function BaseRoom:relink(userid)
     -- 基础实现为空，由游戏特定逻辑处理
