@@ -107,8 +107,8 @@ end
 
 -- 玩家加入私人房
 function PrivateRoom:joinPrivateRoom(userid)
-    if self.roomInfo.gameStatus == self.config.GAME_STATUS.START or 
-       self.roomInfo.gameStatus == self.config.GAME_STATUS.END then
+    if self.roomInfo.roomStatus == self.config.GAME_STATUS.START or 
+       self.roomInfo.roomStatus == self.config.GAME_STATUS.END then
         return false, "游戏已开始"
     end
 
@@ -310,7 +310,7 @@ end
 
 -- 重写房间结束方法
 function PrivateRoom:roomEnd(code)
-    self.roomInfo.gameStatus = self.config.GAME_STATUS.END
+    self.roomInfo.roomStatus = self.config.GAME_STATUS.END
     self.roomInfo.canDestroy = true
 
     if self.roomInfo.canDestroy then

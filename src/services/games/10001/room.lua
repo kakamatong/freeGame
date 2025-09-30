@@ -100,7 +100,7 @@ function Room:init(data)
     end
     
     -- 初始化游戏状态
-    self.roomInfo.gameStatus = config.GAME_STATUS.WAITTING_CONNECT
+    self.roomInfo.roomStatus = config.GAME_STATUS.WAITTING_CONNECT
     
     -- 加载协议
     self:loadSproto()
@@ -182,7 +182,7 @@ end
 
 -- 重写开始游戏方法
 function Room:startGame()
-    self.roomInfo.gameStatus = config.GAME_STATUS.START
+    self.roomInfo.roomStatus = config.GAME_STATUS.START
     self.roomInfo.playedCnt = self.roomInfo.playedCnt + 1
     self.roomInfo.gameStartTime = os.time()
 
