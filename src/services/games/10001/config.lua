@@ -1,7 +1,7 @@
 local config = {
     MATCH_ROOM_WAITTING_CONNECT_TIME = 8, -- 等待连接时间
     MATCH_ROOM_GAME_TIME = 900, -- 游戏时间
-    GAME_STATUS = { -- 游戏状态
+    ROOM_STATUS = { -- 游戏状态
         NONE = 0,
         WAITTING_CONNECT = 1,
         START = 2,

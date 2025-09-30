@@ -38,6 +38,7 @@ function BaseRoom:_init()
         playerNum = 0, -- 房间最大人数
         nowPlayerNum = 0, -- 当前人数
         roomStatus = 0, -- 房间状态 (NONE, WAITTING_CONNECT, START, END)
+        gameStatus = 0, -- 游戏状态 ()
         canDestroy = false, -- 是否可以销毁
         gameData = {}, -- 游戏数据
         playerids = {}, -- 玩家id列表,index 表示座位
@@ -143,11 +144,11 @@ function BaseRoom:isRoomStatus(status)
 end
 
 function BaseRoom:isRoomStatusWaittingConnect()
-    return self:isRoomStatus(self.config.GAME_STATUS.WAITTING_CONNECT)
+    return self:isRoomStatus(self.config.ROOM_STATUS.WAITTING_CONNECT)
 end
 
 function BaseRoom:isRoomStatusStarting()
-    return self:isRoomStatus(self.config.GAME_STATUS.START)
+    return self:isRoomStatus(self.config.ROOM_STATUS.START)
 end
 
 function BaseRoom:isMatchRoom()
