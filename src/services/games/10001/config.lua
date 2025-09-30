@@ -49,6 +49,24 @@ local config = {
         OUT_TIME_PLAYING = 3,
         VOTE_DISBAND = 4,        -- 投票解散
         OWNER_DISBAND = 5,        -- 房主解散
+    },
+
+    PRIVATE_ROOM_MODE = {
+        [0] = {
+            name = "3局2胜",
+            maxCnt = 3,
+            winCnt = 2
+        },
+        [1] = {
+            name = "5局3胜",
+            maxCnt = 5,
+            winCnt = 3
+        },
+        [2] = {
+            name = "7局4胜",
+            maxCnt = 7,
+            winCnt = 4
+        },
     }
 }
 

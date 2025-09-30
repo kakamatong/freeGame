@@ -46,6 +46,7 @@ function BaseRoom:_init()
         roomWaitingConnectTime = 0, -- 等待连接时间
         roomGameTime = 0, -- 游戏时间
         addr = "",
+        playedCnt = 0, -- 玩过的次数
     }
     
     -- 玩家信息

@@ -23,6 +23,37 @@ Room.__index = Room
 -- 房间处理器和AI处理器
 local roomHandler = {}
 local roomHandlerAi = {}
+-- 全局room实例
+local roomInstance = nil
+
+local function addLogicData(flag, seat)
+    if roomInstance then
+        roomInstance.roomInfo.logicData[seat] = roomInstance.roomInfo.logicData[seat] or {}
+
+        local logicData = roomInstance.roomInfo.logicData[seat]
+        logicData[flag] = logicData[flag] or 0
+        logicData[flag] = logicData[flag] + 1
+    end
+end
+
+local function checkCanEnd()
+    if roomInstance then
+        if roomInstance.roomInfo.playedCnt >= roomInstance.roomInfo.mode.maxCnt then
+            return true
+        end
+        for key, value in pairs(roomInstance.roomInfo.playerids) do
+            local logicData = roomInstance.roomInfo.logicData[key] or {}
+            local win = logicData["win"] or 0
+            local lose = logicData["lose"] or 0
+            if win >= roomInstance.roomInfo.mode.winCnt then
+                return true
+            end
+        end
+        return false
+    end
+
+    return true
+end
 
 -- 构造函数
 function Room:new()
@@ -47,9 +78,6 @@ function Room:_initRoom()
     self.dTime = 100
 end
 
--- 全局room实例
-local roomInstance = nil
-
 -- 初始化房间逻辑
 function Room:init(data)
     log.info("game10001 Room:init %s", UTILS.tableToString(data))
@@ -63,9 +91,12 @@ function Room:init(data)
         self.roomInfo.nowPlayerNum = self.roomInfo.playerNum
         self.roomInfo.roomWaitingConnectTime = config.MATCH_ROOM_WAITTING_CONNECT_TIME
         self.roomInfo.roomGameTime = config.MATCH_ROOM_GAME_TIME
-        
+        self.roomInfo.mode = {name = "1局1胜",maxCnt = 1,winCnt = 1} -- 默认一局一胜
         -- 初始化匹配房间玩家
         self:_initMatchRoomPlayers(data)
+    elseif self:isPrivateRoom() then
+        local modeData = config.PRIVATE_ROOM_MODE[self.roomInfo.privateRule.mode or 0]
+        self.roomInfo.mode = modeData
     end
     
     -- 初始化游戏状态
@@ -213,7 +244,8 @@ function roomHandler.gameResult(data)
         local flag = config.RESULT_TYPE.NONE
         local addType = "other"
         local score = 0
-        
+
+        -- 需要记录各个座位赢的次数和输的次数
         if v.endResult == 1 then
             flag = config.RESULT_TYPE.WIN
             addType = "win"
@@ -226,6 +258,8 @@ function roomHandler.gameResult(data)
             flag = config.RESULT_TYPE.LOSE
             addType = "lose"
         end
+
+        addLogicData(addType,v.seat)
 
         scores[v.seat] = score
         
@@ -248,7 +282,10 @@ end
 -- room接口，游戏结束
 function roomHandler.gameEnd()
     if roomInstance then
-        roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+        roomInstance.roomInfo.playedCnt = roomInstance.roomInfo.playedCnt + 1
+        if checkCanEnd() then
+            roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+        end
     end
 end
 

@@ -87,10 +87,8 @@ end
 -- 比较大小
 function logic.compare()
     log.info("compare")
-    local maxFlag = 0
-    local maxSeatid = 0
     local result = 0x0000
-    for seatid, flag in pairs(logic.outHandInfo) do
+    for _, flag in pairs(logic.outHandInfo) do
         result = result | flag
     end
     logic.outHandNum = logic.outHandNum + 1

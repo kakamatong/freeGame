@@ -30,7 +30,6 @@ end
 function PrivateRoom:_initPrivateRoom()
     -- 私人房扩展信息
     self.roomInfo.owner = 0          -- 房主ID
-    self.roomInfo.battleCnt = 1      -- 对战次数
     self.roomInfo.shortRoomid = 0    -- 短房间ID
     self.roomInfo.privateRule = nil  -- 私人房间规则
     
@@ -61,7 +60,7 @@ function PrivateRoom:init(data)
         self.roomInfo.playerNum = self.roomInfo.privateRule.playerCnt or 2
         self.roomInfo.nowPlayerNum = 1
         self.roomInfo.owner = self.roomInfo.playerids[1]
-        self.roomInfo.battleCnt = data.gameData.battleCnt or 1
+        self.roomInfo.logicData = {}
         
         if self.config then
             self.roomInfo.roomWaitingConnectTime = configPrivateRoom.PRIVATE_ROOM_WAITTING_CONNECT_TIME
