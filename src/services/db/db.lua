@@ -461,5 +461,54 @@ function db.clearPrivateRoomid(mysql, ...)
     return true
 end
 
+-- CREATE TABLE revokeAccount (
+--     userid BIGINT NOT NULL COMMENT '用户id',
+--     loginType CHAR(64) NOT NULL COMMENT '登入类型',
+--     applyTime TIMESTAMP NOT NULL COMMENT '申请时间',
+--     revokeTime TIMESTAMP NULL COMMENT '注销时间',
+--     status INT DEFAULT 0 COMMENT '状态，默认0,注销成功为1',
+--     ext VARCHAR(256) NULL COMMENT '扩展',
+--     PRIMARY KEY (userid)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='注销账号表';
+-- 添加注销账号
+function db.applyRevokeAcc(mysql,...)
+    local userid,loginType = ...
+    local sql = string.format("INSERT INTO revokeAccount (userid,loginType,applyTime) VALUES (%d,'%s',CURRENT_TIMESTAMP);",userid,loginType,os.time())
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 获取注销账号
+function db.getRevokeAcc(mysql,...)
+    local userid = ...
+    local sql = string.format("SELECT * FROM revokeAccount WHERE userid = %d;",userid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return res[1]
+end
+
+-- 删除注销账号
+function db.delRevokeAcc(mysql,...)
+    local userid = ...
+    local sql = string.format("DELETE FROM revokeAccount WHERE userid = %d;",userid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 注销账号
+function db.revokeAcc(mysql,...)
+    local userid = ...
+    local sql = string.format("UPDATE revokeAccount SET status = 1, revokeTime = CURRENT_TIMESTAMP WHERE userid = %d;",userid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 返回db表，供外部调用
 return db
