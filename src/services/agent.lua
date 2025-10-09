@@ -163,6 +163,14 @@ function REQUEST:userGameRecord(args)
 	return call(svrUser, "getUserGameRecords", args.userid, args.gameid)
 end
 
+function REQUEST:revokeAcc(args)
+	return call(svrUser, "revokeAcc", userid, args.loginType)
+end
+
+function REQUEST:cancelRevokeAcc(args)
+	return call(svrUser, "cancelRevokeAcc", userid)
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)

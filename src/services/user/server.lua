@@ -88,6 +88,43 @@ function CMD.updateUserNameAndHeadurl(userid, nickname, headurl)
     skynet.send(dbSvr, "lua", "db", "updateUserNameAndHeadurl", userid, nickname, headurl)
 end
 
+-- 用户申请注销账号
+function CMD.revokeAcc(userid, loginType)
+	assert(userid)
+	local res = skynet.call(dbSvr, "lua", "db", "getRevokeAcc", userid)
+	if not res then
+		if skynet.call(dbSvr, "lua", "db", "applyRevokeAcc", userid,loginType) then
+			return {code = 1, msg = "申请成功"}
+		else
+			return {code = 0, msg = "申请失败"}
+		end
+	else
+		if res.status == 1 then
+			return {code = 0, msg = "已经注销"}
+		end
+		return {code = 2, msg = "已申请"}
+	end
+end
+
+-- 取消申请注销账号
+function CMD.cancelRevokeAcc(userid)
+	assert(userid)
+	local res = skynet.call(dbSvr, "lua", "db", "getRevokeAcc", userid)
+	if not res then
+		return {code = 0, msg = "取消失败，未申请注销"}
+	else
+		if res.status == 1 then
+			return {code = 0, msg = "已经注销"}
+		end
+
+		if skynet.call(dbSvr, "lua", "db", "delRevokeAcc", userid) then
+			return {code = 1, msg = "取消成功"}
+		else
+			return {code = 0, msg = "取消失败"}
+		end
+	end
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
