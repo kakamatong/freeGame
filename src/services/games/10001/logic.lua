@@ -110,7 +110,7 @@ function logic.checkContinue()
         return false
     end
 
-    return logic.roundResult == config.HAND_RESULT.DRAW
+    return (logic.roundResult == config.HAND_FLAG.PAPER or logic.roundResult == config.HAND_FLAG.SCISSORS or logic.roundResult == config.HAND_FLAG.ROCK)
 end
 
 -- 比较大小
@@ -151,18 +151,27 @@ function logic.sendResult(result)
         tmp.endResult = endflag
         table.insert(playerResult, tmp)
     end
-    local scores = logic.roomHandler.gameResult(playerResult)
-    local continue = 0
-    if logic.checkContinue() then
-        continue = 1
-    end
+    
     local info = {
         roundNum = logic.roundNum,
         outHandNum = logic.outHandNum,
-        continue = continue,
         info = playerResult,
-        score = cjson.encode(scores),
     }
+    local continue = 0
+    if logic.checkContinue() then
+        continue = 1
+        local tmp = {}
+        for i = 1, logic.playerNum, 1 do
+            tmp[i] = 0
+        end
+        info.score = cjson.encode(tmp)
+    else
+        local scores = logic.roomHandler.gameResult(playerResult)
+        info.score = cjson.encode(scores)
+    end
+
+    info.continue = continue
+    
 
     logic.sendToAllClient("roundResult", info)
 end
@@ -316,7 +325,7 @@ end
 
 -- 开始一轮结束步骤
 function logic.startStepRoundEnd()
-
+    logic.roundClear()
 end
 
 -- 停止一轮结束步骤
@@ -493,6 +502,11 @@ function logic.clear()
     logic.playerNum = 0
     logic.roomHandler = nil
     logic.rule = {}
+end
+
+function logic.roundClear()
+    logic.outHandInfo = {}
+    logic.playerAttitude = {}
 end
 
 ------------------------------------------------------------------------------------------------------------
