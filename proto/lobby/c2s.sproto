@@ -216,3 +216,27 @@ updateUserNameAndHeadurl 16 {
         code 0 : integer
     }
 }
+
+# 注销
+revokeAcc 17 {
+    request {
+        loginType 0 : string
+    }
+
+    response {
+        code 0 : integer # 1:成功，0：失败，2：已经在注销
+        msg 1 : string
+    }
+}
+
+# 取消注销
+cancelRevokeAcc 18 {
+    request {
+        loginType 0 : string
+    }
+
+    response {
+        code 0 : integer # 1:成功，0：失败
+        msg 1 : string
+    }
+}
