@@ -124,6 +124,16 @@ function db.getLoginInfo(mysql,...)
     return res[1]
 end
 
+-- 删除用户登录信息(注销账号使用)
+function db.delLoginInfo(mysql,...)
+    local userid,loginType = ...
+    local sql = string.format("DELETE FROM %s WHERE userid = %d;",loginType, userid)
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 获取用户详细数据
 function db.getUserData(mysql,...)
     local userid =...

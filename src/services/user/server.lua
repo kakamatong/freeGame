@@ -101,8 +101,33 @@ function CMD.revokeAcc(userid, loginType)
 	else
 		if res.status == 1 then
 			return {code = 0, msg = "已经注销"}
+		else
+			local applyTime = res.applyTime
+			local year, month, day, hour, min, sec = applyTime:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
+
+			-- 转换为时间戳
+			local timestamp = os.time({
+				year = tonumber(year),
+				month = tonumber(month),
+				day = tonumber(day),
+				hour = tonumber(hour),
+				min = tonumber(min),
+				sec = tonumber(sec)
+			})
+
+			local timeNow = os.time()
+			if timeNow - timestamp > 0 * 24 * 3600 then
+				-- todo:注销
+				if skynet.call(dbSvr, "lua", "db", "revokeAcc", userid) then
+					skynet.send(dbSvr, "lua", "db", "delLoginInfo", userid, res.loginType)
+					return {code = 3, msg = "注销成功"}
+				else
+					return {code = 0, msg = "注销失败"}
+				end
+			else
+				return {code = 2, msg = "已申请"}
+			end
 		end
-		return {code = 2, msg = "已申请"}
 	end
 end
 
