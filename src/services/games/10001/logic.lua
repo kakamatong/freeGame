@@ -5,6 +5,7 @@ local logic = {}
 logic.outHandInfo = {} -- 出招信息
 logic.roundid = 0 -- 轮次id
 logic.roundNum = 0 -- 轮次
+logic.roundResult = 0 -- 回合结构
 logic.stepBeginTime = 0 -- 步骤开始时间
 logic.outHandNum = 0 -- 出招次数
 logic.stepid = 0 -- 步骤id
@@ -40,6 +41,7 @@ function logic.init(rule, roomHandler)
     logic.outHandInfo = {} -- 出招信息
     logic.roundid = 0 -- 轮次id
     logic.roundNum = 0 -- 轮次
+    logic.roundResult = 0 -- 轮次
     logic.stepBeginTime = 0 -- 步骤开始时间
     logic.outHandNum = 0 -- 出招次数
     logic.stepid = 0 -- 步骤id
@@ -85,7 +87,12 @@ function logic.outHand(seatid, args)
         end
         logic.compare()
 
-        logic.startStep(config.GAME_STEP.GAME_END)
+        -- 是否有下一回合
+        if logic.checkContinue() then
+            logic.startStep(config.GAME_STEP.ROUND_END)
+        else
+            logic.startStep(config.GAME_STEP.GAME_END)
+        end
     else
         logic.sendPlayerAttitude(config.SEAT_FLAG.SEAT_ALL, seatid, config.PLAYER_ATTITUDE.READY)
         -- 下发自己的
@@ -93,15 +100,28 @@ function logic.outHand(seatid, args)
     end
 end
 
+function logic.checkContinue()
+    local canDraw =  false
+    if logic.rule.privateRule then
+        canDraw = logic.rule.privateRule.canDraw or false
+    end
+
+    if canDraw then
+        return false
+    end
+
+    return logic.roundResult == config.HAND_RESULT.DRAW
+end
+
 -- 比较大小
 function logic.compare()
     log.info("compare")
-    local result = 0x0000
+    local result = config.HAND_RESULT.DRAW
     for _, flag in pairs(logic.outHandInfo) do
         result = result | flag
     end
     logic.outHandNum = logic.outHandNum + 1
-
+    logic.roundResult = result -- 回合结果
     if result == config.HAND_RESULT.ROCK_WIN then
         -- 石头胜
         logic.sendResult(config.HAND_FLAG.ROCK)
@@ -132,10 +152,14 @@ function logic.sendResult(result)
         table.insert(playerResult, tmp)
     end
     local scores = logic.roomHandler.gameResult(playerResult)
+    local continue = 0
+    if logic.checkContinue() then
+        continue = 1
+    end
     local info = {
         roundNum = logic.roundNum,
         outHandNum = logic.outHandNum,
-        continue = 0,
+        continue = continue,
         info = playerResult,
         score = cjson.encode(scores),
     }
@@ -297,12 +321,12 @@ end
 
 -- 停止一轮结束步骤
 function logic.stopStepRoundEnd()
-
+    logic.startStep(config.GAME_STEP.START)
 end
 
 -- 一轮结束步骤超时
 function logic.onStepRoundEndTimeout()
-
+    logic.stopStep(config.GAME_STEP.ROUND_END)
 end
 
 -- 开始游戏结束步骤
