@@ -116,7 +116,7 @@ function CMD.revokeAcc(userid, loginType)
 			})
 
 			local timeNow = os.time()
-			if timeNow - timestamp > 0 * 24 * 3600 then
+			if timeNow - timestamp > CONFIG.REVLKE_DAY * 24 * 3600 then
 				-- todo:注销
 				if skynet.call(dbSvr, "lua", "db", "revokeAcc", userid) then
 					skynet.send(dbSvr, "lua", "db", "delLoginInfo", userid, res.loginType)
