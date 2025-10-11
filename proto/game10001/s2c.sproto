@@ -187,3 +187,27 @@ privateInfo 18 {
         ext 2 :string
     }
 }
+
+.TotalResultInfo {
+    # 私人房总结算信息
+    seat 0 : integer
+    userid 1 : integer
+    score 2 : integer
+    win 3 : integer
+    lose 4 : integer
+    draw 5 : integer
+    ext 6 : string
+}
+
+# 私人房总结算
+totalResult 19 {
+    request {
+        startTime 0 : integer
+        endTime 1 : integer
+        shortRoomid 2 : integer
+        roomid 3 : integer
+        owner 4 : integer
+        rule 5 : string
+        totalResultInfo 6 : *TotalResultInfo
+    }
+}

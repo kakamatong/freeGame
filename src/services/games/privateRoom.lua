@@ -308,6 +308,32 @@ function PrivateRoom:sendAllPrivateInfo()
     end
 end
 
+function PrivateRoom:sendTotalResult()
+    local userInfo = {}
+    for seat, userid in ipairs(self.roomInfo.playerids) do
+        local tmp = {}
+        tmp.userid = userid
+        tmp.seat = seat
+        tmp.score = 0
+        tmp.win = self.roomInfo.logicData[seat].win or 0
+        tmp.lose = self.roomInfo.logicData[seat].lose or 0
+        tmp.draw = self.roomInfo.logicData[seat].draw or 0
+        tmp.ext = ""
+        table.insert(userInfo, tmp)
+    end
+
+    local data = {
+        startTime = self.roomInfo.createRoomTime,
+        endTime = os.time(),
+        shortRoomid = self.roomInfo.shortRoomid,
+        roomid = self.roomInfo.roomid,
+        owner = self.roomInfo.owner,
+        rule = self.roomInfo.gameData.rule or "{}",
+        totalResultInfo = userInfo
+    }
+    self:sendToAllClient("totalResult", data)
+end
+
 -- 重写房间结束方法
 function PrivateRoom:roomEnd(code)
     self.roomInfo.roomStatus = self.config.ROOM_STATUS.END
