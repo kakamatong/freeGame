@@ -329,6 +329,8 @@ function PrivateRoom:sendTotalResult()
         roomid = self.roomInfo.roomid,
         owner = self.roomInfo.owner,
         rule = self.roomInfo.gameData.rule or "{}",
+        playCnt = self.roomInfo.playedCnt,
+        maxCnt = self.roomInfo.mode.maxCnt,
         totalResultInfo = userInfo
     }
     self:sendToAllClient("totalResult", data)
@@ -340,6 +342,14 @@ function PrivateRoom:roomEnd(code)
     self.roomInfo.canDestroy = true
 
     if self.roomInfo.canDestroy then
+        -- 清除私有房间短ID
+        if self:isPrivateRoom() then
+            if self.roomInfo.playedCnt > 0 then
+                self:sendTotalResult()
+            end
+            skynet.send(self.svrDB, "lua", "db", "clearPrivateRoomid", self.roomInfo.shortRoomid)
+        end
+
         -- 通知游戏管理器销毁房间
         self:sendToAllClient("roomEnd", {code = code})
         skynet.send(self.gameManager, "lua", "destroyGame", self.roomInfo.gameid, self.roomInfo.roomid)
@@ -349,11 +359,6 @@ function PrivateRoom:roomEnd(code)
             if not self:isRobotByUserid(userid) then
                 self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
             end
-        end
-        
-        -- 清除私有房间短ID
-        if self:isPrivateRoom() then
-            skynet.send(self.svrDB, "lua", "db", "clearPrivateRoomid", self.roomInfo.shortRoomid)
         end
     end
 

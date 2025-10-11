@@ -208,6 +208,8 @@ totalResult 19 {
         roomid 3 : integer
         owner 4 : integer
         rule 5 : string
-        totalResultInfo 6 : *TotalResultInfo
+        playCnt 6 : integer
+        maxCnt 7 : integer
+        totalResultInfo 8 : *TotalResultInfo
     }
 }
