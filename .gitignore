@@ -6,6 +6,7 @@
 .vscode
 .qoder
 src/config/gameConfig.lua
+src/config/gameConfig.lua.prod
 *.pid
 /log/*
 /logLobby/*
