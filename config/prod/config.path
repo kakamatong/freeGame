@@ -1,0 +1,14 @@
+root = "./"
+skynetRoot = root .. "skynet/"
+dbPath = root .. "src/services/db/?.lua;"
+mySkynetSvrPath = root .. "src/skynetService/?.lua;"
+luaservice = mySkynetSvrPath .. skynetRoot.."service/?.lua;"..root.."src/?.lua;"..root.."src/services/?.lua;"
+lualoader = skynetRoot .. "lualib/loader.lua"
+lua_path = root.."src/lualib/?.lua;"..skynetRoot.."lualib/?.lua;"..skynetRoot.."lualib/?/init.lua;"..root.."src/services/?.lua;"..root.."src/config/?.lua;"
+lobbyPath = root .. "src/services/lobby/?.lua;"
+matchPath = root .. "src/services/match/?.lua;"
+userPath = root .. "src/services/user/?.lua;"
+
+lua_path = lua_path .. lobbyPath .. dbPath .. matchPath .. userPath
+lua_cpath = skynetRoot .. "luaclib/?.so"
+snax = root.."src/?.lua;"

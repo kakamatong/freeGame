@@ -1,0 +1,26 @@
+include "config.path"
+
+preload = root .."src/preload.lua"	-- run preload.lua before every lua service run
+thread = 8
+-- 日志服务
+logger = "logger"
+logservice = "snlua"  -- 现在日志服务用 Lua 实现
+logpath    = "./log/" -- 日志输出目录
+loggroup   = "skynet"   -- 日志文件分组名
+
+debugConsolePort = 8016
+harbor = 0
+start = "main"	-- main script
+bootstrap = "snlua bootstrap"	-- The service for bootstrap
+cpath = root.."skynet/cservice/?.so"
+daemon = "./skynetGame.pid" -- 启动服务时，会生成一个 skynet.pid 文件，用于保存服务进程的 PID， 并脱离控制台
+clusterName = "game1"
+nodeid = 1
+
+gateAddress = "0.0.0.0"
+gatePort = 9003
+gateMaxclient = 4096
+protocol = "wss"
+certfile = "./cert/server-cert.pem"
+keyfile = "./cert/server-key.key"
+enablessl = "true"
