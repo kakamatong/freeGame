@@ -22,4 +22,4 @@ keyfile = "./cert/server-key.key"
 
 loginAddress = "0.0.0.0"
 loginPort = 8002
-protocol = "wss"
+protocol = "ws"
