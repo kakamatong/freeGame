@@ -19,3 +19,7 @@ clusterName = "login1"
 enablessl = "true"
 certfile = "./cert/server-cert.pem"
 keyfile = "./cert/server-key.key"
+
+loginAddress = "0.0.0.0"
+loginPort = 8002
+protocol = "wss"

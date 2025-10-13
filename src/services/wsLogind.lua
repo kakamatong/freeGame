@@ -9,11 +9,11 @@ local cluster = require "skynet.cluster"
 local gConfig = CONFIG
 -- 服务器配置信息
 local server = {
-	host = gConfig.WS_ATTH_LISTEN.host,           -- 监听地址
-	port = gConfig.WS_ATTH_LISTEN.port,                -- 监听端口
-	multilogin = gConfig.WS_ATTH_LISTEN.multilogin,         -- 是否允许多端登录
+	host = skynet.getenv("loginAddress"),           -- 监听地址
+	port = skynet.getenv("loginPort"),                -- 监听端口
+	multilogin = false,         -- 是否允许多端登录
 	name = CONFIG.SVR_NAME.LOGIN,  -- 服务名
-	protocol = gConfig.WS_ATTH_LISTEN.protocol, -- 协议
+	protocol = skynet.getenv("protocol"), -- 协议
 }
 
 local server_list = {}    -- 注册的网关服务器列表
