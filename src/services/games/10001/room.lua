@@ -55,6 +55,13 @@ local function checkCanEnd()
     return true
 end
 
+local function addCombatPower(n)
+    if not roomInstance then
+        return
+    end
+    skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", CONFIG.RICH_TYPE.COMBAT_POWER, n)
+end
+
 -- 构造函数
 function Room:new()
     local obj = PrivateRoom:new()
@@ -245,11 +252,12 @@ function roomHandler.gameResult(data)
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
     local scores = {}
-    for k, v in pairs(data) do
+    for _, v in pairs(data) do
         local userid = roomInstance.roomInfo.playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
         local addType = "other"
         local score = 0
+        --local cp = 0
 
         -- 需要记录各个座位赢的次数和输的次数
         if v.endResult == 1 then
@@ -263,6 +271,14 @@ function roomHandler.gameResult(data)
         else 
             flag = config.RESULT_TYPE.LOSE
             addType = "lose"
+        end
+
+        -- 如果是私房，则不记录分数
+        if roomInstance:isPrivateRoom() then
+            score = 0
+        elseif roomInstance:isMatchRoom() then
+            -- 记录战力
+            --addCombatPower(score)
         end
 
         addLogicData(addType,v.seat)

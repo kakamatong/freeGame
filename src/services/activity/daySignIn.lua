@@ -1,47 +1,44 @@
 local daySignIn = {}
-local skynet = require "skynet"
-local log = require "log"
 local cjson = require "cjson"
 local oneHour = 3600
 local oneDay = oneHour * 24
 local maxSignInIndex = 7
-local name = "daySignIn"
 local tools = require "activity.tools"
 
 local signInConfig = {
     -- 第一天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {10000}
     },
     -- 第二天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {20000}
     },
     -- 第三天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {30000}
     },
     -- 第四天
     {
-        richTypes = {2},
-        richNums = {40000}
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
+        richNums = {40000}  
     },
     -- 第五天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {50000}
     },
     -- 第六天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {60000}
     },
     -- 第七天
     {
-        richTypes = {2},
+        richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {70000}
     },
 }
