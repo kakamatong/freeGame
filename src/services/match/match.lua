@@ -10,6 +10,14 @@ local svrGame = CONFIG.CLUSTER_SVR_NAME.GAME
 local svrRobot = CONFIG.CLUSTER_SVR_NAME.ROBOT
 local svrUser = CONFIG.CLUSTER_SVR_NAME.USER
 local matchOnSure = require("match.matchOnSure")
+local svrDB = nil
+
+local function getDB()
+    if not svrDB then
+        svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+    end
+    return svrDB
+end
 
 local function setUserStatus(userid, status, gameid, roomid, addr)
     send(svrUser , "setUserStatus", userid, status, gameid, roomid, addr, 0)
@@ -44,7 +52,7 @@ local function checkGame(gameid, queueid)
 end
 
 -- 玩家进入匹配队列
-local function enterQueue(userid, gameid, queueid, rate)
+local function enterQueue(userid, gameid, queueid, cp)
     log.info("enterQueue %d %d %d", userid, gameid, queueid)
     if not gameid or not queueid or queueid == 0 then
         return false
@@ -65,15 +73,15 @@ local function enterQueue(userid, gameid, queueid, rate)
         queueUserids[gameid][queueid] = {}
     end
     --根据rate的大小插入队列
-    rate = rate or 0
+    cp = cp or 0
     local index = 1
     for i, v in ipairs(queueUserids[gameid][queueid]) do
-        if rate > v.rate then
+        if cp > v.rate then
             index = i
             break
         end
     end
-    table.insert(queueUserids[gameid][queueid], index, {userid = userid, rate = rate, checkNum = 0})
+    table.insert(queueUserids[gameid][queueid], index, {userid = userid, rate = cp, checkNum = 0})
     inMatchList[userid] = true
     setUserStatus(userid, gConfig.USER_STATUS.MATCHING, 0, 0, "")
     return true
@@ -187,13 +195,13 @@ local function leaveQueue(userid, gameid, queueid)
     return false
 end
 
-local function join(userid, gameid, queueid)
+local function join(userid, gameid, queueid, cp)
     if inMatchList[userid] then
         return {code = 0, msg = "已经在匹配队列中"}
     end
 
     -- 检查用户是否在匹配队列中
-    if not enterQueue(userid, gameid, queueid) then
+    if not enterQueue(userid, gameid, queueid, cp) then
         return {code = 0, msg = "加入匹配队列失败"}
     end
     return {code = 1, msg = "加入匹配队列成功"}
@@ -225,7 +233,12 @@ function match.stopTest()
 end
 
 function match.join(userid, gameid, queueid)
-    return join(userid, gameid, queueid)
+    local rices = skynet.call(getDB(), "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
+    local cp = 0
+    if rices then
+        cp = rices.richNums
+    end
+    return join(userid, gameid, queueid, cp)
 end
 
 function match.leave(userid, gameid, queueid)
