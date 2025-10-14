@@ -88,17 +88,17 @@ local function enterQueue(userid, gameid, queueid, cp)
 end
 
 -- 匹配成功
-local function matchSuccess(gameid, queueid, userid1, userid2)
-    log.info("matchSuccess %d %d", userid1, userid2)
-    local playerids = {userid1, userid2}
-    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = ""})
+local function matchSuccess(gameid, queueid, user1, user2)
+    log.info("matchSuccess %d %d", user1.userid, user2.userid)
+    local playerids = {user1.userid, user2.userid}
+    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", rate = {user1.rate, user2.rate}})
 end
 
 -- 匹配成功，与机器人匹配
-local function matchSuccessWithRobot(gameid, queueid, userid, robotData)
-    log.info("matchWithRobot %d %s", userid, UTILS.tableToString(robotData))
-    local playerids = {userid, robotData.userid}
-    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}})
+local function matchSuccessWithRobot(gameid, queueid, user, robotData)
+    log.info("matchWithRobot %d %s", user.userid, UTILS.tableToString(robotData))
+    local playerids = {user.userid, robotData.userid}
+    matchOnSure.startOnSure(gameid, queueid, playerids, {rule = "", robots = {robotData.userid}, rate = {user.rate, robotData.cp}})
 end
 
 local function getRobots(gameid, num)
@@ -118,13 +118,13 @@ local function testRobotPlay(gameid, queueid)
 end
 
 -- 检查用户匹配失败次数，如果次数过多，则直接与机器人匹配
-local function checkMatchNum(gameid, queueid, userid, checkNum)
+local function checkMatchNum(gameid, queueid, user, checkNum)
     --log.info("checkMatchNum %d", userid)
     if checkNum >= CHECK_MAX_NUM then
         --log.info("checkMatchNum %d %d", userid, checkNum)
         local robot = getRobots(gameid, 1)
         if robot and #robot > 0 then
-            matchSuccessWithRobot(gameid, queueid, userid, robot[1])
+            matchSuccessWithRobot(gameid, queueid, user, robot[1])
             return true
         end
     end
@@ -145,7 +145,7 @@ local function checkQueue(gameid, queueid)
         if i < queLen then
             local user1 = que[i]
             local user2 = que[i+1]
-            if math.abs(user1.rate - user2.rate) < 0.05 then
+            if math.abs(user1.rate - user2.rate) < 500 then
                 log.info("match success %d %d", user1.userid, user2.userid)
                 table.remove(que, i)
                 table.remove(que, i)
@@ -153,11 +153,11 @@ local function checkQueue(gameid, queueid)
                 inMatchList[user2.userid] = nil
                 i = i - 1
                 queLen = queLen - 2
-                matchSuccess(gameid, queueid, user1.userid, user2.userid)
+                matchSuccess(gameid, queueid, user1, user2)
             else
                 user1.checkNum = user1.checkNum + 1
                 -- 如果用户匹配失败次数过多，则直接与机器人匹配
-                if checkMatchNum(gameid, queueid, user1.userid, user1.checkNum) then
+                if checkMatchNum(gameid, queueid, user1, user1.checkNum) then
                     table.remove(que, i)
                     inMatchList[user1.userid] = nil
                     i = i - 1
@@ -167,7 +167,7 @@ local function checkQueue(gameid, queueid)
         else
             local user = que[i]
             user.checkNum = user.checkNum + 1
-            if checkMatchNum(gameid, queueid, user.userid, user.checkNum) then
+            if checkMatchNum(gameid, queueid, user, user.checkNum) then
                 table.remove(que, i)
                 inMatchList[user.userid] = nil
             end

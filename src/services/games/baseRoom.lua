@@ -215,7 +215,7 @@ function BaseRoom:dispatchSeat()
 end
 
 -- 初始化玩家信息
-function BaseRoom:checkUserInfo(userid, seat, status, bRobot)
+function BaseRoom:checkUserInfo(userid, seat, status, bRobot, cp)
     if not self.players[userid] then
         local info = call(self.svrUser, "userData", userid)
         self.players[userid] = {
@@ -223,6 +223,7 @@ function BaseRoom:checkUserInfo(userid, seat, status, bRobot)
             seat = seat,
             status = status,
             isRobot = bRobot,
+            cp = cp, -- 战力
             info = info,
         }
     end

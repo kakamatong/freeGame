@@ -47,6 +47,15 @@ function CMD.getRobots(gameid, num)
         local id = getFreeRobotid()
         log.info("getRobots %s %d", id, n)
         if id and robotDatas[id] then
+            -- 机器人战力
+            local rices = skynet.call(dbSvr, "lua", "db", "getUserRichesByType", id, CONFIG.RICH_TYPE.COMBAT_POWER)
+            local cp = 0
+            if rices then
+                cp = rices.richNums
+            end
+            robotDatas[id] = robotDatas[id] or {}
+            robotDatas[id].cp = cp
+
             table.insert(datas, robotDatas[id])
             usingRobots[id] = true
             n = n + 1

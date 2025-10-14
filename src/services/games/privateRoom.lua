@@ -94,7 +94,14 @@ function PrivateRoom:_initPrivateRoomPlayers(data)
         else
             self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
-        self:checkUserInfo(userid, seat, status, bRobot)
+
+        -- 私人房战力拉去
+        local rices = skynet.call(self.svrDB, "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
+        local cp = 0
+        if rices then
+            cp = rices.richNums
+        end
+        self:checkUserInfo(userid, seat, status, bRobot, cp)
     end
     
     self.roomInfo.robotCnt = robotCnt
@@ -128,7 +135,13 @@ function PrivateRoom:joinPrivateRoom(userid)
                 self.roomInfo.playerids[seat] = userid
                 self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum + 1
                 self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
-                self:checkUserInfo(userid, seat, self.config.PLAYER_STATUS.LOADING, false)
+                -- 私人房战力拉去
+                local rices = skynet.call(self.svrDB, "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
+                local cp = 0
+                if rices then
+                    cp = rices.richNums
+                end
+                self:checkUserInfo(userid, seat, self.config.PLAYER_STATUS.LOADING, false, cp)
                 self:onPlayerJoin(userid)
                 return true
             else

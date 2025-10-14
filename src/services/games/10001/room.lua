@@ -65,7 +65,7 @@ end
 
 -- 开始计分
 local function startRating()
-    
+
 end
 
 -- 构造函数
@@ -156,7 +156,8 @@ function Room:_initMatchRoomPlayers(data)
         else
             self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
-        self:checkUserInfo(userid, seat, status, bRobot)
+        -- 匹配场的战力是匹配的时候传过来的
+        self:checkUserInfo(userid, seat, status, bRobot, data.gameData.rate[seat] or 0)
     end
     
     self.roomInfo.robotCnt = robotCnt
