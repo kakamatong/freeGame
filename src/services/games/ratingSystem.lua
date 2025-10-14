@@ -53,6 +53,9 @@ function RatingSystem:process_match(score_a, score_b, a_wins)
         delta_a = -self:calculate_dynamic_k(score_a, false) * expected_a
         delta_b = self:calculate_dynamic_k(score_b, true) * (1 - expected_b)
     end
+
+    delta_a = math.floor(delta_a)
+    delta_b = math.floor(delta_b)
     
     -- 零和模式调整：确保总分不变
     if self.zero_sum_mode then

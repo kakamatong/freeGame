@@ -60,6 +60,7 @@ local function addCombatPower(userid, n)
     if not roomInstance then
         return
     end
+    log.info("addCombatPower %d %d", userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
@@ -267,7 +268,7 @@ function roomHandler.gameResult(data)
         local cp1Win = nil
         for _, v in pairs(data) do
             local userid = roomInstance.roomInfo.playerids[v.seat]
-            local player = roomInstance.roomInfo.players[userid]
+            local player = roomInstance.players[userid]
             local cp = player.cp
             local tmp2 = {}
             tmp2.cp = cp
@@ -283,6 +284,7 @@ function roomHandler.gameResult(data)
         tmpcp[1].dcp = tmp.delta_a
         tmpcp[2].cpNew = tmp.new_score_b
         tmpcp[2].dcp = tmp.delta_b
+        log.info(UTILS.tableToString(tmpcp))
         -- 记录战力
         addCombatPower(tmpcp[1].userid, tmpcp[1].dcp)
         addCombatPower(tmpcp[2].userid, tmpcp[2].dcp)
