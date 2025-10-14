@@ -15,6 +15,7 @@ local config = require "games.10001.config"
 local logicHandler = require "games.10001.logic"
 local aiHandler = require "games.10001.ai"
 local PrivateRoom = require "games.privateRoom"
+local RatingSystem = require "games.ratingSystem"
 
 local Room = {}
 setmetatable(Room, {__index = PrivateRoom})
@@ -62,6 +63,11 @@ local function addCombatPower(n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
+-- 开始计分
+local function startRating()
+    
+end
+
 -- 构造函数
 function Room:new()
     local obj = PrivateRoom:new()
@@ -83,6 +89,7 @@ function Room:_initRoom()
     
     -- 定时器间隔
     self.dTime = 100
+    self.ratingSystem = RatingSystem.new(self.config.RATING_CONFIG)
 end
 
 -- 初始化房间逻辑

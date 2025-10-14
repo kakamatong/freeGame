@@ -67,6 +67,14 @@ local config = {
             maxCnt = 7,
             winCnt = 4
         },
+    },
+
+    RATING_CONFIG = {
+        K_base = 65,
+        S_max = 6000,
+        initial_score = 1000,
+        min_score = 0,
+        zero_sum_mode = false  -- 启用零和模式
     }
 }
 
