@@ -56,11 +56,11 @@ local function checkCanEnd()
     return true
 end
 
-local function addCombatPower(n)
+local function addCombatPower(userid, n)
     if not roomInstance then
         return
     end
-    skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", CONFIG.RICH_TYPE.COMBAT_POWER, n)
+    skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
 -- 开始计分
@@ -259,7 +259,45 @@ function roomHandler.gameResult(data)
     
     local day = os.date("%Y%m%d")
     local rankKey = "game10001DayRank:" .. day
-    local scores = {}
+    --local scores = {}
+    local rateData = {}
+    -- 计算战力
+    if roomInstance:isMatchRoom() and data then
+        local tmpcp = {}
+        local cp1Win = nil
+        for _, v in pairs(data) do
+            local userid = roomInstance.roomInfo.playerids[v.seat]
+            local player = roomInstance.roomInfo.players[userid]
+            local cp = player.cp
+            local tmp2 = {}
+            tmp2.cp = cp
+            tmp2.seat = v.seat
+            tmp2.userid = userid
+            table.insert(tmpcp, tmp2)
+            if cp1Win == nil then
+                cp1Win = v.endResult == 1
+            end
+        end
+        local tmp = roomInstance.ratingSystem:process_match(tmpcp[1].cp, tmpcp[2].cp, cp1Win)
+        tmpcp[1].cpNew = tmp.new_score_a
+        tmpcp[1].dcp = tmp.delta_a
+        tmpcp[2].cpNew = tmp.new_score_b
+        tmpcp[2].dcp = tmp.delta_b
+        -- 记录战力
+        addCombatPower(tmpcp[1].userid, tmpcp[1].dcp)
+        addCombatPower(tmpcp[2].userid, tmpcp[2].dcp)
+
+        for key, value in pairs(tmpcp) do
+            rateData[value.seat] = {
+                cpNew = value.cpNew,
+                dcp = value.dcp,
+                cp = value.cp,
+                userid = value.userid,
+            }
+        end
+    end
+
+    -- 计算每日对局积分
     for _, v in pairs(data) do
         local userid = roomInstance.roomInfo.playerids[v.seat]
         local flag = config.RESULT_TYPE.NONE
@@ -284,14 +322,11 @@ function roomHandler.gameResult(data)
         -- 如果是私房，则不记录分数
         if roomInstance:isPrivateRoom() then
             score = 0
-        elseif roomInstance:isMatchRoom() then
-            -- 记录战力
-            --addCombatPower(score)
         end
 
         addLogicData(addType,v.seat)
 
-        scores[v.seat] = score
+        --scores[v.seat] = score
         
         local totalScore = skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zscore", rankKey, userid) or 0
         totalScore = totalScore + score
@@ -306,7 +341,7 @@ function roomHandler.gameResult(data)
         roomInstance:pushUserGameRecords(userid, addType, 1)
     end
 
-    return scores
+    return rateData
 end
 
 -- room接口，游戏结束
