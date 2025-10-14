@@ -78,7 +78,8 @@ roomEnd 7 {
     city 5 : string
     ip 6 : string
     status 7 : integer
-    ext 8 : string
+    cp 8 : integer
+    ext 9 : string
 }
 
 # 玩家信息 
