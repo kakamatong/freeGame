@@ -322,6 +322,7 @@ function BaseRoom:sendPlayerInfo(userid)
     for _, player in pairs(self.players) do
         data[player.seat] = player.info
         data[player.seat].status = player.status
+        data[player.seat].cp = player.cp or 0
     end
     self:sendToOneClient(userid, "playerInfos", {infos = data})
 end
