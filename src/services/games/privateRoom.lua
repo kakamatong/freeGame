@@ -281,7 +281,16 @@ function PrivateRoom:clientReady(userid, args)
             self.players[userid].status = self.config.PLAYER_STATUS.READY
         end
     elseif self:isRoomStatusStarting() then
-        self.players[userid].status = self.config.PLAYER_STATUS.PLAYING
+        if self:isPrivateRoom() then
+            -- 局间是在线状态
+            if self:isRoomStatus(self.config.ROOM_STATUS.HALFTIME) then
+                self.players[userid].status = self.config.PLAYER_STATUS.ONLINE 
+            else
+                self.players[userid].status = self.config.PLAYER_STATUS.PLAYING
+            end
+        else
+            self.players[userid].status = self.config.PLAYER_STATUS.PLAYING
+        end
     end
     
     self:sendRoomInfo(userid)
@@ -327,7 +336,7 @@ function PrivateRoom:sendGameRecord()
     if not self.roomInfo.record then
         return
     end
-    
+
     local data = {
         record = self.roomInfo.record
     }

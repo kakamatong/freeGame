@@ -5,7 +5,8 @@ local config = {
         NONE = 0,
         WAITTING_CONNECT = 1,
         START = 2,
-        END = 3
+        END = 3,
+        HALFTIME = 4, -- 局间
     },
     PLAYER_STATUS = { -- 玩家状态
         LOADING = 1,

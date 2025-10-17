@@ -374,6 +374,7 @@ function roomHandler.gameEnd()
         if checkCanEnd() then
             roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
         else
+            roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
             roomInstance:changeAllPlayerStatus(config.PLAYER_STATUS.ONLINE)
         end
     end

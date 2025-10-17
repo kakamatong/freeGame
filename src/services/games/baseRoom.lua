@@ -148,7 +148,7 @@ function BaseRoom:isRoomStatusWaittingConnect()
 end
 
 function BaseRoom:isRoomStatusStarting()
-    return self:isRoomStatus(self.config.ROOM_STATUS.START)
+    return self:isRoomStatus(self.config.ROOM_STATUS.START) or self:isRoomStatus(self.config.ROOM_STATUS.HALFTIME)
 end
 
 function BaseRoom:isMatchRoom()
