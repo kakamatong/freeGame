@@ -68,6 +68,11 @@ local config = {
             maxCnt = 7,
             winCnt = 4
         },
+        [3] = {
+            name = "无限对局",
+            maxCnt = 9999,
+            winCnt = 9999
+        },
     },
 
     RATING_CONFIG = {
