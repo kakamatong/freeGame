@@ -214,3 +214,19 @@ totalResult 19 {
         totalResultInfo 8 : *TotalResultInfo
     }
 }
+
+.Record {
+    index 0 : integer
+    outhand 1 : *integer
+    win 2 : integer
+    startTime 3 : integer
+    endTime 4 : integer
+    round 5 : integer
+}
+
+# 私人房对战记录
+gameRecord 20 {
+    request {
+        record 0 : *Record
+    }
+}

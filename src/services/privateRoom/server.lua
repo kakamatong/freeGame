@@ -14,7 +14,7 @@ function CMD.createPrivateRoom(...)
 	local gameData = {
 		rule = rule,
 	}
-	return call(CONFIG.CLUSTER_SVR_NAME.GAME, "createPrivateGameRoom", gameid,players,gameData)
+	return call(CONFIG.CLUSTER_SVR_NAME.GAME, "createPrivateGameRoom", gameid, players, gameData)
 end
 
 function CMD.joinPrivateRoom(...)

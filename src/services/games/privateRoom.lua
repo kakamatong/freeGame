@@ -32,6 +32,7 @@ function PrivateRoom:_initPrivateRoom()
     self.roomInfo.owner = 0          -- 房主ID
     self.roomInfo.shortRoomid = 0    -- 短房间ID
     self.roomInfo.privateRule = nil  -- 私人房间规则
+    self.roomInfo.record = {}        -- 对局记录
     
     -- 投票解散相关状态
     self.voteDisbandInfo = {
