@@ -329,6 +329,7 @@ function roomHandler.gameResult(data)
             addType = "lose"
         end
 
+        addLogicData(addType,v.seat)
         -- 如果是私房，则不记录分数
         if roomInstance:isPrivateRoom() then
             score = 0
@@ -338,9 +339,9 @@ function roomHandler.gameResult(data)
             if addType == "win" then
                 roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].win = v.seat
             end
-        end
 
-        addLogicData(addType,v.seat)
+            rateData = roomInstance.roomInfo.logicData
+        end
 
         --scores[v.seat] = score
         
