@@ -322,6 +322,15 @@ function PrivateRoom:sendAllPrivateInfo()
     end
 end
 
+-- 发送游戏记录
+function PrivateRoom:sendGameRecord()
+    if not self.roomInfo.record then
+        return
+    end
+    self:sendToAllClient("gameRecord", self.roomInfo.record)
+end
+
+-- 发送总成绩
 function PrivateRoom:sendTotalResult()
     local userInfo = {}
     for seat, userid in ipairs(self.roomInfo.playerids) do

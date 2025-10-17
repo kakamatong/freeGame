@@ -367,6 +367,7 @@ function roomHandler.gameEnd()
         if roomInstance:isPrivateRoom() then
             roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] = roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] or {}
             roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].endTime = os.time()
+            roomInstance:sendGameRecord()
         end
 
         if checkCanEnd() then
