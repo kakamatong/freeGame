@@ -327,7 +327,11 @@ function PrivateRoom:sendGameRecord()
     if not self.roomInfo.record then
         return
     end
-    self:sendToAllClient("gameRecord", self.roomInfo.record)
+    
+    local data = {
+        record = self.roomInfo.record
+    }
+    self:sendToAllClient("gameRecord", data)
 end
 
 -- 发送总成绩
