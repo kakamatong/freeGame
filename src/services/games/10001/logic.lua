@@ -3,7 +3,6 @@ local log = require "log"
 local cjson = require "cjson"
 local logic = {}
 logic.outHandInfo = {} -- 出招信息
-logic.roundid = 0 -- 轮次id
 logic.roundNum = 0 -- 轮次
 logic.roundResult = 0 -- 回合结构
 logic.stepBeginTime = 0 -- 步骤开始时间
@@ -39,7 +38,6 @@ end
 
 function logic.init(rule, roomHandler)
     logic.outHandInfo = {} -- 出招信息
-    logic.roundid = 0 -- 轮次id
     logic.roundNum = 0 -- 轮次
     logic.roundResult = 0 -- 轮次
     logic.stepBeginTime = 0 -- 步骤开始时间
@@ -510,7 +508,13 @@ function logic.roundClear()
 end
 
 ------------------------------------------------------------------------------------------------------------
--- 游戏逻辑接口提供给table调用
+-- 游戏逻辑接口提供给room调用
+
+-- 获取几轮
+function logicHandler.getRoundNum()
+    return logic.roundNum
+end
+
 -- 重新连接
 function logicHandler.relink(seat)
     logic.onRelink(seat)

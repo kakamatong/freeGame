@@ -204,6 +204,9 @@ function Room:startGame()
 
     -- 下发当前第几局的信息
     if self:isPrivateRoom() then
+        self.roomInfo.record[self.roomInfo.playedCnt] = self.roomInfo.record[self.roomInfo.playedCnt] or {}
+        self.roomInfo.record[self.roomInfo.playedCnt].index = self.roomInfo.playedCnt -- 第几局
+        self.roomInfo.record[self.roomInfo.playedCnt].startTime = os.time()
         self:sendAllPrivateInfo()
     end
     
@@ -299,6 +302,11 @@ function roomHandler.gameResult(data)
         end
     end
 
+    if roomInstance:isPrivateRoom() then
+        roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] = roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] or {}
+        roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].round = roomInstance.logicHandler.getRoundNum()
+    end
+
     -- 计算每日对局积分
     for _, v in pairs(data) do
         local userid = roomInstance.roomInfo.playerids[v.seat]
@@ -324,6 +332,12 @@ function roomHandler.gameResult(data)
         -- 如果是私房，则不记录分数
         if roomInstance:isPrivateRoom() then
             score = 0
+            -- 私人房游戏战绩相关数据记录
+            roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].outhand = roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].outhand or {}
+            roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].outhand[v.seat] = v.outHand
+            if addType == "win" then
+                roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].win = v.seat
+            end
         end
 
         addLogicData(addType,v.seat)
@@ -349,6 +363,12 @@ end
 -- room接口，游戏结束
 function roomHandler.gameEnd()
     if roomInstance then
+        -- 私人房游戏战绩相关数据记录
+        if roomInstance:isPrivateRoom() then
+            roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] = roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt] or {}
+            roomInstance.roomInfo.record[roomInstance.roomInfo.playedCnt].endTime = os.time()
+        end
+
         if checkCanEnd() then
             roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
         else
