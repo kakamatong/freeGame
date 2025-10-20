@@ -102,9 +102,6 @@ function RatingSystem:print_match_result(score_a, score_b, a_wins, result)
         score_a, result.new_score_a, result.delta_a, result.expected_a * 100))
     print(string.format("玩家B: %d -> %d (%.1f) [预期胜率: %.1f%%]", 
         score_b, result.new_score_b, result.delta_b, result.expected_b * 100))
-    print(string.format("等级: A=%s, B=%s", 
-        self:get_rank_title(result.new_score_a), 
-        self:get_rank_title(result.new_score_b)))
     print("---")
 end
 
