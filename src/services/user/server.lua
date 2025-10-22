@@ -78,7 +78,11 @@ end
 
 -- 获取用户游戏记录(输赢平)
 function CMD.getUserGameRecords(userid, gameid)
-	return skynet.call(dbSvr, "lua", "db", "getUserGameRecords", userid, gameid)
+	local res = skynet.call(dbSvr, "lua", "db", "getUserGameRecords", userid, gameid)
+	if not res then
+		return {win = 0, lose = 0, draw = 0, gameid = gameid}
+	end
+	return res
 end
 
 function CMD.updateUserNameAndHeadurl(userid, nickname, headurl)
