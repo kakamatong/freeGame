@@ -8,7 +8,7 @@ logservice = "snlua"  -- 现在日志服务用 Lua 实现
 logpath    = "./log/" -- 日志输出目录
 loggroup   = "skynet"   -- 日志文件分组名
 
-debugConsolePort = 8005
+--debugConsolePort = 8005
 harbor = 0
 start = "main"	-- main script
 bootstrap = "snlua bootstrap"	-- The service for bootstrap
