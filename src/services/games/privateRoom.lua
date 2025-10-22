@@ -347,13 +347,21 @@ end
 function PrivateRoom:sendTotalResult()
     local userInfo = {}
     for seat, userid in ipairs(self.roomInfo.playerids) do
+        local win = 0
+        local lose = 0
+        local draw = 0
+        if self.roomInfo.logicData and self.roomInfo.logicData[seat] then
+            win = self.roomInfo.logicData[seat].win or 0
+            lose = self.roomInfo.logicData[seat].lose or 0
+            draw = self.roomInfo.logicData[seat].draw or 0
+        end
         local tmp = {}
         tmp.userid = userid
         tmp.seat = seat
         tmp.score = 0
-        tmp.win = self.roomInfo.logicData[seat].win or 0
-        tmp.lose = self.roomInfo.logicData[seat].lose or 0
-        tmp.draw = self.roomInfo.logicData[seat].draw or 0
+        tmp.win = win
+        tmp.lose = lose
+        tmp.draw = draw
         tmp.ext = ""
         table.insert(userInfo, tmp)
     end
