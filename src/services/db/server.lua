@@ -29,6 +29,7 @@ local function startMysql()
         user = gConfig.mysql.user,
         password = gConfig.mysql.password,
         database = gConfig.mysql.database,
+        charset = "utf8mb4",
         on_connect = onConnect,
     })
 
@@ -45,6 +46,7 @@ local function startMysql()
         password = gConfig.mysqlLog.password,
         database = gConfig.mysqlLog.database,
         on_connect = onConnectLog,
+        charset = "utf8mb4",
     })
 end
 
