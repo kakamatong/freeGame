@@ -593,7 +593,7 @@ function PrivateRoom:startVoteDisbandTimer()
         
         -- 超时处理
         if self.voteDisbandInfo.inProgress then
-            self:endVoteDisband(0, "投票超时，自动取消")
+            self:endVoteDisband(1, "投票超时，自动解散")
         end
     end)
 end
