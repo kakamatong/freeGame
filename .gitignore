@@ -11,7 +11,7 @@ src/config/gameConfig.lua.prod
 /log/*
 /logLobby/*
 /logGame/*
-/output/*
-/output.zip
+/gameSvr/*
+/gameSvr.zip
 output.sh
 /cert
