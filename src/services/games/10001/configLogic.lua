@@ -17,6 +17,7 @@ local HAND_RESULT = {
     ROCK_WIN = 0x0101, -- 石头胜
     PAPER_WIN = 0x0011, -- 布胜
     SCISSORS_WIN = 0x0110, -- 剪刀胜
+    DRAW2 = 0x0111,
 }
 
 local RESULT_TYPE = {

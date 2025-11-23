@@ -108,7 +108,7 @@ function logic.checkContinue()
         return false
     end
 
-    return (logic.roundResult == config.HAND_FLAG.PAPER or logic.roundResult == config.HAND_FLAG.SCISSORS or logic.roundResult == config.HAND_FLAG.ROCK)
+    return (logic.roundResult == config.HAND_FLAG.PAPER or logic.roundResult == config.HAND_FLAG.SCISSORS or logic.roundResult == config.HAND_FLAG.ROCK or logic.roundResult == config.HAND_RESULT.DRAW or logic.roundResult == config.HAND_RESULT.DRAW2)
 end
 
 -- 比较大小
