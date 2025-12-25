@@ -464,7 +464,7 @@ end
 function db.clearPrivateRoomid(mysql, ...)
     local shortRoomid = ...
     local now = os.time()
-    local sql = string.format("UPDATE privateRoomid SET status = 0, roomid = 0, owner = 0, gameid = 0, addr = '', rule = '', available_at = %d WHERE shortRoomid = %d AND available_at <= %d;", now + CONFIG.PRIVATE_ROOM_SHORTID_TIME2, shortRoomid, now)
+    local sql = string.format("UPDATE privateRoomid SET status = 0, roomid = 0, owner = 0, gameid = 0, addr = '', rule = '', available_at = %d WHERE shortRoomid = %d;", now + CONFIG.PRIVATE_ROOM_SHORTID_TIME2, shortRoomid)
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))
