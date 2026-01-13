@@ -230,6 +230,27 @@ function Room:relink(userid)
     end
 end
 
+function Room:forwardMessage(userid, args)
+    local msgType = args.type
+    local toUserid = args.to
+    local msg = args.msg
+    local from = userid 
+    local data = {
+        type = msgType,
+        from = from,
+        msg = msg
+    }
+    if not toUserid or #toUserid == 0 then
+        self:sendToAllClient("forwardMessage", data)
+    else
+        for _, value in pairs(toUserid) do
+            if not self.players[value] then
+                self:sendToOneClient(value, "forwardMessage", data)
+            end
+        end
+    end
+end
+
 -- AI消息处理
 function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("roomHandlerAi.onAiMsg %d, %s, %s", seat, name, UTILS.tableToString(data))
@@ -467,6 +488,13 @@ end
 function REQUEST:voteDisbandResponse(userid, args)
     if roomInstance then
         return roomInstance:voteDisbandResponse(userid, args.voteId, args.agree)
+    end
+    return {code = 0, msg = "房间未初始化"}
+end
+
+function REQUEST:forwardMessage(userid, args)
+    if roomInstance then
+        return roomInstance:forwardMessage(userid, args)
     end
     return {code = 0, msg = "房间未初始化"}
 end
