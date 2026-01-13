@@ -230,6 +230,7 @@ function Room:relink(userid)
     end
 end
 
+-- 房间转发协议
 function Room:forwardMessage(userid, args)
     local msgType = args.type
     local toUserid = args.to
