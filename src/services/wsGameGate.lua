@@ -260,7 +260,7 @@ local CMD = {}
 ]]
 function CMD.send(source, fd, msg)
     if not connection[fd] then
-        log.error("wsgate send error: fd not found %d", fd)
+        log.warn("wsgate send error: fd not found %d", fd)
         return
     end
     websocket.write(fd, msg, "binary")

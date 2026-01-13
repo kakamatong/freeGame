@@ -236,6 +236,7 @@ function Room:forwardMessage(userid, args)
     local toUserid = args.to
     local msg = args.msg
     local from = userid 
+    log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
     local data = {
         type = msgType,
         from = from,
