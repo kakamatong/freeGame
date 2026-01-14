@@ -9,37 +9,44 @@ local signInConfig = {
     -- 第一天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {10000}
+        richNums = {5},
+        richNums2 = {10}
     },
     -- 第二天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {20000}
+        richNums = {10},
+        richNums2 = {20}
     },
     -- 第三天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {30000}
+        richNums = {15},
+        richNums2 = {30}
     },
     -- 第四天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {40000}  
+        richNums = {20},
+        richNums2 = {40}
     },
     -- 第五天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {50000}
+        richNums = {25},
+        richNums2 = {50}
     },
     -- 第六天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {60000}
+        richNums = {30},
+        richNums2 = {60}
     },
     -- 第七天
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-        richNums = {70000}
+        richNums = {50},
+        richNums2 = {100}
     },
 }
 
