@@ -10,7 +10,7 @@ local signInConfig = {
     {
         richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
         richNums = {5},
-        richNums2 = {10}
+        richNums2 = {10} -- 奖励2，翻倍领取所需
     },
     -- 第二天
     {
@@ -134,6 +134,7 @@ end
 
 -- 签到
 function daySignIn.signIn(userid, args)
+    local mult = args.mult
     local resp = {}
     local signInIndex, signInData = getUserSignInData(userid)
     if signInData.status[signInIndex] > STATUS_SIGN.NOT_SIGNIN then
@@ -153,6 +154,11 @@ function daySignIn.signIn(userid, args)
         setSignInData(userid, signInData, oneDay * (8 - signInIndex))
         -- 发奖
         local awardData = signInConfig[signInIndex]
+        local awards = awardData.richNums
+        -- 翻倍，一般是看广告
+        if mult and mult == 1 then
+            awards = awardData.richNums2
+        end
         local richTypes = awardData.richTypes
         local richNums = awardData.richNums
         for i = 1, #richTypes do
