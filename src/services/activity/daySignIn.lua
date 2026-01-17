@@ -160,7 +160,7 @@ function daySignIn.signIn(userid, args)
             awards = awardData.richNums2
         end
         local richTypes = awardData.richTypes
-        local richNums = awardData.richNums
+        local richNums = awards
         for i = 1, #richTypes do
             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
