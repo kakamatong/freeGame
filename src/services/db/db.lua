@@ -197,6 +197,20 @@ function db.reduceUserRiches(mysql,...)
     return true
 end
 
+-- 减少用户财富,如果不够扣不执行
+function db.reduceUserRiches2(mysql,...)
+    local userid,richType,richNums =...
+    local nums = db.getUserRichesByType(mysql,userid,richType)
+    if nums.richNums < richNums then
+        return false
+    end
+    local sql = string.format("UPDATE userRiches SET richNums = richNums - %d WHERE userid = %d AND richType = %d;",richNums,userid,richType)
+    local res, err = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
 function db.setUserStatus(mysql,...)
     local userid,status,gameid,roomid,addr,shortRoomid =...

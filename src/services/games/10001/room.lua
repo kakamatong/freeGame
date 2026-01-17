@@ -56,12 +56,30 @@ local function checkCanEnd()
     return true
 end
 
+-- 增加战力
 local function addCombatPower(userid, n)
     if not roomInstance then
         return
     end
     log.info("addCombatPower %d %d", userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
+end
+
+-- 扣除财富
+local function reduceRiches(userid, richType, cnt)
+    if not roomInstance then
+        return
+    end
+    return skynet.call(roomInstance.svrDB, "lua", "db", "reduceUserRiches2", userid, richType, cnt)
+end
+
+-- 获取聊天信息
+local function getTalkInfo(id)
+    for key, value in pairs(config.TALK_LIST) do
+        if value.id == id then
+            return value
+        end
+    end
 end
 
 -- 开始计分
@@ -237,6 +255,23 @@ function Room:forwardMessage(userid, args)
     local msg = args.msg
     local from = userid 
     log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
+
+    if msgType == config.FORWARD_MESSAGE_TYPE.TALK then
+        local talkInfo = cjson.decode(msg)
+        if not talkInfo then
+            return {code = 0, msg = "talk info error"}
+        end
+        local info = getTalkInfo(talkInfo.id)
+        if not info then
+            return {code = 0, msg = "talk info error"}
+        end
+        if not reduceRiches(userid, CONFIG.RICH_TYPE.SILVER_COIN, info.speed) then
+            return {code = 0, msg = "reduce riches error"}
+        end
+
+        log.info("talk info %s", UTILS.tableToString(info))
+    end
+
     local data = {
         type = msgType,
         from = from,
@@ -251,6 +286,8 @@ function Room:forwardMessage(userid, args)
             end
         end
     end
+
+    return {code = 1, msg = "success"}
 end
 
 -- AI消息处理
