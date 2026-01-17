@@ -73,6 +73,14 @@ local function reduceRiches(userid, richType, cnt)
     return skynet.call(roomInstance.svrDB, "lua", "db", "reduceUserRiches2", userid, richType, cnt)
 end
 
+-- 获取用户财富
+local function getRiches(userid, richType)
+    if not roomInstance then
+        return
+    end
+    return skynet.call(roomInstance.svrDB, "lua", "db", "getUserRichesByType", userid, richType)
+end
+
 -- 获取聊天信息
 local function getTalkInfo(id)
     for key, value in pairs(config.TALK_LIST) do
@@ -256,22 +264,6 @@ function Room:forwardMessage(userid, args)
     local from = userid 
     log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
 
-    if msgType == config.FORWARD_MESSAGE_TYPE.TALK then
-        local talkInfo = cjson.decode(msg)
-        if not talkInfo then
-            return {code = 0, msg = "talk info error"}
-        end
-        local info = getTalkInfo(talkInfo.id)
-        if not info then
-            return {code = 0, msg = "talk info error"}
-        end
-        if not reduceRiches(userid, CONFIG.RICH_TYPE.SILVER_COIN, info.speed) then
-            return {code = 0, msg = "reduce riches error"}
-        end
-
-        log.info("talk info %s", UTILS.tableToString(info))
-    end
-
     local data = {
         type = msgType,
         from = from,
@@ -288,6 +280,35 @@ function Room:forwardMessage(userid, args)
     end
 
     return {code = 1, msg = "success"}
+end
+
+-- 房间聊天
+function Room:talkUse(userid, args)
+    local id = args.id
+    local from = userid 
+    log.info("Room:talkUse %d %s", userid, UTILS.tableToString(args))
+
+    local info = getTalkInfo(id)
+    if not info then
+        return {code = 0, msg = "talk info error"}
+    end
+    if not reduceRiches(userid, CONFIG.RICH_TYPE.SILVER_COIN, info.speed) then
+        return {code = 0, msg = "reduce riches error"}
+    end
+
+    local left = getRiches(userid, CONFIG.RICH_TYPE.SILVER_COIN)
+    if not left then
+        return {code = 0, msg = "get riches error"}
+    end
+    log.info("talk use left %s", UTILS.tableToString(left))
+
+    local data = {
+        from = from,
+        id = id,
+    }
+    self:sendToAllClient("talk", data)
+
+    return {code = 1, msg = "success" , richNum = left.richNums}
 end
 
 -- AI消息处理
@@ -531,9 +552,18 @@ function REQUEST:voteDisbandResponse(userid, args)
     return {code = 0, msg = "房间未初始化"}
 end
 
+-- 转发消息
 function REQUEST:forwardMessage(userid, args)
     if roomInstance then
         return roomInstance:forwardMessage(userid, args)
+    end
+    return {code = 0, msg = "房间未初始化"}
+end
+
+-- 聊天使用
+function REQUEST:talkUse(userid, args)
+    if roomInstance then
+        return roomInstance:talkUse(userid, args)
     end
     return {code = 0, msg = "房间未初始化"}
 end
