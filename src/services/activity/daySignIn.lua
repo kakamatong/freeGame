@@ -172,7 +172,8 @@ function daySignIn.signIn(userid, args)
         local id = call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, strData)
         local res = {
             noticeid = id,
-            awards = awardData
+            awards = awardData,
+            status = signInData.status
         }
         return tools.result(res)
     end
@@ -216,7 +217,8 @@ function daySignIn.fillSignIn(userid, args)
         local id = call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, strData)
         local res = {
             noticeid = id,
-            awards = awardData
+            awards = awardData,
+            status = signInData.status
         }
          return tools.result(res)
     end
