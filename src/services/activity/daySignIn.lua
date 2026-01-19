@@ -206,6 +206,7 @@ function daySignIn.fillSignIn(userid, args)
         local awardData = signInConfig[fillIndex]
         local richTypes = awardData.richTypes
         local richNums = awardData.richNums
+        -- todo: 优化，合并成一条sql
         for i = 1, #richTypes do
             local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
             if not res then
