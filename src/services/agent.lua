@@ -22,6 +22,7 @@ local function send_package(pack)
 	skynet.call(gate, "lua", "send", client_fd, pack)
 end
 
+-- 请求用户状态
 local function userStatus(userid)
 	local status = call(svrUser, "userStatus", userid)
 	log.info("userStatus %s", cjson.encode(status))
@@ -44,9 +45,13 @@ local function userStatus(userid)
 	return status
 end
 
+-- region REQUEST表：客户端请求处理
+-- 获取用户数据
 function REQUEST:userData(args)
 	return call(svrUser, "userData", args.userid)
 end
+
+-- 获取用户财富
 
 function REQUEST:userRiches(args)
 	local richType, richNums = call(svrUser, "userRiches", userid)
@@ -56,10 +61,12 @@ function REQUEST:userRiches(args)
 	}
 end
 
+-- 获取用户状态
 function REQUEST:userStatus(args)
 	return userStatus(userid)
 end
 
+-- 匹配加入
 function REQUEST:matchJoin(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
@@ -69,26 +76,33 @@ function REQUEST:matchJoin(args)
 	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 
+-- 匹配离开
 function REQUEST:matchLeave(args)
 	return call(svrMatch, "matchLeave", userid, args.gameid, args.queueid)
 end
 
+-- 匹配确认
 function REQUEST:matchOnSure(args)
 	return call(svrMatch, "matchOnSure", userid, args.id, args.sure)
 end
 
+-- 匹配测试开始
 function REQUEST:matchTestStart(args)
 	return call(svrMatch, "startTest")
 end
+
+-- 匹配测试停止
 
 function REQUEST:matchTestStop(args)
 	return call(svrMatch, "stopTest")
 end
 
+-- 调用活动服函数
 function REQUEST:callActivityFunc(args)
 	return call(svrActivity, "clientCall", args.moduleName, args.funcName, userid, cjson.decode(args.args))
 end
 
+-- 获取用户奖励公告
 function REQUEST:getAwardNotice(args)
 	local res = {
 		list = call(svrUser, "getAwardNotice", userid) or {}
@@ -96,15 +110,18 @@ function REQUEST:getAwardNotice(args)
 	return res
 end
 
+-- 设置用户奖励公告已读
 function REQUEST:setAwardNoticeRead(args)
 	call(svrUser, "setAwardNoticeRead", args.id)
 end
 
+-- 更新用户昵称和头像
 function REQUEST:updateUserNameAndHeadurl(args)
 	call(svrUser, "updateUserNameAndHeadurl", userid, args.nickname, args.headurl)
 	return {code = 1}
 end
 
+-- 创建房间
 function REQUEST:createPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
@@ -128,6 +145,8 @@ function REQUEST:createPrivateRoom(args)
 	}
 
 end
+
+-- 加入房间
 
 function REQUEST:joinPrivateRoom(args)
 	local status = userStatus(userid)
@@ -159,14 +178,17 @@ function REQUEST:joinPrivateRoom(args)
 	end
 end
 
+-- 获取用户游戏记录
 function REQUEST:userGameRecord(args)
 	return call(svrUser, "getUserGameRecords", args.userid, args.gameid)
 end
 
+-- 注销账号
 function REQUEST:revokeAcc(args)
 	return call(svrUser, "revokeAcc", userid, args.loginType)
 end
 
+-- 取消注销账号
 function REQUEST:cancelRevokeAcc(args)
 	return call(svrUser, "cancelRevokeAcc", userid)
 end
