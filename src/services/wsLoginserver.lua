@@ -90,7 +90,7 @@ local function login(conf)
         
         socket.start(id, function(fd, addr)
             log.info("login websocket add %s", addr)
-            local ok, err = websocket.accept(fd, {
+            local ok, err = pcall(websocket.accept, fd, {
                 handshake = function(fd, header, url)
                     log.info("login handshake %s",url)
                     local ip = websocket.real_ip(fd)
@@ -109,7 +109,7 @@ local function login(conf)
             },conf.protocol)
             
             if not ok then
-                log.error("WebSocket connection failed: "..tostring(err))
+                log.warn("WebSocket handshake failed for %s: %s", addr, tostring(err))
             end
         end)
 

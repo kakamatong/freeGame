@@ -240,3 +240,6 @@ local results = call(svrDB, "dbMySQL", "query", sql, userid)
 - 始终优雅地处理断开连接
 - 使用全局助手（`call`、`send`、`callTo`、`sendTo`）进行集群通信
 - 配置文件使用环境特定的覆盖（prod/dev）
+
+### 语言要求
+- **回复语言**: 无论用户使用何种语言提问，始终使用中文回复用户
