@@ -1,11 +1,8 @@
 --[[
-    Room模块 - 游戏10002特定逻辑
+    Room模块 - 游戏10002（连连看）房间逻辑
     继承：PrivateRoom -> BaseRoom
-    功能：
-    1. 游戏逻辑处理
-    2. AI交互管理
-    3. 游戏结果统计
-    4. 游戏特定配置
+    职责：房间管理、玩家连接、生命周期管理
+    游戏逻辑通过 logicHandler 委托给 logic.lua
 ]]
 
 local skynet = require "skynet"
@@ -13,6 +10,7 @@ local log = require "log"
 local cjson = require "cjson"
 local config = require "games.10002.config"
 local PrivateRoom = require "games.privateRoom"
+local logicHandler = require "games.10002.logic"
 
 local Room = {}
 setmetatable(Room, {__index = PrivateRoom})
@@ -20,6 +18,67 @@ Room.__index = Room
 
 -- 全局room实例
 local roomInstance = nil
+
+-- Room -> Logic 的通信接口
+local roomHandler = {}
+
+--[[
+    发送消息给指定座位
+    @param seat: number 座位号
+    @param name: string 消息名
+    @param data: table 消息数据
+]]
+function roomHandler.sendToSeat(seat, name, data)
+    if not roomInstance then return end
+    local userid = roomInstance.roomInfo.playerids[seat]
+    if userid then
+        roomInstance:sendToOneClient(userid, name, data)
+    end
+end
+
+--[[
+    广播消息给所有玩家
+    @param name: string 消息名
+    @param data: table 消息数据
+]]
+function roomHandler.sendToAll(name, data)
+    if not roomInstance then return end
+    roomInstance:sendToAllClient(name, data)
+end
+
+--[[
+    玩家完成游戏回调
+    @param seat: number 座位号
+    @param usedTime: number 用时（秒）
+    @param rank: number 排名
+]]
+function roomHandler.onPlayerFinish(seat, usedTime, rank)
+    if not roomInstance then return end
+    log.info("[Room] 玩家座位%d完成游戏，用时: %d秒，排名: %d", seat, usedTime, rank)
+    -- 可以在这里记录日志、更新统计数据等
+end
+
+--[[
+    游戏结束回调
+    @param endType: number 结束类型
+    @param rankings: table 排名列表
+]]
+function roomHandler.onGameEnd(endType, rankings)
+    if not roomInstance then return end
+    log.info("[Room] 游戏结束，类型: %d", endType)
+    
+    -- 调用父类方法结束房间
+    roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+end
+
+--[[
+    获取游戏时间
+    @return number 当前游戏时间（秒）
+]]
+function roomHandler.getGameTime()
+    if not roomInstance then return 0 end
+    return os.time() - roomInstance.roomInfo.gameStartTime
+end
 
 -- 构造函数
 function Room:new()
@@ -33,6 +92,9 @@ end
 function Room:_initRoom()
     -- 设置游戏配置
     self.config = config
+    
+    -- 游戏逻辑处理器引用
+    self.logicHandler = logicHandler
     
     -- 定时器间隔
     self.dTime = 100
@@ -54,12 +116,12 @@ function Room:init(data)
         -- 初始化匹配房间玩家
         self:_initMatchRoomPlayers(data)
     elseif self:isPrivateRoom() then
-        local modeData = config.PRIVATE_ROOM_MODE and config.PRIVATE_ROOM_MODE[self.roomInfo.privateRule.mode or 0] or {name = "默认模式", maxCnt = 1, winCnt = 1}
+        local modeData = config.PRIVATE_ROOM_MODE and config.PRIVATE_ROOM_MODE[self.roomInfo.privateRule.mode or 0] or {name = "单局竞速", maxCnt = 1, winCnt = 1}
         self.roomInfo.mode = modeData
     end
     
     -- 初始化游戏状态
-    self.roomInfo.roomStatus = config.ROOM_STATUS and config.ROOM_STATUS.WAITTING_CONNECT or 1
+    self.roomInfo.roomStatus = config.ROOM_STATUS.WAITTING_CONNECT
     
     -- 加载协议
     self:loadSproto()
@@ -72,7 +134,7 @@ function Room:init(data)
         playerids = self.roomInfo.playerids,
         gameData = self.roomInfo.gameData
     }
-    self:pushLog(config.LOG_TYPE and config.LOG_TYPE.CREATE_ROOM or 1, 0, cjson.encode(ext))
+    self:pushLog(config.LOG_TYPE.CREATE_ROOM, 0, cjson.encode(ext))
     
     -- 检查是否可以开始游戏
     self:testStart()
@@ -94,9 +156,9 @@ function Room:_initMatchRoomPlayers(data)
     
     for seat, userid in pairs(self.roomInfo.playerids) do
         local bRobot = isRobotFunc(userid)
-        local status = config.PLAYER_STATUS and config.PLAYER_STATUS.LOADING or 1
+        local status = config.PLAYER_STATUS.LOADING
         if bRobot then
-            status = config.PLAYER_STATUS and config.PLAYER_STATUS.READY or 2
+            status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
             self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
@@ -108,11 +170,38 @@ function Room:_initMatchRoomPlayers(data)
     self.roomInfo.robotCnt = robotCnt
 end
 
+-- 初始化游戏逻辑
+function Room:initLogic()
+    local ruleData = {
+        playerCnt = self.roomInfo.playerNum,
+        mapRows = config.MAP.DEFAULT_ROWS,
+        mapCols = config.MAP.DEFAULT_COLS,
+        iconTypes = 8,
+    }
+    
+    -- 根据难度调整
+    if self.roomInfo.difficulty == "easy" then
+        ruleData.mapRows = 6
+        ruleData.mapCols = 10
+        ruleData.iconTypes = 6
+    elseif self.roomInfo.difficulty == "hard" then
+        ruleData.mapRows = 10
+        ruleData.mapCols = 14
+        ruleData.iconTypes = 10
+    end
+    
+    -- 初始化逻辑模块
+    self.logicHandler.init(ruleData, roomHandler)
+end
+
 -- 启动定时任务
 function Room:startTimer()
     skynet.fork(function()
         while true do
             skynet.sleep(self.dTime)
+            if self.logicHandler then
+                self.logicHandler.update()
+            end
             self:checkRoomTimeout()
         end
     end)
@@ -120,30 +209,45 @@ end
 
 -- 重写开始游戏方法
 function Room:startGame()
-    self.roomInfo.roomStatus = config.ROOM_STATUS and config.ROOM_STATUS.START or 2
+    self.roomInfo.roomStatus = config.ROOM_STATUS.START
     self.roomInfo.playedCnt = self.roomInfo.playedCnt + 1
     self.roomInfo.gameStartTime = os.time()
-
+    
+    -- 初始化逻辑
+    self:initLogic()
+    
+    -- 开始游戏逻辑
+    self.logicHandler.startGame()
+    
+    -- 更新玩家状态
+    for _, value in pairs(self.players) do
+        self:changePlayerStatus(value.userid, config.PLAYER_STATUS.PLAYING)
+    end
+    
     -- 下发当前第几局的信息
     if self:isPrivateRoom() then
         self.roomInfo.record[self.roomInfo.playedCnt] = self.roomInfo.record[self.roomInfo.playedCnt] or {}
-        self.roomInfo.record[self.roomInfo.playedCnt].index = self.roomInfo.playedCnt -- 第几局
+        self.roomInfo.record[self.roomInfo.playedCnt].index = self.roomInfo.playedCnt
         self.roomInfo.record[self.roomInfo.playedCnt].startTime = os.time()
         self:sendAllPrivateInfo()
     end
     
-    for _, value in pairs(self.players) do
-        self:changePlayerStatus(value.userid, config.PLAYER_STATUS and config.PLAYER_STATUS.PLAYING or 3)
-    end
-    
-    self:pushLog(config.LOG_TYPE and config.LOG_TYPE.GAME_START or 2, 0, "")
-    log.info("game10002 game start")
+    self:pushLog(config.LOG_TYPE.GAME_START, 0, "")
+    log.info("game10002 game start, player count: %d", self.roomInfo.playerNum)
 end
 
 -- 重写重连方法
 function Room:relink(userid)
     log.info("game10002 Room:relink %d", userid)
-    -- TODO: 实现游戏特定的重连逻辑
+    local seat = self:getPlayerSeat(userid)
+    if not seat then
+        return
+    end
+    
+    -- 转发给逻辑模块处理
+    if self.logicHandler then
+        self.logicHandler.relink(seat)
+    end
 end
 
 -- 命令接口
@@ -227,6 +331,47 @@ function REQUEST:voteDisbandResponse(userid, args)
     return {code = 0, msg = "房间未初始化"}
 end
 
+-- 处理点击消除请求
+function REQUEST:clickTiles(userid, args)
+    if not roomInstance then
+        return {code = 0, msg = "房间未初始化"}
+    end
+    
+    local seat = roomInstance:getPlayerSeat(userid)
+    if not seat then
+        return {code = 0, msg = "玩家不在房间中"}
+    end
+    
+    -- 转发给逻辑模块处理
+    if roomInstance.logicHandler then
+        roomInstance.logicHandler.clickTiles(seat, args)
+    end
+end
+
+-- 请求提示
+function REQUEST:requestHint(userid, args)
+    if not roomInstance then
+        return {code = 0, msg = "房间未初始化"}
+    end
+    
+    local seat = roomInstance:getPlayerSeat(userid)
+    if not seat then
+        return {code = 0, msg = "玩家不在房间中"}
+    end
+    
+    -- 转发给逻辑模块处理
+    if roomInstance.logicHandler then
+        local hint = roomInstance.logicHandler.requestHint(seat)
+        if hint then
+            return {code = 1}
+        else
+            return {code = 0, msg = "没有可消除的方块"}
+        end
+    end
+    
+    return {code = 0, msg = "逻辑模块未初始化"}
+end
+
 -- 客户端请求分发
 local function request(fd, name, args, response)
     if not roomInstance then
@@ -265,7 +410,7 @@ skynet.register_protocol {
     end,
     dispatch = function (fd, _, type, ...)
         log.info("room10002 dispatch fd %d, type %s", fd, type)
-        skynet.ignoreret() -- session是fd，不需要返回
+        skynet.ignoreret()
         if type == "REQUEST" then
             local ok, result = pcall(request, fd, ...)
             if ok then
