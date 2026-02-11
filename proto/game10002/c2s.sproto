@@ -1,8 +1,14 @@
-# 登录服务协议(0-9999)
+# 连连看游戏10002协议 (客户端 -> 服务端)
+# 协议号范围: 1-9999
+
 .package {
     type 0 : integer
     session 1 : integer
 }
+
+# ============================================
+# 基础通用协议 (1-20)
+# ============================================
 
 # 调用接口
 call 2 {
@@ -17,7 +23,7 @@ call 2 {
     }
 }
 
-# 调用接口
+# 发送接口（无响应）
 send 3 {
     request {
         moduleName 0 : string
@@ -26,24 +32,17 @@ send 3 {
     }
 }
 
-# 客户端准备
+# 客户端准备就绪
 clientReady 4 {
     request {
-        ready 0 : integer
-    }
-}
-
-# 游戏协议出手
-outHand 5 {
-    request {
-        flag 0 : integer
+        ready 0 : integer  # 1:准备, 0:取消准备
     }
 }
 
 # 游戏准备
-gameReady 6 {
+gameReady 5 {
     request {
-        ready 0 : integer
+        ready 0 : integer  # 1:准备, 0:取消准备
     }
     response {
         code 0 : integer
@@ -52,20 +51,8 @@ gameReady 6 {
 }
 
 # 离开房间
-leaveRoom 7 {
+leaveRoom 6 {
     request {
-        flag 0 : integer
-    }
-    response {
-        code 0 : integer
-        msg 1 : string
-    }
-}
-
-# 解散房间
-disbandRoom 8 {
-    request {
-        flag 0 : integer
     }
     response {
         code 0 : integer
@@ -74,7 +61,7 @@ disbandRoom 8 {
 }
 
 # 发起投票解散
-voteDisbandRoom 9 {
+voteDisbandRoom 7 {
     request {
         reason 0 : string  # 解散原因(可选)
     }
@@ -85,7 +72,7 @@ voteDisbandRoom 9 {
 }
 
 # 投票解散响应
-voteDisbandResponse 10 {
+voteDisbandResponse 8 {
     request {
         voteId 0 : integer  # 投票ID
         agree 1 : integer   # 1:同意, 0:拒绝
@@ -96,30 +83,73 @@ voteDisbandResponse 10 {
     }
 }
 
-# 消息转发协议，服务会下发同名协议
-forwardMessage 11 {
+# 消息转发
+forwardMessage 9 {
     request {
-        type 0 : integer # 类型
-        to 1 : *integer # 数组目标玩家id，不传则全部转发
-        msg 2 : string # 消息，一般为json，服务不解析，原样转发
+        type 0 : integer    # 消息类型
+        to 1 : *integer     # 目标玩家ID列表，空则全员
+        msg 2 : string      # 消息内容(JSON)
     }
-
     response {
         code 0 : integer
         msg 1 : string
     }
 }
 
-# 聊天
-talkUse 12 {
+# 使用聊天
+chatUse 10 {
     request {
-        id 0 : integer #聊天id
-        ext 1 : string #扩展
+        id 0 : integer      # 聊天ID
+        ext 1 : string      # 扩展数据
     }
-
     response {
         code 0 : integer
-        richNum 1 : integer #剩余道具数量
+        richNum 1 : integer # 剩余道具数
         msg 2 : string
     }
+}
+
+# ============================================
+# 连连看游戏协议 (21-40)
+# ============================================
+
+# 点击消除方块
+clickTiles 21 {
+    request {
+        row1 0 : integer    # 第一个方块行坐标
+        col1 1 : integer    # 第一个方块列坐标
+        row2 2 : integer    # 第二个方块行坐标
+        col2 3 : integer    # 第二个方块列坐标
+    }
+}
+
+# 请求提示
+requestHint 22 {
+    request {
+    }
+}
+
+# 道具使用 (预留)
+useItem 23 {
+    request {
+        itemId 0 : integer  # 道具ID (1:重排, 2:提示, 3:加时等)
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+    }
+}
+
+# ============================================
+# 坐标结构定义
+# ============================================
+
+.Point {
+    row 0 : integer
+    col 1 : integer
+}
+
+.LineSegment {
+    start 0 : Point
+    end 1 : Point
 }

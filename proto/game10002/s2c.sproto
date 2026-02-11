@@ -3,6 +3,11 @@
     session 1 : integer
 }
 
+# ============================================
+# 基础通用协议 (1-30)
+# ============================================
+
+# 服务器消息
 svrMsg 1 {
     request {
         type 0 : string
@@ -22,53 +27,14 @@ roomInfo 2 {
     }
 }
 
-# 步骤id
-stepId 3 {
-    request {
-        step 0 : integer
-    }
-}
-
-# 玩家姿态
-playerAtt 4 {
-    request {
-        seat 0 : integer
-        att 1 : integer
-    }
-}
-
-# 玩家出招信息
-outHandInfo 5 {
-    request {
-        seat 0 : integer
-        flag 1 : integer
-    }
-}
-
-.ResultInfo {
-    seat 0 : integer
-    outHand 1 : integer
-    endResult 2 : integer
-}
-
-# 一轮游戏结果
-roundResult 6 {
-    request {
-        roundNum 0 : integer
-        outHandNum 1 : integer
-        continue 2 : integer
-        info 3 : *ResultInfo
-        score 4 : string
-    }
-}
-
 # 房间结束
-roomEnd 7 {
+roomEnd 3 {
     request {
         code 0 : integer
     }
 }
 
+# 玩家信息结构
 .PlayerInfo {
     userid 0 : integer
     nickname 1 : string
@@ -82,42 +48,23 @@ roomEnd 7 {
     ext 9 : string
 }
 
-# 玩家信息 
-playerInfos 8 {
+# 玩家信息列表
+playerInfos 4 {
     request {
         infos 0 : *PlayerInfo
     }
 }
 
-# 游戏开始
-gameStart 9 {
-    request {
-        roundNum 0 : integer
-        startTime 1 : integer
-        brelink 2 : integer
-        roundData 3 : string
-    }
-}
-
-# 游戏结束
-gameEnd 10 {
-    request {
-        roundNum 0 : integer
-        endTime 1 : integer
-        roundData 3 : string
-    }
-}
-
 # 玩家加入
-playerEnter 11 {
+playerEnter 5 {
     request {
         userid 0 : integer
         seat 1 : integer
     }
 }
 
-# 更新玩家状态
-playerStatusUpdate 12 {
+# 玩家状态更新
+playerStatusUpdate 6 {
     request {
         userid 0 : integer
         status 1 : integer
@@ -125,72 +72,89 @@ playerStatusUpdate 12 {
 }
 
 # 玩家离开
-playerLeave 13 {
+playerLeave 7 {
     request {
         userid 0 : integer
         seat 1 : integer
     }
 }
 
+# 投票信息结构
 .VoteInfo {
     userid 0 : integer
     vote 1 : integer     # 1:同意, 0:拒绝, -1:未投票
 }
 
-# 投票解散开始通知
-voteDisbandStart 14 {
+# 投票解散开始
+voteDisbandStart 8 {
     request {
-        voteId 0 : integer       # 投票ID
-        initiator 1 : integer    # 发起人 userid
-        reason 2 : string        # 解散原因
-        timeLeft 3 : integer     # 剩余时间(秒)
-        playerCount 4 : integer  # 房间总人数
-        needAgreeCount 5 : integer # 需要同意人数(60%)
+        voteId 0 : integer
+        initiator 1 : integer
+        reason 2 : string
+        timeLeft 3 : integer
+        playerCount 4 : integer
+        needAgreeCount 5 : integer
     }
 }
 
 # 投票状态更新
-voteDisbandUpdate 15 {
+voteDisbandUpdate 9 {
     request {
-        voteId 0 : integer       # 投票ID
-        votes 1 : *VoteInfo      # 投票状态列表
-        agreeCount 2 : integer   # 当前同意人数
-        refuseCount 3 : integer  # 当前拒绝人数
-        timeLeft 4 : integer     # 剩余时间(秒)
+        voteId 0 : integer
+        votes 1 : *VoteInfo
+        agreeCount 2 : integer
+        refuseCount 3 : integer
+        timeLeft 4 : integer
     }
 }
 
 # 投票解散结果
-voteDisbandResult 16 {
+voteDisbandResult 10 {
     request {
-        voteId 0 : integer       # 投票ID
-        result 1 : integer       # 结果: 1:解散成功, 0:解散失败
-        reason 2 : string        # 结果原因
-        agreeCount 3 : integer   # 最终同意人数
-        refuseCount 4 : integer  # 最终拒绝人数
-        votes 5 : *VoteInfo      # 最终投票状态
+        voteId 0 : integer
+        result 1 : integer
+        reason 2 : string
+        agreeCount 3 : integer
+        refuseCount 4 : integer
+        votes 5 : *VoteInfo
     }
 }
 
 # 游戏时钟
-gameClock 17 {
+gameClock 11 {
     request {
         time 0 : integer
-        seat 1 : integer # 0表示所有玩家
+        seat 1 : integer
     }
 }
 
 # 私人房信息
-privateInfo 18 {
+privateInfo 12 {
     request {
-        nowCnt 0 :integer
-        maxCnt 1 :integer
-        ext 2 :string
+        nowCnt 0 : integer
+        maxCnt 1 : integer
+        ext 2 : string
     }
 }
 
+# 私人房对战记录
+.Record {
+    index 0 : integer
+    outhand 1 : *integer
+    win 2 : integer
+    startTime 3 : integer
+    endTime 4 : integer
+    round 5 : integer
+}
+
+gameRecord 13 {
+    request {
+        record 0 : *Record
+    }
+}
+
+# 总结算信息
 .TotalResultInfo {
-    # 私人房总结算信息
     seat 0 : integer
     userid 1 : integer
     score 2 : integer
@@ -201,7 +165,7 @@ privateInfo 18 {
 }
 
 # 私人房总结算
-totalResult 19 {
+totalResult 14 {
     request {
         startTime 0 : integer
         endTime 1 : integer
@@ -215,35 +179,132 @@ totalResult 19 {
     }
 }
 
-.Record {
-    index 0 : integer
-    outhand 1 : *integer
-    win 2 : integer
-    startTime 3 : integer
-    endTime 4 : integer
-    round 5 : integer
-}
-
-# 私人房对战记录
-gameRecord 20 {
+# 消息转发
+forwardMessage 15 {
     request {
-        record 0 : *Record
-    }
-}
-
-# 消息转发协议，服务会下发同名协议
-forwardMessage 21 {
-    request {
-        type 0 : integer # 类型
-        from 1 : integer # 源玩家id，0 为系统
-        msg 2 : string # 消息，一般为json，服务不解析，原样转发
+        type 0 : integer
+        from 1 : integer
+        msg 2 : string
     }
 }
 
 # 聊天消息
-talk 22 {
+talk 16 {
     request {
-        from 0 : integer # 源玩家id，0 为系统
-        id 1 :integer # 聊天id
+        from 0 : integer
+        id 1 : integer
+    }
+}
+
+# ============================================
+# 连连看游戏协议 (31-60)
+# ============================================
+
+# 坐标结构
+.Point {
+    row 0 : integer
+    col 1 : integer
+}
+
+# 线段结构（路径）
+.LineSegment {
+    start 0 : Point
+    end 1 : Point
+}
+
+# 游戏开始
+gameStart 31 {
+    request {
+        roundNum 0 : integer
+        startTime 1 : integer
+        brelink 2 : integer
+        mapData 3 : string       # 地图数据JSON
+        totalBlocks 4 : integer  # 总方块数
+    }
+}
+
+# 点击结果响应
+clickResult 32 {
+    request {
+        code 0 : integer         # 1:成功, 0:失败
+        msg 1 : string           # 错误信息
+        eliminated 2 : integer   # 已消除数量
+        remaining 3 : integer    # 剩余方块数
+    }
+}
+
+# 方块消除成功通知
+tilesRemoved 33 {
+    request {
+        code 0 : integer
+        p1 1 : Point             # 第一个方块
+        p2 2 : Point             # 第二个方块
+        lines 3 : *LineSegment   # 连接路径
+        eliminated 4 : integer   # 已消除数量
+        remaining 5 : integer    # 剩余方块数
+    }
+}
+
+# 玩家完成游戏
+playerFinished 34 {
+    request {
+        seat 0 : integer
+        usedTime 1 : integer     # 用时(秒)
+        rank 2 : integer         # 排名
+    }
+}
+
+# 游戏结束
+.RankingInfo {
+    seat 0 : integer
+    usedTime 1 : integer     # -1表示未完成
+    eliminated 2 : integer   # 消除数量
+}
+
+gameEnd 35 {
+    request {
+        roundNum 0 : integer
+        endTime 1 : integer
+        endType 2 : integer      # 结束类型 (1:正常完成, 2:超时, 3:全部完成, 4:解散)
+        rankings 3 : *RankingInfo
+    }
+}
+
+# 游戏重连恢复
+gameRelink 36 {
+    request {
+        startTime 0 : integer
+        mapData 1 : string       # 当前地图状态JSON
+        eliminated 2 : integer   # 已消除数量
+        remaining 3 : integer    # 剩余方块数
+        finished 4 : integer     # 1:已完成, 0:未完成
+        usedTime 5 : integer     # 用时(秒)
+    }
+}
+
+# 提示响应
+hint 37 {
+    request {
+        p1 0 : Point             # 第一个方块
+        p2 1 : Point             # 第二个方块
+    }
+}
+
+# 道具效果通知 (预留)
+itemEffect 38 {
+    request {
+        seat 0 : integer
+        itemId 1 : integer
+        effect 2 : string        # 效果描述JSON
+    }
+}
+
+# 游戏进度更新 (广播给所有人看其他人的进度)
+progressUpdate 39 {
+    request {
+        seat 0 : integer
+        eliminated 1 : integer   # 已消除数量
+        remaining 2 : integer    # 剩余方块数
+        percentage 3 : integer   # 完成百分比
     }
 }
