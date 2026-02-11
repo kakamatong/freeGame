@@ -1,8 +1,11 @@
 --[[
     logic.lua
-    连连看游戏核心逻辑模块
-    负责：地图管理、消除判断、游戏状态管理
+    连连看游戏核心逻辑模块 - 单局逻辑
+    职责：管理一局游戏的生命周期（地图、消除、胜负）
     通过 roomHandler 与 Room 通信
+    
+    注意：本模块只负责一局游戏，多局管理由 Room 控制
+    每局开始时 Room 会重新调用 init 初始化
 ]]
 
 local config = require("games.10002.configLogic")
@@ -13,7 +16,7 @@ local mapGenerator = require "games.10002.mapGenerator"
 
 local logic = {}
 
--- 游戏状态
+-- 游戏状态（单局）
 logic.playerMaps = {}           -- 玩家地图 { [seat] = Map实例 }
 logic.playerProgress = {}       -- 玩家进度 { [seat] = { eliminated, startTime, finishTime, rank } }
 logic.roomHandler = nil         -- Room 提供的回调接口
@@ -26,14 +29,14 @@ logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 local logicHandler = {}
 
 --[[
-    初始化逻辑模块
+    重置/初始化逻辑模块（每局开始时调用）
     @param rule: table 游戏规则 { playerCnt, mapRows, mapCols, iconTypes }
     @param roomHandler: table Room 提供的回调接口
 ]]
-function logic.init(rule, roomHandler)
-    log.info("[Logic] 初始化游戏逻辑")
+function logicHandler.init(rule, roomHandler)
+    log.info("[Logic] 初始化单局游戏逻辑")
     
-    -- 重置状态
+    -- 重置所有状态（关键：每局必须完全重置）
     logic.playerMaps = {}
     logic.playerProgress = {}
     logic.startTime = 0
@@ -47,6 +50,10 @@ function logic.init(rule, roomHandler)
     logic.rule.mapRows = logic.rule.mapRows or 8
     logic.rule.mapCols = logic.rule.mapCols or 12
     logic.rule.iconTypes = logic.rule.iconTypes or 8
+    logic.rule.playerCnt = logic.rule.playerCnt or 2
+    
+    log.info("[Logic] 单局初始化完成，玩家数: %d，地图: %dx%d",
+        logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols)
 end
 
 --[[
@@ -83,16 +90,22 @@ function logic._generatePlayerMaps()
 end
 
 --[[
-    开始游戏
+    开始一局游戏
+    @param roundNum: number 当前局数（由 Room 传入，用于消息下发）
 ]]
-function logicHandler.startGame()
-    log.info("[Logic] 开始游戏")
+function logicHandler.startGame(roundNum)
+    roundNum = roundNum or 1
+    
+    log.info("[Logic] 开始第%d局游戏", roundNum)
     
     if not logic.binit then
-        log.error("[Logic] 游戏逻辑未初始化")
-        return
+        log.error("[Logic] 游戏逻辑未初始化，请先调用 init()")
+        return false
     end
     
+    -- 重置本局状态（确保上一局的数据不会残留）
+    logic.playerMaps = {}
+    logic.playerProgress = {}
     logic.startTime = os.time()
     logic.gameStatus = config.GAME_STATUS.PLAYING
     
@@ -105,15 +118,20 @@ function logicHandler.startGame()
             logic.playerProgress[seat].startTime = logic.startTime
         end
         
-        -- 发送游戏开始消息
+        -- 发送游戏开始消息（协议格式与sproto一致）
         if logic.roomHandler and logic.roomHandler.sendToSeat then
             logic.roomHandler.sendToSeat(seat, "gameStart", {
+                roundNum = roundNum,
                 startTime = logic.startTime,
+                brelink = 0,
                 mapData = cjson.encode(playerMap:getMap()),
                 totalBlocks = playerMap:getRemainingBlockCount(),
             })
         end
     end
+    
+    log.info("[Logic] 第%d局游戏开始，玩家数: %d", roundNum, logic.rule.playerCnt)
+    return true
 end
 
 --[[
@@ -148,6 +166,8 @@ function logicHandler.clickTiles(seat, args)
             logic.roomHandler.sendToSeat(seat, "clickResult", {
                 code = 0,
                 msg = "无效的方块坐标",
+                eliminated = progress.eliminated,
+                remaining = playerMap:getRemainingBlockCount(),
             })
         end
         return
@@ -161,6 +181,8 @@ function logicHandler.clickTiles(seat, args)
             logic.roomHandler.sendToSeat(seat, "clickResult", {
                 code = 0,
                 msg = "无法消除这两个方块",
+                eliminated = progress.eliminated,
+                remaining = playerMap:getRemainingBlockCount(),
             })
         end
         return
@@ -172,7 +194,7 @@ function logicHandler.clickTiles(seat, args)
     
     log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
     
-    -- 发送消除成功消息给该玩家
+    -- 发送消除成功消息给该玩家（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToSeat then
         logic.roomHandler.sendToSeat(seat, "tilesRemoved", {
             code = 1,
@@ -184,6 +206,18 @@ function logicHandler.clickTiles(seat, args)
         })
     end
     
+    -- 广播进度更新给所有人（包含完成百分比）
+    local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+    local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+    if logic.roomHandler and logic.roomHandler.sendToAll then
+        logic.roomHandler.sendToAll("progressUpdate", {
+            seat = seat,
+            eliminated = progress.eliminated,
+            remaining = remaining,
+            percentage = percentage,
+        })
+    end
+    
     -- 检查该玩家是否已完成
     if playerMap:isComplete() then
         logic._onPlayerFinish(seat)
@@ -191,7 +225,7 @@ function logicHandler.clickTiles(seat, args)
 end
 
 --[[
-    玩家完成游戏
+    玩家完成本局游戏
     @param seat: number 玩家座位
 ]]
 function logic._onPlayerFinish(seat)
@@ -204,9 +238,9 @@ function logic._onPlayerFinish(seat)
     progress.finishTime = os.time()
     progress.usedTime = progress.finishTime - progress.startTime
     
-    log.info("[Logic] 座位%d完成游戏，用时: %d秒", seat, progress.usedTime)
+    log.info("[Logic] 座位%d完成本局，用时: %d秒", seat, progress.usedTime)
     
-    -- 计算排名
+    -- 计算本局排名
     local rank = 1
     for otherSeat, otherProgress in pairs(logic.playerProgress) do
         if otherSeat ~= seat and otherProgress.finished and otherProgress.finishTime < progress.finishTime then
@@ -220,7 +254,7 @@ function logic._onPlayerFinish(seat)
         logic.roomHandler.onPlayerFinish(seat, progress.usedTime, rank)
     end
     
-    -- 广播玩家完成消息
+    -- 广播玩家完成消息（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToAll then
         logic.roomHandler.sendToAll("playerFinished", {
             seat = seat,
@@ -229,12 +263,12 @@ function logic._onPlayerFinish(seat)
         })
     end
     
-    -- 检查游戏是否结束
+    -- 检查本局是否结束
     logic._checkGameEnd()
 end
 
 --[[
-    检查游戏是否结束
+    检查本局游戏是否结束
 ]]
 function logic._checkGameEnd()
     local allFinished = true
@@ -250,24 +284,30 @@ function logic._checkGameEnd()
         end
     end
     
-    log.info("[Logic] 检查游戏结束: %d/%d 已完成", finishedPlayers, totalPlayers)
+    log.info("[Logic] 检查本局结束: %d/%d 已完成", finishedPlayers, totalPlayers)
     
-    -- 如果所有人都完成了，结束游戏
+    -- 如果所有人都完成了，结束本局
     if allFinished and totalPlayers > 0 then
         logicHandler.endGame(config.END_TYPE.ALL_FINISHED)
     end
 end
 
 --[[
-    结束游戏
+    结束本局游戏
     @param endType: number 结束类型
 ]]
 function logicHandler.endGame(endType)
-    log.info("[Logic] 游戏结束，类型: %d", endType)
+    if logic.gameStatus == config.GAME_STATUS.END then
+        log.warn("[Logic] 本局已结束，跳过")
+        return
+    end
+    
+    log.info("[Logic] 本局游戏结束，类型: %d", endType)
     
     logic.gameStatus = config.GAME_STATUS.END
+    local endTime = os.time()
     
-    -- 计算最终排名
+    -- 计算本局最终排名
     local rankings = {}
     for seat, progress in pairs(logic.playerProgress) do
         if progress.finished then
@@ -293,7 +333,7 @@ function logicHandler.endGame(endType)
         return a.usedTime < b.usedTime
     end)
     
-    -- 广播游戏结束
+    -- 广播游戏结束（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToAll then
         logic.roomHandler.sendToAll("gameEnd", {
             endType = endType,
@@ -301,10 +341,13 @@ function logicHandler.endGame(endType)
         })
     end
     
-    -- 通知 Room 游戏结束
+    -- 通知 Room 本局结束
     if logic.roomHandler and logic.roomHandler.onGameEnd then
         logic.roomHandler.onGameEnd(endType, rankings)
     end
+    
+    -- 注意：这里不清理数据，重连时可能需要访问
+    -- 新局开始时 Room 会重新调用 init 重置
 end
 
 --[[
@@ -320,6 +363,7 @@ function logicHandler.requestHint(seat)
     
     local hint = playerMap:getHint()
     if hint and logic.roomHandler and logic.roomHandler.sendToSeat then
+        -- 协议格式与sproto一致
         logic.roomHandler.sendToSeat(seat, "hint", {
             p1 = hint[1],
             p2 = hint[2],
@@ -344,15 +388,15 @@ function logicHandler.relink(seat)
         return
     end
     
-    -- 发送当前游戏状态
+    -- 发送当前游戏状态（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToSeat then
         logic.roomHandler.sendToSeat(seat, "gameRelink", {
             startTime = logic.startTime,
             mapData = cjson.encode(playerMap:getMap()),
             eliminated = progress.eliminated,
             remaining = playerMap:getRemainingBlockCount(),
-            finished = progress.finished,
-            usedTime = progress.usedTime,
+            finished = progress.finished and 1 or 0,
+            usedTime = progress.usedTime or 0,
         })
     end
 end
@@ -374,7 +418,7 @@ function logicHandler.update()
 end
 
 --[[
-    获取游戏状态
+    获取本局游戏状态
     @return table 游戏状态信息
 ]]
 function logicHandler.getGameStatus()
@@ -392,6 +436,31 @@ end
 ]]
 function logicHandler.getPlayerMap(seat)
     return logic.playerMaps[seat]
+end
+
+--[[
+    获取本局排名信息（供 Room 统计多局战绩）
+    @return table 排名列表
+]]
+function logicHandler.getRankings()
+    local rankings = {}
+    for seat, progress in pairs(logic.playerProgress) do
+        table.insert(rankings, {
+            seat = seat,
+            finished = progress.finished,
+            usedTime = progress.usedTime or -1,
+            eliminated = progress.eliminated,
+            rank = progress.rank,
+        })
+    end
+    
+    table.sort(rankings, function(a, b)
+        if not a.finished then return false end
+        if not b.finished then return true end
+        return a.usedTime < b.usedTime
+    end)
+    
+    return rankings
 end
 
 return logicHandler

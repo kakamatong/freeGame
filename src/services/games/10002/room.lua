@@ -59,15 +59,47 @@ function roomHandler.onPlayerFinish(seat, usedTime, rank)
 end
 
 --[[
-    游戏结束回调
+    单局游戏结束回调
     @param endType: number 结束类型
     @param rankings: table 排名列表
 ]]
 function roomHandler.onGameEnd(endType, rankings)
     if not roomInstance then return end
-    log.info("[Room] 游戏结束，类型: %d", endType)
+    log.info("[Room] 第%d局结束，类型: %d", roomInstance.roomInfo.playedCnt, endType)
     
-    -- 调用父类方法结束房间
+    -- 记录本局战绩
+    local currentRound = roomInstance.roomInfo.playedCnt
+    if roomInstance.roomInfo.record then
+        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
+        roomInstance.roomInfo.record[currentRound].endTime = os.time()
+        roomInstance.roomInfo.record[currentRound].rankings = rankings
+    end
+    
+    -- 私人房间模式：检查是否需要继续下一局
+    if roomInstance:isPrivateRoom() then
+        local mode = roomInstance.roomInfo.mode
+        if mode and currentRound < mode.maxCnt then
+            -- 还有下一局，进入局间休息，等待玩家准备
+            log.info("[Room] 第%d/%d局结束，等待玩家准备下一局", currentRound, mode.maxCnt)
+            roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
+            
+            -- 重置玩家准备状态
+            for _, player in pairs(roomInstance.players) do
+                roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
+            end
+            
+            -- 广播局间休息通知
+            roomInstance:sendToAllClient("roundEnd", {
+                currentRound = currentRound,
+                maxRound = mode.maxCnt,
+                rankings = rankings,
+            })
+            return
+        end
+    end
+    
+    -- 所有局都结束了，或匹配模式，结束房间
+    log.info("[Room] 所有局结束，房间关闭")
     roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
 end
 
@@ -216,8 +248,8 @@ function Room:startGame()
     -- 初始化逻辑
     self:initLogic()
     
-    -- 开始游戏逻辑
-    self.logicHandler.startGame()
+    -- 开始游戏逻辑，传入局数
+    self.logicHandler.startGame(self.roomInfo.playedCnt)
     
     -- 更新玩家状态
     for _, value in pairs(self.players) do
