@@ -581,35 +581,6 @@ end
 ]]
 
 --[[
-    请求提示
-    @param seat: number 玩家座位
-    @return table | nil 提示信息
-]]
-function logicHandler.requestHint(seat)
-    -- 检查当前阶段
-    if logic.stepId ~= config.GAME_STEP.PLAYING then
-        log.warn("[Logic] 当前不在PLAYING阶段，无法使用提示")
-        return nil
-    end
-    
-    local playerMap = logic.playerMaps[seat]
-    if not playerMap then
-        return nil
-    end
-    
-    local hint = playerMap:getHint()
-    if hint and logic.roomHandler and logic.roomHandler.sendToSeat then
-        -- 协议格式与sproto一致
-        logic.roomHandler.sendToSeat(seat, "hint", {
-            p1 = hint[1],
-            p2 = hint[2],
-        })
-    end
-    
-    return hint
-end
-
---[[
     玩家重连
     @param seat: number 玩家座位
 ]]

@@ -378,30 +378,9 @@ function REQUEST:clickTiles(userid, args)
     if roomInstance.logicHandler then
         roomInstance.logicHandler.clickTiles(seat, args)
     end
-end
-
--- 请求提示
-function REQUEST:requestHint(userid, args)
-    if not roomInstance then
-        return {code = 0, msg = "房间未初始化"}
-    end
     
-    local seat = roomInstance:getPlayerSeat(userid)
-    if not seat then
-        return {code = 0, msg = "玩家不在房间中"}
-    end
-    
-    -- 转发给逻辑模块处理
-    if roomInstance.logicHandler then
-        local hint = roomInstance.logicHandler.requestHint(seat)
-        if hint then
-            return {code = 1}
-        else
-            return {code = 0, msg = "没有可消除的方块"}
-        end
-    end
-    
-    return {code = 0, msg = "逻辑模块未初始化"}
+    -- 返回成功（实际结果通过 tilesRemoved 或 clickResult 推送）
+    return {code = 1, msg = "请求已处理"}
 end
 
 -- 客户端请求分发

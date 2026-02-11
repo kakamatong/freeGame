@@ -289,16 +289,8 @@ gameRelink 37 {
     }
 }
 
-# 提示响应
-hint 38 {
-    request {
-        p1 0 : Point             # 第一个方块
-        p2 1 : Point             # 第二个方块
-    }
-}
-
 # 道具效果通知 (预留)
-itemEffect 39 {
+itemEffect 38 {
     request {
         seat 0 : integer
         itemId 1 : integer
@@ -307,7 +299,7 @@ itemEffect 39 {
 }
 
 # 游戏进度更新 (广播给所有人看其他人的进度)
-progressUpdate 40 {
+progressUpdate 39 {
     request {
         seat 0 : integer
         eliminated 1 : integer   # 已消除数量

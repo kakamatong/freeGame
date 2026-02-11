@@ -121,16 +121,16 @@ clickTiles 21 {
         row2 2 : integer    # 第二个方块行坐标
         col2 3 : integer    # 第二个方块列坐标
     }
-}
-
-# 请求提示
-requestHint 22 {
-    request {
+    response {
+        code 0 : integer    # 1:成功, 0:失败
+        msg 1 : string      # 错误信息
+        eliminated 2 : integer  # 已消除数量
+        remaining 3 : integer   # 剩余方块数
     }
 }
 
 # 道具使用 (预留)
-useItem 23 {
+useItem 22 {
     request {
         itemId 0 : integer  # 道具ID (1:重排, 2:提示, 3:加时等)
     }
