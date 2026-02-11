@@ -34,6 +34,21 @@ config.MAP_CONFIG = {
     },
 }
 
+-- 游戏阶段（参考10001，简化为3个阶段）
+config.GAME_STEP = {
+    NONE = 0,           -- 无阶段
+    START = 1,          -- 游戏开始阶段（1秒，下发地图）
+    PLAYING = 2,        -- 游戏进行中阶段（玩家消除）
+    END = 3,            -- 游戏结束阶段（结算）
+}
+
+-- 阶段时间配置（秒）
+config.STEP_TIME_LEN = {
+    [config.GAME_STEP.START] = 1,       -- 开始阶段1秒（给客户端加载地图的时间）
+    [config.GAME_STEP.PLAYING] = 9999,  -- 游戏阶段，默认9999秒（实际需要根据配置调整）
+    [config.GAME_STEP.END] = 0,         -- 结束阶段0秒（立即执行）
+}
+
 -- 游戏状态
 config.GAME_STATUS = {
     NONE = 0,

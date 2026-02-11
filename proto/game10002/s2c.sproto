@@ -223,8 +223,15 @@ gameStart 31 {
     }
 }
 
+# 游戏阶段ID (参考10001)
+stepId 32 {
+    request {
+        step 0 : integer         # 当前阶段: 1=START, 2=PLAYING, 3=END
+    }
+}
+
 # 点击结果响应
-clickResult 32 {
+clickResult 33 {
     request {
         code 0 : integer         # 1:成功, 0:失败
         msg 1 : string           # 错误信息
@@ -234,7 +241,7 @@ clickResult 32 {
 }
 
 # 方块消除成功通知
-tilesRemoved 33 {
+tilesRemoved 34 {
     request {
         code 0 : integer
         p1 1 : Point             # 第一个方块
@@ -246,7 +253,7 @@ tilesRemoved 33 {
 }
 
 # 玩家完成游戏
-playerFinished 34 {
+playerFinished 35 {
     request {
         seat 0 : integer
         usedTime 1 : integer     # 用时(秒)
@@ -261,7 +268,7 @@ playerFinished 34 {
     eliminated 2 : integer   # 消除数量
 }
 
-gameEnd 35 {
+gameEnd 36 {
     request {
         roundNum 0 : integer
         endTime 1 : integer
@@ -271,7 +278,7 @@ gameEnd 35 {
 }
 
 # 游戏重连恢复
-gameRelink 36 {
+gameRelink 37 {
     request {
         startTime 0 : integer
         mapData 1 : string       # 当前地图状态JSON
@@ -283,7 +290,7 @@ gameRelink 36 {
 }
 
 # 提示响应
-hint 37 {
+hint 38 {
     request {
         p1 0 : Point             # 第一个方块
         p2 1 : Point             # 第二个方块
@@ -291,7 +298,7 @@ hint 37 {
 }
 
 # 道具效果通知 (预留)
-itemEffect 38 {
+itemEffect 39 {
     request {
         seat 0 : integer
         itemId 1 : integer
@@ -300,7 +307,7 @@ itemEffect 38 {
 }
 
 # 游戏进度更新 (广播给所有人看其他人的进度)
-progressUpdate 39 {
+progressUpdate 40 {
     request {
         seat 0 : integer
         eliminated 1 : integer   # 已消除数量

@@ -4,6 +4,11 @@
     职责：管理一局游戏的生命周期（地图、消除、胜负）
     通过 roomHandler 与 Room 通信
     
+    游戏阶段：
+    1. START (1秒): 游戏开始，下发地图数据
+    2. PLAYING (长时间): 玩家进行消除
+    3. END (0秒): 游戏结束，结算
+    
     注意：本模块只负责一局游戏，多局管理由 Room 控制
     每局开始时 Room 会重新调用 init 初始化
 ]]
@@ -25,8 +30,195 @@ logic.binit = false             -- 是否初始化
 logic.startTime = 0             -- 游戏开始时间
 logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 
+-- 游戏阶段管理（参考10001实现）
+logic.stepId = config.GAME_STEP.NONE        -- 当前阶段ID
+logic.stepBeginTime = 0                     -- 阶段开始时间
+logic.roundNum = 0                          -- 当前局数
+
 -- 暴露给 Room 的接口
 local logicHandler = {}
+
+--[[
+    ==================== 阶段管理核心函数 ====================
+]]
+
+--[[
+    获取当前阶段ID
+]]
+function logic.getStepId()
+    return logic.stepId
+end
+
+--[[
+    获取阶段时间限制（秒）
+]]
+function logic.getStepTimeLen(stepid)
+    return config.STEP_TIME_LEN[stepid] or 0
+end
+
+--[[
+    设置阶段开始时间
+]]
+function logic.setStepBeginTime()
+    logic.stepBeginTime = os.time()
+end
+
+--[[
+    开始一个新的阶段
+    @param stepid: number 阶段ID (GAME_STEP.START/PLAYING/END)
+]]
+function logic.startStep(stepid)
+    log.info("[Logic] 开始阶段 %d", stepid)
+    
+    logic.setStepBeginTime()
+    logic.stepId = stepid
+    
+    -- 根据阶段调用对应的开始函数
+    if stepid == config.GAME_STEP.START then
+        logic.startStepStart()
+    elseif stepid == config.GAME_STEP.PLAYING then
+        logic.startStepPlaying()
+    elseif stepid == config.GAME_STEP.END then
+        logic.startStepEnd()
+    end
+end
+
+--[[
+    停止当前阶段
+    @param stepid: number 阶段ID
+]]
+function logic.stopStep(stepid)
+    log.info("[Logic] 停止阶段 %d", stepid)
+    
+    if stepid == config.GAME_STEP.START then
+        logic.stopStepStart()
+    elseif stepid == config.GAME_STEP.PLAYING then
+        logic.stopStepPlaying()
+    elseif stepid == config.GAME_STEP.END then
+        logic.stopStepEnd()
+    end
+end
+
+--[[
+    阶段超时处理
+    @param stepid: number 阶段ID
+]]
+function logic.onStepTimeout(stepid)
+    log.info("[Logic] 阶段 %d 超时", stepid)
+    
+    if stepid == config.GAME_STEP.START then
+        logic.onStepStartTimeout()
+    elseif stepid == config.GAME_STEP.PLAYING then
+        logic.onStepPlayingTimeout()
+    elseif stepid == config.GAME_STEP.END then
+        logic.onStepEndTimeout()
+    end
+end
+
+--[[
+    ==================== START 阶段 ====================
+]]
+
+--[[
+    START阶段开始：广播阶段ID，下发地图数据
+]]
+function logic.startStepStart()
+    log.info("[Logic] START阶段开始")
+    
+    -- 广播当前阶段给所有玩家
+    if logic.roomHandler and logic.roomHandler.sendToAll then
+        logic.roomHandler.sendToAll("stepId", {
+            step = config.GAME_STEP.START,
+        })
+    end
+end
+
+--[[
+    START阶段停止：进入PLAYING阶段
+]]
+function logic.stopStepStart()
+    log.info("[Logic] START阶段停止")
+    logic.startStep(config.GAME_STEP.PLAYING)
+end
+
+--[[
+    START阶段超时处理
+]]
+function logic.onStepStartTimeout()
+    log.info("[Logic] START阶段超时，进入PLAYING阶段")
+    logic.stopStep(config.GAME_STEP.START)
+end
+
+--[[
+    ==================== PLAYING 阶段 ====================
+]]
+
+--[[
+    PLAYING阶段开始：广播阶段ID，允许玩家消除
+]]
+function logic.startStepPlaying()
+    log.info("[Logic] PLAYING阶段开始，玩家可以开始消除")
+    
+    -- 广播当前阶段给所有玩家
+    if logic.roomHandler and logic.roomHandler.sendToAll then
+        logic.roomHandler.sendToAll("stepId", {
+            step = config.GAME_STEP.PLAYING,
+        })
+    end
+end
+
+--[[
+    PLAYING阶段停止：进入END阶段
+]]
+function logic.stopStepPlaying()
+    log.info("[Logic] PLAYING阶段停止")
+    logic.startStep(config.GAME_STEP.END)
+end
+
+--[[
+    PLAYING阶段超时处理（时间到，强制结束）
+]]
+function logic.onStepPlayingTimeout()
+    log.info("[Logic] PLAYING阶段超时，强制结束游戏")
+    logicHandler.endGame(config.END_TYPE.TIMEOUT)
+end
+
+--[[
+    ==================== END 阶段 ====================
+]]
+
+--[[
+    END阶段开始：广播阶段ID，结算游戏
+]]
+function logic.startStepEnd()
+    log.info("[Logic] END阶段开始")
+    
+    -- 广播当前阶段给所有玩家
+    if logic.roomHandler and logic.roomHandler.sendToAll then
+        logic.roomHandler.sendToAll("stepId", {
+            step = config.GAME_STEP.END,
+        })
+    end
+end
+
+--[[
+    END阶段停止：通知Room游戏结束
+]]
+function logic.stopStepEnd()
+    log.info("[Logic] END阶段停止，游戏结束")
+    -- 通知Room本局结束已在endGame中处理
+end
+
+--[[
+    END阶段超时处理（END阶段时间为0，通常不会触发）
+]]
+function logic.onStepEndTimeout()
+    -- END阶段时间为0，不处理
+end
+
+--[[
+    ==================== 初始化 & 游戏控制 ====================
+]]
 
 --[[
     重置/初始化逻辑模块（每局开始时调用）
@@ -41,6 +233,9 @@ function logicHandler.init(rule, roomHandler)
     logic.playerProgress = {}
     logic.startTime = 0
     logic.gameStatus = config.GAME_STATUS.NONE
+    logic.stepId = config.GAME_STEP.NONE
+    logic.stepBeginTime = 0
+    logic.roundNum = 0
     
     logic.rule = rule or {}
     logic.roomHandler = roomHandler
@@ -51,9 +246,13 @@ function logicHandler.init(rule, roomHandler)
     logic.rule.mapCols = logic.rule.mapCols or 12
     logic.rule.iconTypes = logic.rule.iconTypes or 8
     logic.rule.playerCnt = logic.rule.playerCnt or 2
+    logic.rule.maxTime = logic.rule.maxTime or 600  -- 默认10分钟超时
     
-    log.info("[Logic] 单局初始化完成，玩家数: %d，地图: %dx%d",
-        logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols)
+    -- 更新PLAYING阶段时间
+    config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
+    
+    log.info("[Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒",
+        logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
 end
 
 --[[
@@ -95,6 +294,7 @@ end
 ]]
 function logicHandler.startGame(roundNum)
     roundNum = roundNum or 1
+    logic.roundNum = roundNum
     
     log.info("[Logic] 开始第%d局游戏", roundNum)
     
@@ -108,11 +308,13 @@ function logicHandler.startGame(roundNum)
     logic.playerProgress = {}
     logic.startTime = os.time()
     logic.gameStatus = config.GAME_STATUS.PLAYING
+    logic.stepId = config.GAME_STEP.NONE
+    logic.stepBeginTime = 0
     
     -- 生成地图
     logic._generatePlayerMaps()
     
-    -- 通知每个玩家游戏开始
+    -- 通知每个玩家游戏开始（发送地图数据）
     for seat, playerMap in pairs(logic.playerMaps) do
         if logic.playerProgress[seat] then
             logic.playerProgress[seat].startTime = logic.startTime
@@ -130,9 +332,16 @@ function logicHandler.startGame(roundNum)
         end
     end
     
+    -- 进入START阶段（1秒后自动进入PLAYING阶段）
+    logic.startStep(config.GAME_STEP.START)
+    
     log.info("[Logic] 第%d局游戏开始，玩家数: %d", roundNum, logic.rule.playerCnt)
     return true
 end
+
+--[[
+    ==================== 玩家操作处理 ====================
+]]
 
 --[[
     处理玩家点击消除请求
@@ -140,6 +349,12 @@ end
     @param args: table { row1, col1, row2, col2 }
 ]]
 function logicHandler.clickTiles(seat, args)
+    -- 检查当前阶段
+    if logic.stepId ~= config.GAME_STEP.PLAYING then
+        log.warn("[Logic] 当前不在PLAYING阶段，无法消除")
+        return
+    end
+    
     log.info("[Logic] 玩家%d点击消除: (%d,%d) -> (%d,%d)", 
         seat, args.row1, args.col1, args.row2, args.col2)
     
@@ -288,9 +503,13 @@ function logic._checkGameEnd()
     
     -- 如果所有人都完成了，结束本局
     if allFinished and totalPlayers > 0 then
-        logicHandler.endGame(config.END_TYPE.ALL_FINISHED)
+        logic.stopStep(config.GAME_STEP.PLAYING)
     end
 end
+
+--[[
+    ==================== 游戏结束 ====================
+]]
 
 --[[
     结束本局游戏
@@ -300,6 +519,11 @@ function logicHandler.endGame(endType)
     if logic.gameStatus == config.GAME_STATUS.END then
         log.warn("[Logic] 本局已结束，跳过")
         return
+    end
+    
+    -- 如果不在END阶段，先切换到END阶段
+    if logic.stepId ~= config.GAME_STEP.END then
+        logic.startStep(config.GAME_STEP.END)
     end
     
     log.info("[Logic] 本局游戏结束，类型: %d", endType)
@@ -346,9 +570,15 @@ function logicHandler.endGame(endType)
         logic.roomHandler.onGameEnd(endType, rankings)
     end
     
-    -- 注意：这里不清理数据，重连时可能需要访问
-    -- 新局开始时 Room 会重新调用 init 重置
+    -- 停止END阶段
+    skynet.timeout(1, function()
+        logic.stopStep(config.GAME_STEP.END)
+    end)
 end
+
+--[[
+    ==================== 其他功能 ====================
+]]
 
 --[[
     请求提示
@@ -356,6 +586,12 @@ end
     @return table | nil 提示信息
 ]]
 function logicHandler.requestHint(seat)
+    -- 检查当前阶段
+    if logic.stepId ~= config.GAME_STEP.PLAYING then
+        log.warn("[Logic] 当前不在PLAYING阶段，无法使用提示")
+        return nil
+    end
+    
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
         return nil
@@ -390,6 +626,12 @@ function logicHandler.relink(seat)
     
     -- 发送当前游戏状态（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToSeat then
+        -- 先发送阶段ID
+        logic.roomHandler.sendToSeat(seat, "stepId", {
+            step = logic.stepId,
+        })
+        
+        -- 再发送游戏状态
         logic.roomHandler.sendToSeat(seat, "gameRelink", {
             startTime = logic.startTime,
             mapData = cjson.encode(playerMap:getMap()),
@@ -402,18 +644,26 @@ function logicHandler.relink(seat)
 end
 
 --[[
-    定时更新（每帧调用）
+    定时更新（每帧调用，检查阶段超时）
+    参考10001实现
 ]]
 function logicHandler.update()
-    -- 检查游戏超时等逻辑
-    if logic.gameStatus == config.GAME_STATUS.PLAYING then
-        local now = os.time()
-        local elapsed = now - logic.startTime
-        
-        -- 可以在这里添加时间限制逻辑
-        -- if elapsed > logic.rule.maxTime then
-        --     logicHandler.endGame(config.END_TYPE.TIMEOUT)
-        -- end
+    -- 检查是否初始化
+    if not logic.binit then
+        return
+    end
+    
+    local stepid = logic.getStepId()
+    if stepid == config.GAME_STEP.NONE or stepid == config.GAME_STEP.END then
+        return
+    end
+    
+    local currentTime = os.time()
+    local timeLen = currentTime - logic.stepBeginTime  -- 计算已进行的时间
+    
+    -- 如果超过阶段时间限制，触发超时处理
+    if timeLen >= logic.getStepTimeLen(stepid) then
+        logic.onStepTimeout(stepid)
     end
 end
 
@@ -425,6 +675,7 @@ function logicHandler.getGameStatus()
     return {
         status = logic.gameStatus,
         startTime = logic.startTime,
+        stepId = logic.stepId,
         playerProgress = logic.playerProgress,
     }
 end
