@@ -96,14 +96,11 @@ config.RATING_CONFIG = {
 
 -- 地图配置
 config.MAP = {
-    -- 默认地图大小
-    DEFAULT_ROWS = 8,
-    DEFAULT_COLS = 12,
+    DEFAULT_ROWS = 10,
+    DEFAULT_COLS = 10,
+    ICON_TYPES = 10,
     
-    -- 最小玩家数
     MIN_PLAYERS = 2,
-    
-    -- 最大玩家数
     MAX_PLAYERS = 4,
 }
 

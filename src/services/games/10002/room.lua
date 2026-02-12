@@ -208,21 +208,9 @@ function Room:initLogic()
         playerCnt = self.roomInfo.playerNum,
         mapRows = config.MAP.DEFAULT_ROWS,
         mapCols = config.MAP.DEFAULT_COLS,
-        iconTypes = 8,
+        iconTypes = config.MAP.ICON_TYPES,
     }
     
-    -- 根据难度调整
-    if self.roomInfo.difficulty == "easy" then
-        ruleData.mapRows = 6
-        ruleData.mapCols = 10
-        ruleData.iconTypes = 6
-    elseif self.roomInfo.difficulty == "hard" then
-        ruleData.mapRows = 10
-        ruleData.mapCols = 14
-        ruleData.iconTypes = 10
-    end
-    
-    -- 初始化逻辑模块
     self.logicHandler.init(ruleData, roomHandler)
 end
 
