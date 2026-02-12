@@ -180,6 +180,12 @@ end
 ]]
 function logic.startStepPlaying()
     log.info("[Logic] PLAYING阶段开始，玩家可以开始消除")
+    
+    -- 发送倒计时时间给所有玩家
+    logic.roomHandler.sendToAll("gameClock", {
+        time = config.STEP_TIME_LEN[config.GAME_STEP.PLAYING],
+        seat = 0,
+    })
 end
 
 function logic.stopStepPlaying()
@@ -426,6 +432,25 @@ function logic._onPlayerFinish(seat)
         end
     end
     progress.rank = rank
+    
+    -- 检查是否是第一个完成（用于设置10秒倒计时）
+    local finishedCount = 0
+    for _, p in pairs(logic.playerProgress) do
+        if p.finished then finishedCount = finishedCount + 1 end
+    end
+    
+    if finishedCount == 1 then
+        -- 第一个玩家完成，设置10秒后结束
+        local elapsed = os.time() - logic.stepBeginTime
+        config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + 10
+        
+        -- 通知所有玩家剩余10秒
+        logic.roomHandler.sendToAll("gameClock", {
+            time = 10,
+            seat = 0,
+        })
+        log.info("[Logic] 第一个玩家完成，设置10秒倒计时")
+    end
     
     logic.roomHandler.onPlayerFinish(seat, progress.usedTime, rank)
     
