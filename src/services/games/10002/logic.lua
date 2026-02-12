@@ -336,7 +336,7 @@ function logicHandler.clickTiles(seat, args)
     -- 检查当前阶段
     if logic.stepId ~= config.GAME_STEP.PLAYING then
         log.warn("[Logic] 当前不在PLAYING阶段，无法消除")
-        return
+        return {code = 0, msg = "当前不在PLAYING阶段"}
     end
     
     log.info("[Logic] 玩家%d点击消除: (%d,%d) -> (%d,%d)", 
@@ -345,40 +345,28 @@ function logicHandler.clickTiles(seat, args)
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
         log.warn("[Logic] 座位%d地图未初始化", seat)
-        return
+        return {code = 0, msg = "地图未初始化"}
     end
     
     local progress = logic.playerProgress[seat]
     if not progress or progress.finished then
         log.warn("[Logic] 座位%d已结束游戏或进度不存在", seat)
-        return
+        return {code = 0, msg = "已结束游戏或进度不存在"}
     end
     
-    -- 解析点击坐标
-    local p1 = { row = args.row1, col = args.col1 }
-    local p2 = { row = args.row2, col = args.col2 }
+    -- 解析点击坐标（客户端从0开始，服务端+1）
+    local p1 = { row = args.row1 + 1, col = args.col1 + 1 }
+    local p2 = { row = args.row2 + 1, col = args.col2 + 1 }
     
     if not playerMap:isValidBlock(p1) or not playerMap:isValidBlock(p2) then
         log.warn("[Logic] 无效的方块坐标")
-        logic.roomHandler.sendToSeat(seat, "clickResult", {
-            code = 0,
-            msg = "无效的方块坐标",
-            eliminated = progress.eliminated,
-            remaining = playerMap:getRemainingBlockCount(),
-        })
-        return
+        return {code = 0, msg = "无效的方块坐标", eliminated = progress.eliminated, remaining = playerMap:getRemainingBlockCount()}
     end
     
     local success, lines = playerMap:removeTiles(p1, p2)
     if not success then
         log.warn("[Logic] 无法消除这两个方块")
-        logic.roomHandler.sendToSeat(seat, "clickResult", {
-            code = 0,
-            msg = "无法消除这两个方块",
-            eliminated = progress.eliminated,
-            remaining = playerMap:getRemainingBlockCount(),
-        })
-        return
+        return {code = 0, msg = "无法消除这两个方块", eliminated = progress.eliminated, remaining = playerMap:getRemainingBlockCount()}
     end
     
     progress.eliminated = progress.eliminated + 2
@@ -388,8 +376,8 @@ function logicHandler.clickTiles(seat, args)
     
     logic.roomHandler.sendToSeat(seat, "tilesRemoved", {
         code = 1,
-        p1 = p1,
-        p2 = p2,
+        p1 = {row = p1.row - 1, col = p1.col - 1},
+        p2 = {row = p2.row - 1, col = p2.col - 1},
         lines = lines,
         eliminated = progress.eliminated,
         remaining = remaining,
@@ -410,6 +398,8 @@ function logicHandler.clickTiles(seat, args)
     if playerMap:isComplete() then
         logic._onPlayerFinish(seat)
     end
+    
+    return {code = 1, msg = "消除成功", eliminated = progress.eliminated, remaining = remaining}
 end
 
 --[[

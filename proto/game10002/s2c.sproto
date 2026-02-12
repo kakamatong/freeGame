@@ -228,16 +228,6 @@ stepId 32 {
     }
 }
 
-# 点击结果响应
-clickResult 33 {
-    request {
-        code 0 : integer         # 1:成功, 0:失败
-        msg 1 : string           # 错误信息
-        eliminated 2 : integer   # 已消除数量
-        remaining 3 : integer    # 剩余方块数
-    }
-}
-
 # 方块消除成功通知
 tilesRemoved 34 {
     request {

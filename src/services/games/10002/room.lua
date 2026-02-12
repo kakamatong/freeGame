@@ -364,11 +364,10 @@ function REQUEST:clickTiles(userid, args)
     
     -- 转发给逻辑模块处理
     if roomInstance.logicHandler then
-        roomInstance.logicHandler.clickTiles(seat, args)
+        return roomInstance.logicHandler.clickTiles(seat, args)
     end
     
-    -- 返回成功（实际结果通过 tilesRemoved 或 clickResult 推送）
-    return {code = 1, msg = "请求已处理"}
+    return {code = 0, msg = "逻辑模块未初始化"}
 end
 
 -- 客户端请求分发
