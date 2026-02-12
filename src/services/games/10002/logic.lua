@@ -73,6 +73,10 @@ function logic.startStep(stepid)
     logic.setStepBeginTime()
     logic.stepId = stepid
     
+    logic.roomHandler.sendToAll("stepId", {
+        step = stepid,
+    })
+    
     -- 根据阶段调用对应的开始函数
     if stepid == config.GAME_STEP.START then
         logic.startStepStart()
@@ -124,12 +128,6 @@ end
 ]]
 function logic.startStepStart()
     log.info("[Logic] START阶段开始")
-    
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("stepId", {
-            step = config.GAME_STEP.START,
-        })
-    end
 
     logic._generatePlayerMaps()
     
@@ -140,22 +138,20 @@ function logic.startStepStart()
     end
     
     for seat, playerMap in pairs(logic.playerMaps) do
-        if logic.roomHandler and logic.roomHandler.sendToSeat then
-            local totalBlocks = playerMap:getRemainingBlockCount()
-            logic.roomHandler.sendToSeat(seat, "mapData", {
-                mapData = cjson.encode(playerMap:getMap()),
-                totalBlocks = totalBlocks,
-            })
-            
-            logic.roomHandler.sendToSeat(seat, "progressUpdate", {
-                seat = seat,
-                eliminated = 0,
-                remaining = totalBlocks,
-                percentage = 0,
-                finished = 0,
-                usedTime = 0,
-            })
-        end
+        local totalBlocks = playerMap:getRemainingBlockCount()
+        logic.roomHandler.sendToSeat(seat, "mapData", {
+            mapData = cjson.encode(playerMap:getMap()),
+            totalBlocks = totalBlocks,
+        })
+        
+        logic.roomHandler.sendToSeat(seat, "progressUpdate", {
+            seat = seat,
+            eliminated = 0,
+            remaining = totalBlocks,
+            percentage = 0,
+            finished = 0,
+            usedTime = 0,
+        })
     end
 end
 
@@ -184,26 +180,13 @@ end
 ]]
 function logic.startStepPlaying()
     log.info("[Logic] PLAYING阶段开始，玩家可以开始消除")
-    
-    -- 广播当前阶段给所有玩家
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("stepId", {
-            step = config.GAME_STEP.PLAYING,
-        })
-    end
 end
 
---[[
-    PLAYING阶段停止：进入END阶段
-]]
 function logic.stopStepPlaying()
     log.info("[Logic] PLAYING阶段停止")
     logic.startStep(config.GAME_STEP.END)
 end
 
---[[
-    PLAYING阶段超时处理（时间到，强制结束）
-]]
 function logic.onStepPlayingTimeout()
     log.info("[Logic] PLAYING阶段超时，强制结束游戏")
     logicHandler.endGame(config.END_TYPE.TIMEOUT)
@@ -213,18 +196,8 @@ end
     ==================== END 阶段 ====================
 ]]
 
---[[
-    END阶段开始：广播阶段ID，结算游戏
-]]
 function logic.startStepEnd()
     log.info("[Logic] END阶段开始")
-    
-    -- 广播当前阶段给所有玩家
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("stepId", {
-            step = config.GAME_STEP.END,
-        })
-    end
 end
 
 --[[
@@ -336,13 +309,11 @@ function logicHandler.startGame(roundNum)
     logic.stepId = config.GAME_STEP.NONE
     logic.stepBeginTime = 0
     
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("gameStart", {
-            roundNum = roundNum,
-            startTime = logic.startTime,
-            brelink = 0,
-        })
-    end
+    logic.roomHandler.sendToAll("gameStart", {
+        roundNum = roundNum,
+        startTime = logic.startTime,
+        brelink = 0,
+    })
     
     logic.startStep(config.GAME_STEP.START)
     
@@ -385,66 +356,53 @@ function logicHandler.clickTiles(seat, args)
     local p1 = { row = args.row1, col = args.col1 }
     local p2 = { row = args.row2, col = args.col2 }
     
-    -- 验证坐标有效性
     if not playerMap:isValidBlock(p1) or not playerMap:isValidBlock(p2) then
         log.warn("[Logic] 无效的方块坐标")
-        if logic.roomHandler and logic.roomHandler.sendToSeat then
-            logic.roomHandler.sendToSeat(seat, "clickResult", {
-                code = 0,
-                msg = "无效的方块坐标",
-                eliminated = progress.eliminated,
-                remaining = playerMap:getRemainingBlockCount(),
-            })
-        end
+        logic.roomHandler.sendToSeat(seat, "clickResult", {
+            code = 0,
+            msg = "无效的方块坐标",
+            eliminated = progress.eliminated,
+            remaining = playerMap:getRemainingBlockCount(),
+        })
         return
     end
     
-    -- 尝试消除
     local success, lines = playerMap:removeTiles(p1, p2)
     if not success then
         log.warn("[Logic] 无法消除这两个方块")
-        if logic.roomHandler and logic.roomHandler.sendToSeat then
-            logic.roomHandler.sendToSeat(seat, "clickResult", {
-                code = 0,
-                msg = "无法消除这两个方块",
-                eliminated = progress.eliminated,
-                remaining = playerMap:getRemainingBlockCount(),
-            })
-        end
+        logic.roomHandler.sendToSeat(seat, "clickResult", {
+            code = 0,
+            msg = "无法消除这两个方块",
+            eliminated = progress.eliminated,
+            remaining = playerMap:getRemainingBlockCount(),
+        })
         return
     end
     
-    -- 消除成功，更新进度
     progress.eliminated = progress.eliminated + 2
     local remaining = playerMap:getRemainingBlockCount()
     
     log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
     
-    -- 发送消除成功消息给该玩家（协议格式与sproto一致）
-    if logic.roomHandler and logic.roomHandler.sendToSeat then
-        logic.roomHandler.sendToSeat(seat, "tilesRemoved", {
-            code = 1,
-            p1 = p1,
-            p2 = p2,
-            lines = lines,
-            eliminated = progress.eliminated,
-            remaining = remaining,
-        })
-    end
+    logic.roomHandler.sendToSeat(seat, "tilesRemoved", {
+        code = 1,
+        p1 = p1,
+        p2 = p2,
+        lines = lines,
+        eliminated = progress.eliminated,
+        remaining = remaining,
+    })
     
-    -- 广播进度更新给所有人（包含完成百分比）
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
     local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("progressUpdate", {
-            seat = seat,
-            eliminated = progress.eliminated,
-            remaining = remaining,
-            percentage = percentage,
-            finished = progress.finished and 1 or 0,
-            usedTime = progress.usedTime or 0,
-        })
-    end
+    logic.roomHandler.sendToAll("progressUpdate", {
+        seat = seat,
+        eliminated = progress.eliminated,
+        remaining = remaining,
+        percentage = percentage,
+        finished = progress.finished and 1 or 0,
+        usedTime = progress.usedTime or 0,
+    })
     
     -- 检查该玩家是否已完成
     if playerMap:isComplete() then
@@ -477,19 +435,13 @@ function logic._onPlayerFinish(seat)
     end
     progress.rank = rank
     
-    -- 通知 Room
-    if logic.roomHandler and logic.roomHandler.onPlayerFinish then
-        logic.roomHandler.onPlayerFinish(seat, progress.usedTime, rank)
-    end
+    logic.roomHandler.onPlayerFinish(seat, progress.usedTime, rank)
     
-    -- 广播玩家完成消息（协议格式与sproto一致）
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("playerFinished", {
-            seat = seat,
-            usedTime = progress.usedTime,
-            rank = rank,
-        })
-    end
+    logic.roomHandler.sendToAll("playerFinished", {
+        seat = seat,
+        usedTime = progress.usedTime,
+        rank = rank,
+    })
     
     -- 检查本局是否结束
     logic._checkGameEnd()
@@ -570,37 +522,30 @@ function logicHandler.endGame(endType)
         return a.usedTime < b.usedTime
     end)
     
-    -- 广播游戏结束（协议格式与sproto一致）
-    if logic.roomHandler and logic.roomHandler.sendToAll then
-        logic.roomHandler.sendToAll("gameEnd", {
-            endType = endType,
-            rankings = rankings,
-        })
-        
-        -- 广播所有玩家的最终进度
-        local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
-        for seat, progress in pairs(logic.playerProgress) do
-            local remaining = 0
-            local playerMap = logic.playerMaps[seat]
-            if playerMap then
-                remaining = playerMap:getRemainingBlockCount()
-            end
-            local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
-            logic.roomHandler.sendToAll("progressUpdate", {
-                seat = seat,
-                eliminated = progress.eliminated,
-                remaining = remaining,
-                percentage = percentage,
-                finished = progress.finished and 1 or 0,
-                usedTime = progress.usedTime or 0,
-            })
+    logic.roomHandler.sendToAll("gameEnd", {
+        endType = endType,
+        rankings = rankings,
+    })
+    
+    local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+    for seat, progress in pairs(logic.playerProgress) do
+        local remaining = 0
+        local playerMap = logic.playerMaps[seat]
+        if playerMap then
+            remaining = playerMap:getRemainingBlockCount()
         end
+        local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+        logic.roomHandler.sendToAll("progressUpdate", {
+            seat = seat,
+            eliminated = progress.eliminated,
+            remaining = remaining,
+            percentage = percentage,
+            finished = progress.finished and 1 or 0,
+            usedTime = progress.usedTime or 0,
+        })
     end
     
-    -- 通知 Room 本局结束
-    if logic.roomHandler and logic.roomHandler.onGameEnd then
-        logic.roomHandler.onGameEnd(endType, rankings)
-    end
+    logic.roomHandler.onGameEnd(endType, rankings)
     
     logic.stopStep(config.GAME_STEP.END)
 end
@@ -624,31 +569,29 @@ function logicHandler.relink(seat)
         return
     end
     
-    if logic.roomHandler and logic.roomHandler.sendToSeat then
-        logic.roomHandler.sendToSeat(seat, "stepId", {
-            step = logic.stepId,
-        })
-        
-        logic.roomHandler.sendToSeat(seat, "gameRelink", {
-            startTime = logic.startTime,
-        })
-        
-        local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
-        logic.roomHandler.sendToSeat(seat, "mapData", {
-            mapData = cjson.encode(playerMap:getMap()),
-            totalBlocks = totalBlocks,
-        })
-        
-        local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
-        logic.roomHandler.sendToSeat(seat, "progressUpdate", {
-            seat = seat,
-            eliminated = progress.eliminated,
-            remaining = playerMap:getRemainingBlockCount(),
-            percentage = percentage,
-            finished = progress.finished and 1 or 0,
-            usedTime = progress.usedTime or 0,
-        })
-    end
+    logic.roomHandler.sendToSeat(seat, "stepId", {
+        step = logic.stepId,
+    })
+    
+    logic.roomHandler.sendToSeat(seat, "gameRelink", {
+        startTime = logic.startTime,
+    })
+    
+    local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+    logic.roomHandler.sendToSeat(seat, "mapData", {
+        mapData = cjson.encode(playerMap:getMap()),
+        totalBlocks = totalBlocks,
+    })
+    
+    local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+    logic.roomHandler.sendToSeat(seat, "progressUpdate", {
+        seat = seat,
+        eliminated = progress.eliminated,
+        remaining = playerMap:getRemainingBlockCount(),
+        percentage = percentage,
+        finished = progress.finished and 1 or 0,
+        usedTime = progress.usedTime or 0,
+    })
 end
 
 --[[
