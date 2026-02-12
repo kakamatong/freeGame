@@ -52,7 +52,11 @@ end
 ]]
 function mapGenerator._generateRandomMap(rows, cols, iconTypes)
     local map = {}
-    local totalTiles = rows * cols
+    
+    -- 内部可玩区域（去掉外圈）
+    local innerRows = rows - 2
+    local innerCols = cols - 2
+    local totalTiles = innerRows * innerCols
     
     -- 计算每种图标需要的数量（必须是偶数）
     local tilesPerIcon = math.floor(totalTiles / iconTypes)
@@ -83,11 +87,18 @@ function mapGenerator._generateRandomMap(rows, cols, iconTypes)
         iconPool[i], iconPool[j] = iconPool[j], iconPool[i]
     end
     
-    -- 填充地图
-    local poolIndex = 1
+    -- 初始化地图（最外圈为0）
     for row = 1, rows do
         map[row] = {}
         for col = 1, cols do
+            map[row][col] = 0
+        end
+    end
+    
+    -- 填充内部可玩区域
+    local poolIndex = 1
+    for row = 2, rows - 1 do
+        for col = 2, cols - 1 do
             map[row][col] = iconPool[poolIndex]
             poolIndex = poolIndex + 1
         end

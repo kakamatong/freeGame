@@ -266,24 +266,26 @@ function logic._generatePlayerMaps()
     log.info("[Logic] 生成玩家地图，尺寸: %dx%d，图标种类: %d，玩家数: %d", 
         rows, cols, iconTypes, playerCnt)
     
+    -- 生成一张公共地图，所有玩家使用相同的地图
+    local mapData = mapGenerator.generate(rows, cols, iconTypes)
+    if not mapData then
+        log.error("[Logic] 生成地图失败")
+        return
+    end
+    
     for seat = 1, playerCnt do
-        local mapData = mapGenerator.generate(rows, cols, iconTypes)
-        if mapData then
-            local playerMap = Map:new()
-            playerMap:initMap(mapData)
-            logic.playerMaps[seat] = playerMap
-            
-            -- 初始化玩家进度
-            logic.playerProgress[seat] = {
-                eliminated = 0,          -- 已消除数量
-                startTime = 0,           -- 开始时间
-                finishTime = 0,          -- 完成时间
-                rank = 0,                -- 排名
-                finished = false,        -- 是否完成
-            }
-        else
-            log.error("[Logic] 为座位%d生成地图失败", seat)
-        end
+        local playerMap = Map:new()
+        playerMap:initMap(mapData)
+        logic.playerMaps[seat] = playerMap
+        
+        -- 初始化玩家进度
+        logic.playerProgress[seat] = {
+            eliminated = 0,          -- 已消除数量
+            startTime = 0,           -- 开始时间
+            finishTime = 0,          -- 完成时间
+            rank = 0,                -- 排名
+            finished = false,        -- 是否完成
+        }
     end
 end
 
