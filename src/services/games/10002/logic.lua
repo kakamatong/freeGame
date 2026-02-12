@@ -125,11 +125,37 @@ end
 function logic.startStepStart()
     log.info("[Logic] START阶段开始")
     
-    -- 广播当前阶段给所有玩家
     if logic.roomHandler and logic.roomHandler.sendToAll then
         logic.roomHandler.sendToAll("stepId", {
             step = config.GAME_STEP.START,
         })
+    end
+
+    logic._generatePlayerMaps()
+    
+    for seat, playerMap in pairs(logic.playerMaps) do
+        if logic.playerProgress[seat] then
+            logic.playerProgress[seat].startTime = logic.startTime
+        end
+    end
+    
+    for seat, playerMap in pairs(logic.playerMaps) do
+        if logic.roomHandler and logic.roomHandler.sendToSeat then
+            local totalBlocks = playerMap:getRemainingBlockCount()
+            logic.roomHandler.sendToSeat(seat, "mapData", {
+                mapData = cjson.encode(playerMap:getMap()),
+                totalBlocks = totalBlocks,
+            })
+            
+            logic.roomHandler.sendToSeat(seat, "progressUpdate", {
+                seat = seat,
+                eliminated = 0,
+                remaining = totalBlocks,
+                percentage = 0,
+                finished = 0,
+                usedTime = 0,
+            })
+        end
     end
 end
 
@@ -303,7 +329,6 @@ function logicHandler.startGame(roundNum)
         return false
     end
     
-    -- 重置本局状态（确保上一局的数据不会残留）
     logic.playerMaps = {}
     logic.playerProgress = {}
     logic.startTime = os.time()
@@ -311,28 +336,14 @@ function logicHandler.startGame(roundNum)
     logic.stepId = config.GAME_STEP.NONE
     logic.stepBeginTime = 0
     
-    -- 生成地图
-    logic._generatePlayerMaps()
-    
-    -- 通知每个玩家游戏开始（发送地图数据）
-    for seat, playerMap in pairs(logic.playerMaps) do
-        if logic.playerProgress[seat] then
-            logic.playerProgress[seat].startTime = logic.startTime
-        end
-        
-        -- 发送游戏开始消息（协议格式与sproto一致）
-        if logic.roomHandler and logic.roomHandler.sendToSeat then
-            logic.roomHandler.sendToSeat(seat, "gameStart", {
-                roundNum = roundNum,
-                startTime = logic.startTime,
-                brelink = 0,
-                mapData = cjson.encode(playerMap:getMap()),
-                totalBlocks = playerMap:getRemainingBlockCount(),
-            })
-        end
+    if logic.roomHandler and logic.roomHandler.sendToAll then
+        logic.roomHandler.sendToAll("gameStart", {
+            roundNum = roundNum,
+            startTime = logic.startTime,
+            brelink = 0,
+        })
     end
     
-    -- 进入START阶段（1秒后自动进入PLAYING阶段）
     logic.startStep(config.GAME_STEP.START)
     
     log.info("[Logic] 第%d局游戏开始，玩家数: %d", roundNum, logic.rule.playerCnt)
@@ -430,6 +441,8 @@ function logicHandler.clickTiles(seat, args)
             eliminated = progress.eliminated,
             remaining = remaining,
             percentage = percentage,
+            finished = progress.finished and 1 or 0,
+            usedTime = progress.usedTime or 0,
         })
     end
     
@@ -563,6 +576,25 @@ function logicHandler.endGame(endType)
             endType = endType,
             rankings = rankings,
         })
+        
+        -- 广播所有玩家的最终进度
+        local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+        for seat, progress in pairs(logic.playerProgress) do
+            local remaining = 0
+            local playerMap = logic.playerMaps[seat]
+            if playerMap then
+                remaining = playerMap:getRemainingBlockCount()
+            end
+            local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+            logic.roomHandler.sendToAll("progressUpdate", {
+                seat = seat,
+                eliminated = progress.eliminated,
+                remaining = remaining,
+                percentage = percentage,
+                finished = progress.finished and 1 or 0,
+                usedTime = progress.usedTime or 0,
+            })
+        end
     end
     
     -- 通知 Room 本局结束
@@ -570,10 +602,7 @@ function logicHandler.endGame(endType)
         logic.roomHandler.onGameEnd(endType, rankings)
     end
     
-    -- 停止END阶段
-    skynet.timeout(1, function()
-        logic.stopStep(config.GAME_STEP.END)
-    end)
+    logic.stopStep(config.GAME_STEP.END)
 end
 
 --[[
@@ -595,19 +624,27 @@ function logicHandler.relink(seat)
         return
     end
     
-    -- 发送当前游戏状态（协议格式与sproto一致）
     if logic.roomHandler and logic.roomHandler.sendToSeat then
-        -- 先发送阶段ID
         logic.roomHandler.sendToSeat(seat, "stepId", {
             step = logic.stepId,
         })
         
-        -- 再发送游戏状态
         logic.roomHandler.sendToSeat(seat, "gameRelink", {
             startTime = logic.startTime,
+        })
+        
+        local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+        logic.roomHandler.sendToSeat(seat, "mapData", {
             mapData = cjson.encode(playerMap:getMap()),
+            totalBlocks = totalBlocks,
+        })
+        
+        local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+        logic.roomHandler.sendToSeat(seat, "progressUpdate", {
+            seat = seat,
             eliminated = progress.eliminated,
             remaining = playerMap:getRemainingBlockCount(),
+            percentage = percentage,
             finished = progress.finished and 1 or 0,
             usedTime = progress.usedTime or 0,
         })

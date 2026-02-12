@@ -218,8 +218,6 @@ gameStart 31 {
         roundNum 0 : integer
         startTime 1 : integer
         brelink 2 : integer
-        mapData 3 : string       # 地图数据JSON
-        totalBlocks 4 : integer  # 总方块数
     }
 }
 
@@ -281,11 +279,6 @@ gameEnd 36 {
 gameRelink 37 {
     request {
         startTime 0 : integer
-        mapData 1 : string       # 当前地图状态JSON
-        eliminated 2 : integer   # 已消除数量
-        remaining 3 : integer    # 剩余方块数
-        finished 4 : integer     # 1:已完成, 0:未完成
-        usedTime 5 : integer     # 用时(秒)
     }
 }
 
@@ -305,5 +298,15 @@ progressUpdate 39 {
         eliminated 1 : integer   # 已消除数量
         remaining 2 : integer    # 剩余方块数
         percentage 3 : integer   # 完成百分比
+        finished 4 : integer     # 1:已完成, 0:未完成
+        usedTime 5 : integer     # 用时(秒)
+    }
+}
+
+# 地图数据
+mapData 40 {
+    request {
+        mapData 0 : string       # 地图数据JSON
+        totalBlocks 1 : integer  # 总方块数
     }
 }
