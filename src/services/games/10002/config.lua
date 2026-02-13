@@ -104,6 +104,12 @@ config.MAP = {
     MAX_PLAYERS = 4,
 }
 
+-- AI配置
+config.AI = {
+    TICK_INTERVAL = 5,           -- AI执行间隔（秒）
+    ACTION_PROBABILITY = 70,      -- AI行动概率（百分比）
+}
+
 -- 消息转发类型
 config.FORWARD_MESSAGE_TYPE = {
     TALK = 1,

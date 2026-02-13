@@ -11,6 +11,7 @@ local cjson = require "cjson"
 local config = require "games.10002.config"
 local PrivateRoom = require "games.privateRoom"
 local logicHandler = require "games.10002.logic"
+local aiHandler = require "games.10002.ai"
 
 local Room = {}
 setmetatable(Room, {__index = PrivateRoom})
@@ -22,6 +23,9 @@ local roomInstance = nil
 -- Room -> Logic 的通信接口
 local roomHandler = {}
 
+-- Room -> AI 的通信接口
+local roomHandlerAi = {}
+
 --[[
     发送消息给指定座位
     @param seat: number 座位号
@@ -30,6 +34,15 @@ local roomHandler = {}
 ]]
 function roomHandler.sendToSeat(seat, name, data)
     if not roomInstance then return end
+    
+    -- 检查是否是机器人，如果是则发送给AI处理
+    if roomInstance:isRobotBySeat(seat) then
+        if aiHandler.onMsg then
+            aiHandler.onMsg(seat, name, data)
+        end
+        return
+    end
+    
     local userid = roomInstance.roomInfo.playerids[seat]
     if userid then
         roomInstance:sendToOneClient(userid, name, data)
@@ -43,6 +56,16 @@ end
 ]]
 function roomHandler.sendToAll(name, data)
     if not roomInstance then return end
+    
+    -- 发送给机器人（所有座位都要检查）
+    for seat = 1, roomInstance.roomInfo.playerNum do
+        if roomInstance:isRobotBySeat(seat) then
+            if aiHandler.onMsg then
+                aiHandler.onMsg(seat, name, data)
+            end
+        end
+    end
+    
     roomInstance:sendToAllClient(name, data)
 end
 
@@ -112,6 +135,50 @@ function roomHandler.getGameTime()
     return os.time() - roomInstance.roomInfo.gameStartTime
 end
 
+--[[
+    ==================== RoomHandlerAi 接口（供AI调用） ====================
+]]
+
+--[[
+    AI发送消息给Logic
+    @param seat: number 座位号
+    @param name: string 消息名
+    @param data: table 消息数据
+]]
+function roomHandlerAi.onAiMsg(seat, name, data)
+    log.info("[RoomHandlerAi] 座位%d AI消息: %s", seat, name)
+    if roomInstance and roomInstance.logicHandler then
+        local func = roomInstance.logicHandler[name]
+        if func then
+            local result = func(seat, data)
+            log.info("[RoomHandlerAi] 座位%d AI消息处理结果: %s", seat, UTILS.tableToString(result or {}))
+        else
+            log.error("[RoomHandlerAi] 未找到处理方法: %s", name)
+        end
+    end
+end
+
+--[[
+    获取指定座位的可消除方块对（供AI决策使用）
+    @param seat: number 座位号
+    @return table 可消除的方块对数组
+]]
+function roomHandlerAi.getValidPairs(seat)
+    if not roomInstance then return {} end
+    
+    -- 从logicHandler获取玩家地图
+    if roomInstance.logicHandler and roomInstance.logicHandler.getPlayerMap then
+        local playerMap = roomInstance.logicHandler.getPlayerMap(seat)
+        if playerMap and playerMap.getAllValidPairs then
+            local pairs = playerMap:getAllValidPairs()
+            log.debug("[RoomHandlerAi] 座位%d可消除方块对数量: %d", seat, #pairs)
+            return pairs
+        end
+    end
+    
+    return {}
+end
+
 -- 构造函数
 function Room:new()
     local obj = PrivateRoom:new()
@@ -127,6 +194,10 @@ function Room:_initRoom()
     
     -- 游戏逻辑处理器引用
     self.logicHandler = logicHandler
+    
+    -- AI处理器引用
+    self.aiHandler = aiHandler
+    self.roomHandlerAi = roomHandlerAi
     
     -- 定时器间隔
     self.dTime = 100
@@ -192,6 +263,10 @@ function Room:_initMatchRoomPlayers(data)
         if bRobot then
             status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
+            -- 为机器人注册AI
+            if self.aiHandler and self.aiHandler.addRobot then
+                self.aiHandler.addRobot(seat)
+            end
         else
             self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
@@ -212,6 +287,7 @@ function Room:initLogic()
     }
     
     self.logicHandler.init(ruleData, roomHandler)
+    self.aiHandler.init(roomHandlerAi, self.roomInfo.robotCnt)
 end
 
 -- 启动定时任务
@@ -221,6 +297,9 @@ function Room:startTimer()
             skynet.sleep(self.dTime)
             if self.logicHandler then
                 self.logicHandler.update()
+            end
+            if self.aiHandler then
+                self.aiHandler.update()
             end
             self:checkRoomTimeout()
         end
