@@ -3,11 +3,11 @@ local log = require "log"
 local gConfig = CONFIG
 local waitingOnSure = {}
 local onSureIndex = 1
-local onSureLimitTime = 5
 local matchOnSure = {}
 local svrRobot = gConfig.CLUSTER_SVR_NAME.ROBOT
 local svrUser = gConfig.CLUSTER_SVR_NAME.USER
 local svrGame = gConfig.CLUSTER_SVR_NAME.GAME
+local matchConfig = require("match.matchConfig")
 local send_request = nil
 local svrDB = nil
 
@@ -66,8 +66,12 @@ local function createOnSureItem(gameid, queueid, playerids, data)
         for _,v in pairs(data.robots) do
             table.insert(readys, v)
         end
-        --readys = data.robots
     end
+    
+    -- 获取配置中的确认时间
+    local config = matchConfig.get(gameid, queueid)
+    local confirmTime = config.confirmTime or matchConfig.default.confirmTime
+    
     local timeNow = os.time()
     onSureIndex = onSureIndex + 1
     local item = {
@@ -78,7 +82,7 @@ local function createOnSureItem(gameid, queueid, playerids, data)
         readys = readys,
         cancels = {},
         createTime = timeNow,
-        endTime = timeNow + onSureLimitTime,
+        endTime = timeNow + confirmTime,
         id = onSureIndex
     }
     table.insert(waitingOnSure, item)
