@@ -233,7 +233,47 @@ end
 -- 动态人数匹配
 local function checkQueueDynamic(gameid, queueid, config)
     local que = queueUserids[gameid][queueid]
-    if #que < config.minPlayers then
+    
+    -- 检查是否有人超时需要机器人（即使只有1人）
+    if #que > 0 and #que < config.minPlayers then
+        -- 先增加所有用户的checkNum
+        for _, user in ipairs(que) do
+            user.checkNum = user.checkNum + 1
+        end
+        
+        -- 检查等待中的用户是否有人超时
+        local waitingUsers = {}
+        for _, user in ipairs(que) do
+            if user.checkNum >= config.robotAfterFails then
+                table.insert(waitingUsers, user)
+            end
+        end
+        
+        -- 如果有人超时，尝试用机器人补充
+        if #waitingUsers > 0 then
+            if checkNeedRobotDynamic(gameid, queueid, waitingUsers, config) then
+                -- 从队列中移除已匹配的用户
+                for _, matchedUser in ipairs(waitingUsers) do
+                    if not matchedUser.isRobot then
+                        for i, quser in ipairs(que) do
+                            if quser.userid == matchedUser.userid then
+                                table.remove(que, i)
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- 如果队列人数仍然不足minPlayers，继续等待
+        if #que < config.minPlayers then
+            return
+        end
+    end
+    
+    -- 如果队列为空，直接返回
+    if #que == 0 then
         return
     end
     
