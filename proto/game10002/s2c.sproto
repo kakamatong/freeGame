@@ -298,5 +298,6 @@ mapData 40 {
     request {
         mapData 0 : string       # 地图数据JSON
         totalBlocks 1 : integer  # 总方块数
+        seat 2 : integer         # 座位号，标识这是哪个玩家的地图
     }
 }

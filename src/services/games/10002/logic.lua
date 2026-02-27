@@ -124,7 +124,7 @@ end
 ]]
 
 --[[
-    START阶段开始：广播阶段ID，下发地图数据
+    START阶段开始：广播阶段ID，下发所有玩家的地图数据给所有玩家
 ]]
 function logic.startStepStart()
     log.info("[Logic] START阶段开始")
@@ -137,13 +137,19 @@ function logic.startStepStart()
         end
     end
     
+    -- 广播所有玩家的地图给所有玩家
     for seat, playerMap in pairs(logic.playerMaps) do
         local totalBlocks = playerMap:getRemainingBlockCount()
-        logic.roomHandler.sendToSeat(seat, "mapData", {
+        logic.roomHandler.sendToAll("mapData", {
             mapData = cjson.encode(playerMap:getMap()),
             totalBlocks = totalBlocks,
+            seat = seat,  -- 标识这是哪个玩家的地图
         })
-        
+    end
+    
+    -- 单独发送每个玩家的初始进度
+    for seat, playerMap in pairs(logic.playerMaps) do
+        local totalBlocks = playerMap:getRemainingBlockCount()
         logic.roomHandler.sendToSeat(seat, "progressUpdate", {
             seat = seat,
             eliminated = 0,
@@ -594,11 +600,15 @@ function logicHandler.relink(seat)
         startTime = logic.startTime,
     })
     
+    -- 发送所有玩家的地图给重连玩家
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
-    logic.roomHandler.sendToSeat(seat, "mapData", {
-        mapData = cjson.encode(playerMap:getMap()),
-        totalBlocks = totalBlocks,
-    })
+    for targetSeat, targetMap in pairs(logic.playerMaps) do
+        logic.roomHandler.sendToSeat(seat, "mapData", {
+            mapData = cjson.encode(targetMap:getMap()),
+            totalBlocks = totalBlocks,
+            seat = targetSeat,  -- 标识这是哪个玩家的地图
+        })
+    end
     
     local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
     logic.roomHandler.sendToSeat(seat, "progressUpdate", {
