@@ -386,13 +386,25 @@ function logicHandler.clickTiles(seat, args)
     
     log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
     
-    logic.roomHandler.sendToSeat(seat, "tilesRemoved", {
+    -- 转换lines格式以匹配sproto协议: {start={row, col}, dest={row, col}}
+    local formattedLines = {}
+    if lines then
+        for _, line in ipairs(lines) do
+            table.insert(formattedLines, {
+                start = {row = line[1].row - 1, col = line[1].col - 1},
+                dest = {row = line[2].row - 1, col = line[2].col - 1}
+            })
+        end
+    end
+    
+    logic.roomHandler.sendToAll("tilesRemoved", {
         code = 1,
         p1 = {row = p1.row - 1, col = p1.col - 1},
         p2 = {row = p2.row - 1, col = p2.col - 1},
-        lines = lines,
+        lines = formattedLines,
         eliminated = progress.eliminated,
         remaining = remaining,
+        seat = seat,  -- 标识是哪个玩家的消除操作
     })
     
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols

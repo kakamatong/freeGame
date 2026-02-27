@@ -151,5 +151,5 @@ useItem 22 {
 
 .LineSegment {
     start 0 : Point
-    end 1 : Point
+    dest 1 : Point
 }

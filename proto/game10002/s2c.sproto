@@ -209,7 +209,7 @@ talk 16 {
 # 线段结构（路径）
 .LineSegment {
     start 0 : Point
-    end 1 : Point
+    dest 1 : Point
 }
 
 # 游戏开始
@@ -237,6 +237,7 @@ tilesRemoved 34 {
         lines 3 : *LineSegment   # 连接路径
         eliminated 4 : integer   # 已消除数量
         remaining 5 : integer    # 剩余方块数
+        seat 6 : integer         # 执行消除的玩家座位号
     }
 }
 
