@@ -211,11 +211,7 @@ end
 ]]
 function XY.tilesRemoved(seat, data)
     if data.code == 1 then
-        log.debug("[AI] 座位%d消除成功，剩余方块:%d", seat, data.remaining)
-        -- 更新最后行动时间，避免立即再次行动
-        if aiLogic.data[seat] then
-            aiLogic.data[seat].lastActionTime = os.time()
-        end
+        log.debug("[AI] 座位%d消除成功，剩余方块:%d", data.seat, data.remaining)
     end
 end
 
