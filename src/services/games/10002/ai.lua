@@ -142,8 +142,9 @@ function aiLogic.update()
         if data.stepid == config.GAME_STEP.PLAYING then
             local timeSinceLastAction = now - (data.lastActionTime or 0)
             
-            -- 检查是否达到执行间隔
-            if timeSinceLastAction >= aiLogic.config.TICK_INTERVAL then
+            -- 检查是否达到该AI独立的执行间隔
+            local interval = data.tickInterval or aiLogic.config.TICK_INTERVAL
+            if timeSinceLastAction >= interval then
                 aiLogic.doEliminate(seat)
             end
         end
@@ -278,11 +279,14 @@ end
     @param seat: number 座位号
 ]]
 function aiHandler.addRobot(seat)
+    -- 随机生成执行间隔 3-6 秒
+    local tickInterval = math.random(3, 6)
     aiLogic.data[seat] = {
         stepid = config.GAME_STEP.NONE,
         lastActionTime = 0,
+        tickInterval = tickInterval,  -- 每个AI独立的执行间隔
     }
-    log.info("[AI] 添加机器人座位%d", seat)
+    log.info("[AI] 添加机器人座位%d，执行间隔:%d秒", seat, tickInterval)
 end
 
 --[[
