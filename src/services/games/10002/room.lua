@@ -349,6 +349,32 @@ function Room:relink(userid)
     end
 end
 
+-- 房间转发协议
+function Room:forwardMessage(userid, args)
+    local msgType = args.type
+    local toUserid = args.to
+    local msg = args.msg
+    local from = userid
+    log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
+
+    local data = {
+        type = msgType,
+        from = from,
+        msg = msg
+    }
+    if not toUserid or #toUserid == 0 then
+        self:sendToAllClient("forwardMessage", data)
+    else
+        for _, value in pairs(toUserid) do
+            if self.players[value] then
+                self:sendToOneClient(value, "forwardMessage", data)
+            end
+        end
+    end
+
+    return {code = 1, msg = "success"}
+end
+
 -- 命令接口
 local CMD = {}
 
@@ -447,6 +473,14 @@ function REQUEST:clickTiles(userid, args)
     end
     
     return {code = 0, msg = "逻辑模块未初始化"}
+end
+
+-- 消息转发
+function REQUEST:forwardMessage(userid, args)
+    if roomInstance then
+        return roomInstance:forwardMessage(userid, args)
+    end
+    return {code = 0, msg = "房间未初始化"}
 end
 
 -- 客户端请求分发
