@@ -622,6 +622,21 @@ function logicHandler.relink(seat)
         step = logic.stepId,
     })
     
+    -- 如果是PLAYING阶段，下发剩余时间
+    if logic.stepId == config.GAME_STEP.PLAYING then
+        local elapsed = os.time() - logic.stepBeginTime
+        local totalTime = config.STEP_TIME_LEN[config.GAME_STEP.PLAYING]
+        local remainingTime = totalTime - elapsed
+        
+        if remainingTime > 0 then
+            logic.roomHandler.sendToSeat(seat, "gameClock", {
+                time = remainingTime,
+                seat = 0,
+            })
+            log.info("[Logic] 座位%d重连，PLAYING阶段剩余时间:%d秒", seat, remainingTime)
+        end
+    end
+    
     logic.roomHandler.sendToSeat(seat, "gameRelink", {
         startTime = logic.startTime,
     })
