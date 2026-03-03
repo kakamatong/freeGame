@@ -34,6 +34,7 @@ logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 logic.stepId = config.GAME_STEP.NONE        -- 当前阶段ID
 logic.stepBeginTime = 0                     -- 阶段开始时间
 logic.roundNum = 0                          -- 当前局数
+logic.endType = config.END_TYPE.NONE        -- 游戏结束类型
 
 -- 暴露给 Room 的接口
 local logicHandler = {}
@@ -201,7 +202,13 @@ end
 
 function logic.onStepPlayingTimeout()
     log.info("[Logic] PLAYING阶段超时，强制结束游戏")
-    logicHandler.endGame(config.END_TYPE.TIMEOUT)
+    
+    if logic._checkAllUnfinished() then
+        logic.endType = config.END_TYPE.TIMEOUT
+    else
+        logic.endType = config.END_TYPE.NORMAL
+    end
+    logic.stopStep(config.GAME_STEP.PLAYING)
 end
 
 --[[
@@ -210,6 +217,7 @@ end
 
 function logic.startStepEnd()
     log.info("[Logic] END阶段开始")
+    logicHandler.endGame()
 end
 
 --[[
@@ -493,6 +501,21 @@ end
     检查本局游戏是否结束
 ]]
 function logic._checkGameEnd()
+    local allFinished, finishedPlayers, totalPlayers = logic._checkAllFinished()
+    
+    log.info("[Logic] 检查本局结束: %d/%d 已完成", finishedPlayers, totalPlayers)
+    
+    -- 如果所有人都完成了，结束本局
+    if allFinished and totalPlayers > 0 then
+        logic.endType = config.END_TYPE.ALL_FINISHED
+        logic.stopStep(config.GAME_STEP.PLAYING)
+    end
+end
+
+--[[
+    检查所有玩家是否都完成了
+]]
+function logic._checkAllFinished()
     local allFinished = true
     local totalPlayers = 0
     local finishedPlayers = 0
@@ -505,13 +528,22 @@ function logic._checkGameEnd()
             allFinished = false
         end
     end
-    
-    log.info("[Logic] 检查本局结束: %d/%d 已完成", finishedPlayers, totalPlayers)
-    
-    -- 如果所有人都完成了，结束本局
-    if allFinished and totalPlayers > 0 then
-        logic.stopStep(config.GAME_STEP.PLAYING)
+
+    return allFinished, finishedPlayers, totalPlayers
+end
+
+--[[
+    检查所有玩家是否都未完成
+]]
+function logic._checkAllUnfinished()
+    local allUnfinished = true
+    for seat, progress in pairs(logic.playerProgress) do
+        if progress.finished then
+            allUnfinished = false
+            break
+        end
     end
+    return allUnfinished
 end
 
 --[[
@@ -522,7 +554,7 @@ end
     结束本局游戏
     @param endType: number 结束类型
 ]]
-function logicHandler.endGame(endType)
+function logicHandler.endGame()
     if logic.gameStatus == config.GAME_STATUS.END then
         log.warn("[Logic] 本局已结束，跳过")
         return
@@ -533,7 +565,7 @@ function logicHandler.endGame(endType)
         logic.startStep(config.GAME_STEP.END)
     end
     
-    log.info("[Logic] 本局游戏结束，类型: %d", endType)
+    log.info("[Logic] 本局游戏结束，类型: %d", logic.endType)
     
     logic.gameStatus = config.GAME_STATUS.END
     local endTime = os.time()
@@ -565,7 +597,7 @@ function logicHandler.endGame(endType)
     end)
     
     logic.roomHandler.sendToAll("gameEnd", {
-        endType = endType,
+        endType = logic.endType,
         rankings = rankings,
     })
     
@@ -587,7 +619,7 @@ function logicHandler.endGame(endType)
         })
     end
     
-    logic.roomHandler.onGameEnd(endType, rankings)
+    logic.roomHandler.onGameEnd(logic.endType, rankings)
     
     logic.stopStep(config.GAME_STEP.END)
 end
