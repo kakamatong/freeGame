@@ -257,13 +257,20 @@ function logicHandler.init(rule, roomHandler)
     logic.rule.mapCols = logic.rule.mapCols or 12
     logic.rule.iconTypes = logic.rule.iconTypes or 8
     logic.rule.playerCnt = logic.rule.playerCnt or 2
-    logic.rule.maxTime = logic.rule.maxTime or 600  -- 默认10分钟超时
+    logic.rule.maxTime = logic.rule.maxTime or 120  -- 默认10分钟超时
     
     -- 更新PLAYING阶段时间
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
     
     log.info("[Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒",
         logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
+    
+    -- 发送游戏逻辑信息给所有玩家
+    logic.roomHandler.sendToAll("logicInfo", {
+        playerCnt = logic.rule.playerCnt,
+        playingStepTime = logic.rule.maxTime,
+        ext = "",
+    })
 end
 
 --[[
@@ -603,6 +610,13 @@ function logicHandler.relink(seat)
         log.warn("[Logic] 座位%d数据不存在，无法重连", seat)
         return
     end
+    
+    -- 重连时第一条协议：发送游戏逻辑信息
+    logic.roomHandler.sendToSeat(seat, "logicInfo", {
+        playerCnt = logic.rule.playerCnt,
+        playingStepTime = logic.rule.maxTime,
+        ext = "",
+    })
     
     logic.roomHandler.sendToSeat(seat, "stepId", {
         step = logic.stepId,

@@ -302,3 +302,12 @@ mapData 40 {
         seat 2 : integer         # 座位号，标识这是哪个玩家的地图
     }
 }
+
+# 游戏逻辑信息
+logicInfo 41 {
+    request {
+        playerCnt 0 : integer        # 玩家数量
+        playingStepTime 1 : integer  # 对局阶段时间（秒）
+        ext 2 : string               # 扩展字段
+    }
+}

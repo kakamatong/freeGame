@@ -45,7 +45,7 @@ config.GAME_STEP = {
 -- 阶段时间配置（秒）
 config.STEP_TIME_LEN = {
     [config.GAME_STEP.START] = 1,       -- 开始阶段1秒（给客户端加载地图的时间）
-    [config.GAME_STEP.PLAYING] = 9999,  -- 游戏阶段，默认9999秒（实际需要根据配置调整）
+    [config.GAME_STEP.PLAYING] = 120,  -- 游戏阶段，默认9999秒（实际需要根据配置调整）
     [config.GAME_STEP.END] = 0,         -- 结束阶段0秒（立即执行）
 }
 
