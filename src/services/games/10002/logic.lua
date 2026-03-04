@@ -563,11 +563,6 @@ function logicHandler.endGame()
         return
     end
     
-    -- 如果不在END阶段，先切换到END阶段
-    if logic.stepId ~= config.GAME_STEP.END then
-        logic.startStep(config.GAME_STEP.END)
-    end
-    
     log.info("[Logic] 本局游戏结束，类型: %d", logic.endType)
     
     logic.gameStatus = config.GAME_STATUS.END
