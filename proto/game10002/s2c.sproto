@@ -255,6 +255,7 @@ playerFinished 35 {
     seat 0 : integer
     usedTime 1 : integer     # -1表示未完成
     eliminated 2 : integer   # 消除数量
+    rank 3 : integer         # 排名（1开始，未完成则为0）
 }
 
 gameEnd 36 {

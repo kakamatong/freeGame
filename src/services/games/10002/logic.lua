@@ -576,13 +576,15 @@ function logicHandler.endGame()
                 seat = seat,
                 usedTime = progress.usedTime,
                 eliminated = progress.eliminated,
+                rank = progress.rank,
             })
         else
-            -- 未完成，用时为-1
+            -- 未完成，用时为-1，排名为0
             table.insert(rankings, {
                 seat = seat,
                 usedTime = -1,
                 eliminated = progress.eliminated,
+                rank = 0,
             })
         end
     end
