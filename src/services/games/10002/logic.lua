@@ -36,6 +36,7 @@ logic.stepId = config.GAME_STEP.NONE        -- 当前阶段ID
 logic.stepBeginTime = 0                     -- 阶段开始时间
 logic.roundNum = 0                          -- 当前局数
 logic.endType = config.END_TYPE.NONE        -- 游戏结束类型
+logic.finishOrder = 0                       -- 完成顺序计数器，用于排名
 
 -- 暴露给 Room 的接口
 local logicHandler = {}
@@ -262,6 +263,7 @@ function logicHandler.init(rule, roomHandler)
     logic.rule = rule or {}
     logic.roomHandler = roomHandler
     logic.binit = true
+    logic.finishOrder = 0  -- 重置完成顺序计数器
     
     -- 默认地图配置
     logic.rule.mapRows = logic.rule.mapRows or 8
@@ -458,16 +460,11 @@ function logic._onPlayerFinish(seat)
     progress.finishTime = math.floor(skynet.time() * 1000)
     progress.usedTime = progress.finishTime - progress.startTime
     
-    log.info("[Logic] 座位%d完成本局，用时: %d毫秒", seat, progress.usedTime)
+    -- 增加完成顺序计数器，根据先后顺序排名
+    logic.finishOrder = logic.finishOrder + 1
+    progress.rank = logic.finishOrder
     
-    -- 计算本局排名
-    local rank = 1
-    for otherSeat, otherProgress in pairs(logic.playerProgress) do
-        if otherSeat ~= seat and otherProgress.finished and otherProgress.finishTime < progress.finishTime then
-            rank = rank + 1
-        end
-    end
-    progress.rank = rank
+    log.info("[Logic] 座位%d完成本局，用时: %d毫秒，排名: %d", seat, progress.usedTime, progress.rank)
     
     -- 检查是否是第一个完成（用于设置10秒倒计时）
     local finishedCount = 0
@@ -488,12 +485,12 @@ function logic._onPlayerFinish(seat)
         log.info("[Logic] 第一个玩家完成，设置10秒倒计时")
     end
     
-    logic.roomHandler.onPlayerFinish(seat, progress.usedTime, rank)
+    logic.roomHandler.onPlayerFinish(seat, progress.usedTime, logic.finishOrder)
     
     logic.roomHandler.sendToAll("playerFinished", {
         seat = seat,
         usedTime = progress.usedTime,
-        rank = rank,
+        rank = logic.finishOrder,
     })
     
     -- 检查本局是否结束
