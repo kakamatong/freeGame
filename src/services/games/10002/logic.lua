@@ -18,6 +18,7 @@ local log = require "log"
 local cjson = require "cjson"
 local Map = require "games.10002.map"
 local mapGenerator = require "games.10002.mapGenerator"
+local skynet = require "skynet"
 
 local logic = {}
 
@@ -132,9 +133,11 @@ function logic.startStepStart()
 
     logic._generatePlayerMaps()
     
+    -- 记录毫秒级开始时间
+    local startTimeMs = math.floor(skynet.time() * 1000)
     for seat, playerMap in pairs(logic.playerMaps) do
         if logic.playerProgress[seat] then
-            logic.playerProgress[seat].startTime = logic.startTime
+            logic.playerProgress[seat].startTime = startTimeMs
         end
     end
     
@@ -452,10 +455,10 @@ function logic._onPlayerFinish(seat)
     end
     
     progress.finished = true
-    progress.finishTime = os.time()
+    progress.finishTime = math.floor(skynet.time() * 1000)
     progress.usedTime = progress.finishTime - progress.startTime
     
-    log.info("[Logic] 座位%d完成本局，用时: %d秒", seat, progress.usedTime)
+    log.info("[Logic] 座位%d完成本局，用时: %d毫秒", seat, progress.usedTime)
     
     -- 计算本局排名
     local rank = 1
