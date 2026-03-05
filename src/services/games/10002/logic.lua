@@ -586,13 +586,6 @@ function logicHandler.endGame()
         end
     end
     
-    -- 按用时排序（用时短的在前）
-    table.sort(rankings, function(a, b)
-        if a.usedTime == -1 then return false end
-        if b.usedTime == -1 then return true end
-        return a.usedTime < b.usedTime
-    end)
-    
     logic.roomHandler.sendToAll("gameEnd", {
         endType = logic.endType,
         rankings = rankings,
