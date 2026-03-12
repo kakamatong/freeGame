@@ -219,8 +219,14 @@ function Room:init(data)
         -- 初始化匹配房间玩家
         self:_initMatchRoomPlayers(data)
     elseif self:isPrivateRoom() then
-        local modeData = config.PRIVATE_ROOM_MODE and config.PRIVATE_ROOM_MODE[self.roomInfo.privateRule.mode or 0] or {name = "单局竞速", maxCnt = 1, winCnt = 1}
-        self.roomInfo.mode = modeData
+        -- 使用传入的 playNum 和 playerCnt 构建 mode 对象
+        local playNum = self.roomInfo.privateRule.playNum or 1
+        local playerCnt = self.roomInfo.privateRule.playerCnt or 2
+        self.roomInfo.playerNum = playerCnt
+        self.roomInfo.mode = {
+            maxCnt = playNum,
+            playerCnt = playerCnt
+        }
     end
     
     -- 初始化游戏状态
@@ -347,6 +353,75 @@ function Room:relink(userid)
     if self.logicHandler then
         self.logicHandler.relink(seat)
     end
+end
+
+-- 重写发送总成绩方法（按排名积分）
+function Room:sendTotalResult()
+    if not self.roomInfo.record then
+        return
+    end
+
+    local playerCnt = self.roomInfo.mode and self.roomInfo.mode.playerCnt or self.roomInfo.playerNum
+    local userInfo = {}
+    
+    -- 为每个座位初始化数据
+    for seat, userid in ipairs(self.roomInfo.playerids) do
+        userInfo[seat] = {
+            userid = userid,
+            seat = seat,
+            totalScore = 0,
+            roundDetails = {}
+        }
+    end
+    
+    -- 遍历每局记录，计算积分
+    for roundNum, roundData in pairs(self.roomInfo.record) do
+        if roundData and roundData.rankings then
+            for _, rankInfo in ipairs(roundData.rankings) do
+                local seat = rankInfo.seat
+                if userInfo[seat] then
+                    local rank = rankInfo.rank or 0
+                    local finished = rank > 0
+                    -- 积分计算：完成的玩家得 (playerCnt - rank + 1) 分，未完成得0分
+                    local score = finished and (playerCnt - rank + 1) or 0
+                    
+                    userInfo[seat].roundDetails[roundNum] = {
+                        rank = rank,
+                        score = score,
+                        finished = finished,
+                        usedTime = rankInfo.usedTime or -1,
+                        eliminated = rankInfo.eliminated or 0
+                    }
+                    userInfo[seat].totalScore = userInfo[seat].totalScore + score
+                end
+            end
+        end
+    end
+    
+    -- 转换为数组格式
+    local totalResultInfo = {}
+    for _, info in pairs(userInfo) do
+        table.insert(totalResultInfo, info)
+    end
+    
+    -- 按总积分排序（高分在前）
+    table.sort(totalResultInfo, function(a, b)
+        return a.totalScore > b.totalScore
+    end)
+
+    local data = {
+        startTime = self.roomInfo.createRoomTime,
+        endTime = os.time(),
+        shortRoomid = self.roomInfo.shortRoomid,
+        roomid = self.roomInfo.roomid,
+        owner = self.roomInfo.owner,
+        rule = self.roomInfo.gameData.rule or "{}",
+        playCnt = self.roomInfo.playedCnt,
+        maxCnt = self.roomInfo.mode.maxCnt,
+        playerCnt = playerCnt,
+        totalResultInfo = totalResultInfo
+    }
+    self:sendToAllClient("totalResult", data)
 end
 
 -- 房间转发协议

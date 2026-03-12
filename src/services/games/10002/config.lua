@@ -63,28 +63,6 @@ config.ROOM_END_FLAG = {
     OWNER_DISBAND = 5,
 }
 
--- 私人房间模式
-config.PRIVATE_ROOM_MODE = {
-    [0] = {
-        name = "单局竞速",
-        maxCnt = 1,
-        winCnt = 1,
-        desc = "谁先完成谁赢"
-    },
-    [1] = {
-        name = "3局2胜",
-        maxCnt = 3,
-        winCnt = 2,
-        desc = "三局两胜制"
-    },
-    [2] = {
-        name = "5局3胜",
-        maxCnt = 5,
-        winCnt = 3,
-        desc = "五局三胜制"
-    },
-}
-
 -- 评分配置（ELO系统）
 config.RATING_CONFIG = {
     K_base = 65,
