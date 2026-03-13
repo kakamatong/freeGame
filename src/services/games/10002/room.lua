@@ -221,10 +221,12 @@ function Room:init(data)
     elseif self:isPrivateRoom() then
         -- 动态获取人数，基于实际加入的玩家
         local playNum = self.roomInfo.privateRule.playNum or 1
-        self.roomInfo.playerNum = #self.roomInfo.playerids
+        -- 设置房间最大人数（dispatchSeat需要用到）
+        self.roomInfo.playerNum = config.PRIVATE_ROOM.MAX_PLAYERS
+        self.roomInfo.nowPlayerNum = #self.roomInfo.playerids
         self.roomInfo.mode = {
             maxCnt = playNum,
-            playerCnt = self.roomInfo.playerNum
+            playerCnt = self.roomInfo.nowPlayerNum
         }
     end
     
@@ -517,8 +519,10 @@ function Room:joinPrivateRoom(userid)
             if seat then
                 self.roomInfo.playerids[seat] = userid
                 self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum + 1
-                -- 动态更新房间最大人数
-                self.roomInfo.playerNum = #self.roomInfo.playerids
+                -- 更新mode中的实际玩家数
+                if self.roomInfo.mode then
+                    self.roomInfo.mode.playerCnt = self.roomInfo.nowPlayerNum
+                end
                 self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
                 -- 私人房战力拉去
                 local rices = skynet.call(self.svrDB, "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
