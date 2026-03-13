@@ -219,13 +219,12 @@ function Room:init(data)
         -- 初始化匹配房间玩家
         self:_initMatchRoomPlayers(data)
     elseif self:isPrivateRoom() then
-        -- 使用传入的 playNum 和 playerCnt 构建 mode 对象
+        -- 动态获取人数，基于实际加入的玩家
         local playNum = self.roomInfo.privateRule.playNum or 1
-        local playerCnt = self.roomInfo.privateRule.playerCnt or 2
-        self.roomInfo.playerNum = playerCnt
+        self.roomInfo.playerNum = #self.roomInfo.playerids
         self.roomInfo.mode = {
             maxCnt = playNum,
-            playerCnt = playerCnt
+            playerCnt = self.roomInfo.playerNum
         }
     end
     
@@ -310,6 +309,33 @@ function Room:startTimer()
             self:checkRoomTimeout()
         end
     end)
+end
+
+-- 重写testStart方法（支持房主直接开始或所有玩家准备后开始）
+function Room:testStart()
+    log.info("Room10002:testStart")
+    
+    -- 非私人房沿用旧逻辑：所有玩家都准备才能开始
+    if not self:isPrivateRoom() then
+        local readyCount = self:getReadyCnt()
+        if readyCount == self.roomInfo.playerNum then
+            self:startGame()
+            return true
+        end
+        return false
+    end
+    
+    -- 私人房逻辑：房主可直接开始，或所有普通玩家都准备
+    local readyCount = self:getReadyCnt()
+    local playerNum = self.roomInfo.playerNum
+    
+    -- 所有玩家都准备（包括房主）才能开始
+    if readyCount == playerNum then
+        self:startGame()
+        return true
+    end
+    
+    return false
 end
 
 -- 重写开始游戏方法
@@ -467,6 +493,53 @@ function CMD.connectGame(userid, client_fd)
     return false
 end
 
+-- 重写joinPrivateRoom方法（支持动态人数，最多6人）
+function Room:joinPrivateRoom(userid)
+    if self.roomInfo.roomStatus == self.config.ROOM_STATUS.START or 
+       self.roomInfo.roomStatus == self.config.ROOM_STATUS.END then
+        return false, "游戏已开始"
+    end
+
+    -- 动态人数上限：最多6人（从配置读取）
+    local maxPlayers = config.PRIVATE_ROOM.MAX_PLAYERS
+    if self.roomInfo.nowPlayerNum < maxPlayers then
+        -- 检查玩家是否已在房间
+        local alreadyIn = false
+        for key, value in pairs(self.roomInfo.playerids) do
+            if value == userid then
+                alreadyIn = true
+                break
+            end
+        end
+
+        if not alreadyIn then
+            local seat = self:dispatchSeat()
+            if seat then
+                self.roomInfo.playerids[seat] = userid
+                self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum + 1
+                -- 动态更新房间最大人数
+                self.roomInfo.playerNum = #self.roomInfo.playerids
+                self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
+                -- 私人房战力拉去
+                local rices = skynet.call(self.svrDB, "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
+                local cp = 0
+                if rices then
+                    cp = rices.richNums
+                end
+                self:checkUserInfo(userid, seat, self.config.PLAYER_STATUS.LOADING, false, cp)
+                self:onPlayerJoin(userid)
+                return true
+            else
+                return false, "分配座位错误"
+            end
+        else
+            return true -- 已在房间，直接返回成功
+        end
+    else 
+        return false, "人已满"
+    end
+end
+
 -- 加入私人房
 function CMD.joinPrivateRoom(userid)
     if roomInstance then
@@ -505,6 +578,48 @@ function REQUEST:gameReady(userid, args)
         return roomInstance:gameReady(userid, args.ready)
     end
     return {code = 0, msg = "房间未初始化"}
+end
+
+-- 房主开始游戏（仅房主可用）
+function REQUEST:ownerStartGame(userid, args)
+    if not roomInstance then
+        return {code = 0, msg = "房间未初始化"}
+    end
+    
+    -- 检查是否是私人房
+    if not roomInstance:isPrivateRoom() then
+        return {code = 0, msg = "非私人房间"}
+    end
+    
+    -- 检查是否是房主
+    if not roomInstance:isOwner(userid) then
+        return {code = 0, msg = "只有房主可以开始游戏"}
+    end
+    
+    -- 检查房间状态
+    if roomInstance.roomInfo.roomStatus ~= config.ROOM_STATUS.WAITTING_CONNECT then
+        return {code = 0, msg = "游戏已开始或已结束"}
+    end
+    
+    -- 检查是否有玩家未准备
+    local notReadyUserids = {}
+    for seat, pid in ipairs(roomInstance.roomInfo.playerids) do
+        local player = roomInstance.players[pid]
+        if player and player.status ~= config.PLAYER_STATUS.READY then
+            -- 房主不需要检查
+            if not roomInstance:isOwner(pid) then
+                table.insert(notReadyUserids, pid)
+            end
+        end
+    end
+    
+    if #notReadyUserids > 0 then
+        return {code = 0, msg = "有玩家未准备", notReadyUserids = notReadyUserids}
+    end
+    
+    -- 开始游戏
+    roomInstance:startGame()
+    return {code = 1, msg = "游戏开始"}
 end
 
 -- 离开房间

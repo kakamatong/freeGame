@@ -50,6 +50,17 @@ gameReady 5 {
     }
 }
 
+# 房主开始游戏
+ownerStartGame 27 {
+    request {
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+        notReadyUserids 2 : *integer  # 未准备玩家ID数组
+    }
+}
+
 # 离开房间
 leaveRoom 6 {
     request {

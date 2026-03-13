@@ -82,6 +82,11 @@ config.MAP = {
     MAX_PLAYERS = 6,
 }
 
+-- 私人房配置
+config.PRIVATE_ROOM = {
+    MAX_PLAYERS = 6,  -- 私人房最大玩家数
+}
+
 -- AI配置
 config.AI = {
     TICK_INTERVAL = 5,           -- AI执行间隔（秒）
