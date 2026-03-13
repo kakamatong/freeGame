@@ -267,6 +267,16 @@ gameEnd 36 {
     }
 }
 
+# 单局结束（回合结束）
+roundEnd 42 {
+    request {
+        roundNum 0 : integer      # 当前第几局
+        maxCnt 1 : integer         # 总共几局
+        endTime 2 : integer       # 结束时间戳
+        rankings 3 : *RankingInfo  # 本局排名信息
+    }
+}
+
 # 游戏重连恢复
 gameRelink 37 {
     request {

@@ -23,6 +23,12 @@ local roomInstance = nil
 -- Room -> Logic 的通信接口
 local roomHandler = {}
 
+-- 获取房间最大局数
+function roomHandler.getMaxRound()
+    if not roomInstance then return 1 end
+    return roomInstance.roomInfo.mode and roomInstance.roomInfo.mode.maxCnt or 1
+end
+
 -- Room -> AI 的通信接口
 local roomHandlerAi = {}
 
@@ -287,7 +293,7 @@ end
 -- 初始化游戏逻辑
 function Room:initLogic()
     local ruleData = {
-        playerCnt = self.roomInfo.playerNum,
+        playerCnt = self.roomInfo.nowPlayerNum,
         mapRows = config.MAP.DEFAULT_ROWS,
         mapCols = config.MAP.DEFAULT_COLS,
         iconTypes = config.MAP.ICON_TYPES,
@@ -329,7 +335,7 @@ function Room:testStart()
     
     -- 私人房逻辑：房主可直接开始，或所有普通玩家都准备
     local readyCount = self:getReadyCnt()
-    local playerNum = self.roomInfo.playerNum
+    local playerNum = self.roomInfo.nowPlayerNum
     
     -- 所有玩家都准备（包括房主）才能开始
     if readyCount == playerNum then
@@ -603,6 +609,11 @@ function REQUEST:ownerStartGame(userid, args)
     -- 检查房间状态
     if roomInstance.roomInfo.roomStatus ~= config.ROOM_STATUS.WAITTING_CONNECT then
         return {code = 0, msg = "游戏已开始或已结束"}
+    end
+    
+    -- 检查人数（至少2人才能开始）
+    if roomInstance.roomInfo.nowPlayerNum < 2 then
+        return {code = 0, msg = "人数不足，需要至少2人才能开始"}
     end
     
     -- 检查是否有玩家未准备

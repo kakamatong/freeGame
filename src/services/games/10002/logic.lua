@@ -591,6 +591,18 @@ function logicHandler.endGame()
         rankings = rankings,
     })
     
+    -- 发送roundEnd协议
+    local maxCnt = 1
+    if logic.roomHandler.getMaxRound then
+        maxCnt = logic.roomHandler.getMaxRound()
+    end
+    logic.roomHandler.sendToAll("roundEnd", {
+        roundNum = logic.roundNum,
+        maxCnt = maxCnt,
+        endTime = endTime,
+        rankings = rankings,
+    })
+    
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
     for seat, progress in pairs(logic.playerProgress) do
         local remaining = 0
