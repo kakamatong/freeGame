@@ -644,6 +644,11 @@ function logicHandler.relink(seat)
         log.warn("[Logic] 座位%d数据不存在，无法重连", seat)
         return
     end
+
+    -- 开始重连
+    logic.roomHandler.sendToSeat(seat, "gameRelink", {
+        startTime = logic.startTime,
+    })
     
     -- 重连时第一条协议：发送游戏逻辑信息
     logic.roomHandler.sendToSeat(seat, "logicInfo", {
@@ -670,10 +675,6 @@ function logicHandler.relink(seat)
             log.info("[Logic] 座位%d重连，PLAYING阶段剩余时间:%d秒", seat, remainingTime)
         end
     end
-    
-    logic.roomHandler.sendToSeat(seat, "gameRelink", {
-        startTime = logic.startTime,
-    })
     
     -- 发送所有玩家的地图给重连玩家
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
