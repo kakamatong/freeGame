@@ -116,13 +116,6 @@ function roomHandler.onGameEnd(endType, rankings)
             for _, player in pairs(roomInstance.players) do
                 roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
             end
-            
-            -- 广播局间休息通知
-            roomInstance:sendToAllClient("roundEnd", {
-                currentRound = currentRound,
-                maxRound = mode.maxCnt,
-                rankings = rankings,
-            })
             return
         end
     end

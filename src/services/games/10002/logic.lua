@@ -229,7 +229,7 @@ end
 ]]
 function logic.stopStepEnd()
     log.info("[Logic] END阶段停止，游戏结束")
-    -- 通知Room本局结束已在endGame中处理
+    logic.stepId = config.GAME_STEP.NONE
 end
 
 --[[
