@@ -109,28 +109,19 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
     for _, r in ipairs(rankings) do
         local seat = r.seat
         local oldScore = playerScores[seat] or self.initial_score
+        local k = self:calculateDynamicK(oldScore)
 
-        -- 未完成的玩家
+        -- 未完成的玩家：扣分最多
         if r.rank == 0 then
-            -- 低分保护：分数低于阈值且未完成，不扣分
-            if oldScore < self.low_score_threshold then
-                results[seat] = {
-                    oldScore = oldScore,
-                    newScore = oldScore,
-                    delta = 0,
-                    reason = "unfinished_low_score"
-                }
-            else
-                -- 分数足够但未完成，扣少量分
-                local delta = -math.floor(self:calculateDynamicK(oldScore) * 0.5)
-                local newScore = math.max(self.min_score, oldScore + delta)
-                results[seat] = {
-                    oldScore = oldScore,
-                    newScore = newScore,
-                    delta = delta,
-                    reason = "unfinished"
-                }
-            end
+            -- 直接扣K值（最多扣分）
+            local delta = -k
+            local newScore = math.max(self.min_score, oldScore + delta)
+            results[seat] = {
+                oldScore = oldScore,
+                newScore = newScore,
+                delta = delta,
+                reason = "unfinished"
+            }
         else
             -- 已完成的玩家：基于平均分计算ELO分数变化
             local totalPlayers = #finishedPlayers
