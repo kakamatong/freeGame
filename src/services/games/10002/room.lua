@@ -192,9 +192,8 @@ function roomHandler.gameResult(endType, rankings)
             roomInstance.roomInfo.totalScores[seat] = newTotal
             
             roundScores[seat] = {
-                newScore = result.score,
-                delta = 0,
-                totalScore = newTotal,
+                newScore = newTotal,
+                delta = result.score,
             }
             log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d 总积分%d",
                 seat, result.score, result.rank, newTotal)
