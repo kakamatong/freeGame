@@ -161,7 +161,8 @@ gameRecord 13 {
     win 3 : integer
     lose 4 : integer
     draw 5 : integer
-    ext 6 : string
+    rank 6 : integer
+    ext 7 : string
 }
 
 # 私人房总结算

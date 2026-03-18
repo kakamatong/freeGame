@@ -472,47 +472,27 @@ function Room:sendTotalResult()
         return
     end
 
-    local playerCnt = self.roomInfo.mode and self.roomInfo.mode.playerCnt or self.roomInfo.playerNum
     local userInfo = {}
     
-    -- 为每个座位初始化数据
+    -- 直接使用总积分，不需要遍历每局数据
     for seat, userid in ipairs(self.roomInfo.playerids) do
-        userInfo[seat] = {
+        table.insert(userInfo, {
             userid = userid,
             seat = seat,
-            totalScore = self.roomInfo.totalScores[seat] or 0,
-            roundDetails = {}
-        }
+            score = self.roomInfo.totalScores[seat] or 0,
+            rank = 0,
+        })
     end
     
-    -- 遍历每局记录，获取积分详情
-    for roundNum, roundData in pairs(self.roomInfo.record) do
-        if roundData and roundData.scores then
-            for seat, scoreInfo in pairs(roundData.scores) do
-                if userInfo[seat] then
-                    local rank = scoreInfo.rank or 0
-                    local finished = rank > 0
-                    
-                    userInfo[seat].roundDetails[roundNum] = {
-                        rank = rank,
-                        score = scoreInfo.newScore or 0,
-                        finished = finished,
-                    }
-                end
-            end
-        end
-    end
-    
-    -- 转换为数组格式
-    local totalResultInfo = {}
-    for _, info in pairs(userInfo) do
-        table.insert(totalResultInfo, info)
-    end
-    
-    -- 按总积分排序（高分在前）
-    table.sort(totalResultInfo, function(a, b)
-        return a.totalScore > b.totalScore
+    -- 按总分排序，计算排名
+    table.sort(userInfo, function(a, b)
+        return a.score > b.score
     end)
+    
+    -- 设置排名
+    for i, info in ipairs(userInfo) do
+        info.rank = i
+    end
 
     local data = {
         startTime = self.roomInfo.createRoomTime,
@@ -522,9 +502,9 @@ function Room:sendTotalResult()
         owner = self.roomInfo.owner,
         rule = self.roomInfo.gameData.rule or "{}",
         playCnt = self.roomInfo.playedCnt,
-        maxCnt = self.roomInfo.mode.maxCnt,
-        playerCnt = playerCnt,
-        totalResultInfo = totalResultInfo
+        maxCnt = self.roomInfo.mode and self.roomInfo.mode.maxCnt or 0,
+        playerCnt = self.roomInfo.nowPlayerNum,
+        totalResultInfo = userInfo
     }
     self:sendToAllClient("totalResult", data)
 end
