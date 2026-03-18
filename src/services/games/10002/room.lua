@@ -187,12 +187,17 @@ function roomHandler.gameResult(endType, rankings)
         local scoreResults = roomInstance.scoringMatch:calculatePrivateScore(playerCnt, rankings)
         
         for seat, result in pairs(scoreResults) do
+            local currentTotal = roomInstance.roomInfo.totalScores[seat] or 0
+            local newTotal = currentTotal + result.score
+            roomInstance.roomInfo.totalScores[seat] = newTotal
+            
             roundScores[seat] = {
                 newScore = result.score,
                 delta = 0,
+                totalScore = newTotal,
             }
-            log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d",
-                seat, result.score, result.rank)
+            log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d 总积分%d",
+                seat, result.score, result.rank, newTotal)
         end
         
         roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
@@ -476,30 +481,24 @@ function Room:sendTotalResult()
         userInfo[seat] = {
             userid = userid,
             seat = seat,
-            totalScore = 0,
+            totalScore = self.roomInfo.totalScores[seat] or 0,
             roundDetails = {}
         }
     end
     
-    -- 遍历每局记录，计算积分
+    -- 遍历每局记录，获取积分详情
     for roundNum, roundData in pairs(self.roomInfo.record) do
-        if roundData and roundData.rankings then
-            for _, rankInfo in ipairs(roundData.rankings) do
-                local seat = rankInfo.seat
+        if roundData and roundData.scores then
+            for seat, scoreInfo in pairs(roundData.scores) do
                 if userInfo[seat] then
-                    local rank = rankInfo.rank or 0
+                    local rank = scoreInfo.rank or 0
                     local finished = rank > 0
-                    -- 积分计算：完成的玩家得 (playerCnt - rank + 1) 分，未完成得0分
-                    local score = finished and (playerCnt - rank + 1) or 0
                     
                     userInfo[seat].roundDetails[roundNum] = {
                         rank = rank,
-                        score = score,
+                        score = scoreInfo.newScore or 0,
                         finished = finished,
-                        usedTime = rankInfo.usedTime or -1,
-                        eliminated = rankInfo.eliminated or 0
                     }
-                    userInfo[seat].totalScore = userInfo[seat].totalScore + score
                 end
             end
         end

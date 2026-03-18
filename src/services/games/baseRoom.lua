@@ -49,6 +49,7 @@ function BaseRoom:_init()
         addr = "",
         playedCnt = 0, -- 玩过的次数
         logicData = {},
+        totalScores = {}, -- 玩家总积分 { [seat] = totalScore }
     }
     
     -- 玩家信息
