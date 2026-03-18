@@ -12,6 +12,7 @@ local config = require "games.10002.config"
 local PrivateRoom = require "games.privateRoom"
 local logicHandler = require "games.10002.logic"
 local aiHandler = require "games.10002.ai"
+local ScoringSystem = require "games.10002.scoring"
 
 local Room = {}
 setmetatable(Room, {__index = PrivateRoom})
@@ -96,23 +97,71 @@ function roomHandler.onGameEnd(endType, rankings)
     if not roomInstance then return end
     log.info("[Room] 第%d局结束，类型: %d", roomInstance.roomInfo.playedCnt, endType)
     
-    -- 记录本局战绩
     local currentRound = roomInstance.roomInfo.playedCnt
+    
+    local roundScores = {}
+    if roomInstance:isMatchRoom() then
+        local day = os.date("%Y%m%d")
+        local rankKey = "game10002:day:" .. day
+        local playerScores = {}
+        
+        for seat, userid in ipairs(roomInstance.roomInfo.playerids) do
+            local score = skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zscore", rankKey, userid) or 0
+            playerScores[seat] = score
+        end
+        
+        local scoreResults = roomInstance.scoringMatch:calculateMatchScore(playerScores, rankings)
+        
+        for seat, userid in ipairs(roomInstance.roomInfo.playerids) do
+            local result = scoreResults[seat]
+            if result then
+                local newScore = result.newScore
+                skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zadd", rankKey, newScore, userid)
+                skynet.call(roomInstance.svrDB, "lua", "dbRedis", "expire", rankKey, 86400 * 7)
+                
+                roundScores[seat] = {
+                    oldScore = result.oldScore,
+                    newScore = result.newScore,
+                    delta = result.delta,
+                    rank = result.rank or 0,
+                }
+                
+                log.info("[Room] 匹配模式计分: 座位%d 用户%d 分数%d->%d (delta:%d)",
+                    seat, userid, result.oldScore, result.newScore, result.delta)
+            end
+        end
+        
+        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
+        roomInstance.roomInfo.record[currentRound].scores = roundScores
+    elseif roomInstance:isPrivateRoom() then
+        local playerCnt = roomInstance.roomInfo.nowPlayerNum
+        local scoreResults = roomInstance.scoringMatch:calculatePrivateScore(playerCnt, rankings)
+        
+        for seat, result in pairs(scoreResults) do
+            roundScores[seat] = {
+                score = result.score,
+                rank = result.rank,
+            }
+            log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d",
+                seat, result.score, result.rank)
+        end
+        
+        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
+        roomInstance.roomInfo.record[currentRound].scores = roundScores
+    end
+    
     if roomInstance.roomInfo.record then
         roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
         roomInstance.roomInfo.record[currentRound].endTime = os.time()
         roomInstance.roomInfo.record[currentRound].rankings = rankings
     end
     
-    -- 私人房间模式：检查是否需要继续下一局
     if roomInstance:isPrivateRoom() then
         local mode = roomInstance.roomInfo.mode
         if mode and currentRound < mode.maxCnt then
-            -- 还有下一局，进入局间休息，等待玩家准备
             log.info("[Room] 第%d/%d局结束，等待玩家准备下一局", currentRound, mode.maxCnt)
             roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
             
-            -- 重置玩家准备状态
             for _, player in pairs(roomInstance.players) do
                 roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
             end
@@ -120,7 +169,6 @@ function roomHandler.onGameEnd(endType, rankings)
         end
     end
     
-    -- 所有局都结束了，或匹配模式，结束房间
     log.info("[Room] 所有局结束，房间关闭")
     roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
 end
@@ -197,6 +245,9 @@ function Room:_initRoom()
     -- AI处理器引用
     self.aiHandler = aiHandler
     self.roomHandlerAi = roomHandlerAi
+    
+    -- 计分系统
+    self.scoringMatch = ScoringSystem.new(config.SCORING.MATCH)
     
     -- 定时器间隔
     self.dTime = 100

@@ -74,9 +74,9 @@ config.RATING_CONFIG = {
 
 -- 地图配置
 config.MAP = {
-    DEFAULT_ROWS = 10, --10
-    DEFAULT_COLS = 10, --10
-    ICON_TYPES = 10, --10
+    DEFAULT_ROWS = 4, --10
+    DEFAULT_COLS = 4, --10
+    ICON_TYPES = 2, --10
     
     MIN_PLAYERS = 2,
     MAX_PLAYERS = 6,
@@ -91,6 +91,22 @@ config.PRIVATE_ROOM = {
 config.AI = {
     TICK_INTERVAL = 5,           -- AI执行间隔（秒）
     ACTION_PROBABILITY = 70,      -- AI行动概率（百分比）
+}
+
+-- 计分配置
+config.SCORING = {
+    -- 普通匹配ELO配置（炉石模式）
+    MATCH = {
+        K_base = 32,                -- 基础K值
+        S_max = 3000,              -- 高分阈值（超过此分后加分减少）
+        initial_score = 1000,       -- 初始分数
+        min_score = 0,             -- 最低分数
+        low_score_threshold = 1000, -- 低分阈值（低于此分未完成得0分）
+    },
+    -- 私人房计分配置
+    PRIVATE = {
+        -- 第一名得分 = 玩家数，其余名次递减，未完成得0分
+    }
 }
 
 -- 消息转发类型
