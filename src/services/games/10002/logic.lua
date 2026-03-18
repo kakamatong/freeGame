@@ -586,9 +586,14 @@ function logicHandler.endGame()
         end
     end
     
+    -- 调用room计分接口获取分数
+    local scores = logic.roomHandler.gameResult(logic.endType, rankings)
+    
+    -- 发送gameEnd协议（包含分数）
     logic.roomHandler.sendToAll("gameEnd", {
         endType = logic.endType,
         rankings = rankings,
+        scores = scores,
     })
     
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols

@@ -108,7 +108,42 @@ function roomHandler.onGameEnd(endType, rankings)
     
     local currentRound = roomInstance.roomInfo.playedCnt
     
+    if roomInstance.roomInfo.record then
+        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
+        roomInstance.roomInfo.record[currentRound].endTime = os.time()
+        roomInstance.roomInfo.record[currentRound].rankings = rankings
+    end
+    
+    if roomInstance:isPrivateRoom() then
+        local mode = roomInstance.roomInfo.mode
+        if mode and currentRound < mode.maxCnt then
+            log.info("[Room] 第%d/%d局结束，等待玩家准备下一局", currentRound, mode.maxCnt)
+            roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
+            
+            for _, player in pairs(roomInstance.players) do
+                roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
+            end
+            return
+        end
+    end
+    
+    log.info("[Room] 所有局结束，房间关闭")
+    roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+end
+
+--[[
+    计分接口（由logic调用）
+    @param endType: number 结束类型
+    @param rankings: table 排名列表
+    @return table 分数数据
+]]
+function roomHandler.gameResult(endType, rankings)
+    if not roomInstance then return {} end
+    log.info("[Room] gameResult 第%d局结束，类型: %d", roomInstance.roomInfo.playedCnt, endType)
+    
+    local currentRound = roomInstance.roomInfo.playedCnt
     local roundScores = {}
+    
     if roomInstance:isMatchRoom() then
         -- 匹配模式：使用玩家身上的cp值进行ELO计分
         local playerScores = {}
@@ -132,14 +167,12 @@ function roomHandler.onGameEnd(endType, rankings)
                 if player then
                     player.cp = newScore
                 end
-
+                
                 addCombatPower(userid, newScore - result.oldScore)
                 
                 roundScores[seat] = {
-                    oldScore = result.oldScore,
                     newScore = result.newScore,
                     delta = result.delta,
-                    rank = result.rank or 0,
                 }
                 
                 log.info("[Room] 匹配模式计分: 座位%d 用户%d cp %d->%d (delta:%d)",
@@ -155,8 +188,8 @@ function roomHandler.onGameEnd(endType, rankings)
         
         for seat, result in pairs(scoreResults) do
             roundScores[seat] = {
-                score = result.score,
-                rank = result.rank,
+                newScore = result.score,
+                delta = 0,
             }
             log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d",
                 seat, result.score, result.rank)
@@ -166,27 +199,7 @@ function roomHandler.onGameEnd(endType, rankings)
         roomInstance.roomInfo.record[currentRound].scores = roundScores
     end
     
-    if roomInstance.roomInfo.record then
-        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
-        roomInstance.roomInfo.record[currentRound].endTime = os.time()
-        roomInstance.roomInfo.record[currentRound].rankings = rankings
-    end
-    
-    if roomInstance:isPrivateRoom() then
-        local mode = roomInstance.roomInfo.mode
-        if mode and currentRound < mode.maxCnt then
-            log.info("[Room] 第%d/%d局结束，等待玩家准备下一局", currentRound, mode.maxCnt)
-            roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
-            
-            for _, player in pairs(roomInstance.players) do
-                roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
-            end
-            return
-        end
-    end
-    
-    log.info("[Room] 所有局结束，房间关闭")
-    roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
+    return roundScores
 end
 
 --[[

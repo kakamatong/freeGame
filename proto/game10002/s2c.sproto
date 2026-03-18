@@ -258,12 +258,20 @@ playerFinished 35 {
     rank 3 : integer         # 排名（1开始，未完成则为0）
 }
 
+# 分数信息
+.ScoreInfo {
+    seat 0 : integer
+    newScore 1 : integer     # 新的积分/得分
+    delta 2 : integer        # 变化积分（新增-减少）
+}
+
 gameEnd 36 {
     request {
         roundNum 0 : integer
         endTime 1 : integer
         endType 2 : integer      # 结束类型 (1:正常完成, 2:超时, 3:全部完成, 4:解散)
         rankings 3 : *RankingInfo
+        scores 4 : *ScoreInfo   # 分数信息
     }
 }
 
