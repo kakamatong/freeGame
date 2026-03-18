@@ -44,7 +44,7 @@ end
 --[[
     计算动态K值
     @param score: number 当前玩家分数
-    @return number 动态K值
+    @return number 动态K值（整数）
     
     作用：分数越高，K值越小，加分越少，扣分越多
     - 分数为0时，K = K_base
@@ -52,7 +52,7 @@ end
 ]]
 function ScoringSystem:calculateDynamicK(score)
     local normalized = math.max(0, math.min(score / self.S_max, 1))
-    return self.K_base * (1 - normalized * 0.5)
+    return math.floor(self.K_base * (1 - normalized * 0.5))
 end
 
 --[[
@@ -87,9 +87,10 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
     -- 玩家数不足2人时不计算分数变化
     if #finishedPlayers < 2 then
         for _, r in ipairs(rankings) do
+            local score = playerScores[r.seat] or self.initial_score
             results[r.seat] = {
-                oldScore = playerScores[r.seat] or self.initial_score,
-                newScore = playerScores[r.seat] or self.initial_score,
+                oldScore = math.floor(score),
+                newScore = math.floor(score),
                 delta = 0,
                 reason = "not_enough_players"
             }
@@ -114,10 +115,10 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
         -- 未完成的玩家：扣分最多
         if r.rank == 0 then
             -- 直接扣K值（最多扣分）
-            local delta = -k
-            local newScore = math.max(self.min_score, oldScore + delta)
+            local delta = -math.floor(k)
+            local newScore = math.floor(math.max(self.min_score, oldScore + delta))
             results[seat] = {
-                oldScore = oldScore,
+                oldScore = math.floor(oldScore),
                 newScore = newScore,
                 delta = delta,
                 reason = "unfinished"
@@ -139,14 +140,14 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
             -- actual < expected：扣分（表现低于预期）
             local delta = 0
             if actual > expected then
-                delta = math.floor(self:calculateDynamicK(oldScore) * (actual - expected) * 2)
+                delta = math.floor(k * (actual - expected) * 2)
             else
-                delta = -math.floor(self:calculateDynamicK(oldScore) * (expected - actual) * 2)
+                delta = -math.floor(k * (expected - actual) * 2)
             end
 
-            local newScore = math.max(self.min_score, oldScore + delta)
+            local newScore = math.floor(math.max(self.min_score, oldScore + delta))
             results[seat] = {
-                oldScore = oldScore,
+                oldScore = math.floor(oldScore),
                 newScore = newScore,
                 delta = delta,
                 rank = rank,
