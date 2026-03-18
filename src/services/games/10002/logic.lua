@@ -675,7 +675,7 @@ function logicHandler.relink(seat)
         logic.roomHandler.sendToSeat(seat, "mapData", {
             mapData = cjson.encode(targetMap:getMap()),
             totalBlocks = totalBlocks,
-            seat = targetSeat,  -- 标识这是哪个玩家的地图
+            seat = targetSeat,
         })
     end
     
@@ -688,6 +688,18 @@ function logicHandler.relink(seat)
         finished = progress.finished and 1 or 0,
         usedTime = progress.usedTime or 0,
     })
+    
+    -- 下发房间内已完成玩家的finishInfo
+    for targetSeat, targetProgress in pairs(logic.playerProgress) do
+        if targetProgress.finished then
+            logic.roomHandler.sendToSeat(seat, "playerFinished", {
+                seat = targetSeat,
+                usedTime = targetProgress.usedTime,
+                rank = targetProgress.rank,
+            })
+            log.info("[Logic] 重连下发座位%d的完成信息，排名%d", targetSeat, targetProgress.rank)
+        end
+    end
 end
 
 --[[
