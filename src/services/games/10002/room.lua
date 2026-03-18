@@ -21,6 +21,15 @@ Room.__index = Room
 -- 全局room实例
 local roomInstance = nil
 
+-- 增加战力
+local function addCombatPower(userid, n)
+    if not roomInstance then
+        return
+    end
+    log.info("addCombatPower %d %d", userid, n)
+    skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
+end
+
 -- Room -> Logic 的通信接口
 local roomHandler = {}
 
@@ -101,13 +110,14 @@ function roomHandler.onGameEnd(endType, rankings)
     
     local roundScores = {}
     if roomInstance:isMatchRoom() then
-        local day = os.date("%Y%m%d")
-        local rankKey = "game10002:day:" .. day
+        -- 匹配模式：使用玩家身上的cp值进行ELO计分
         local playerScores = {}
         
         for seat, userid in ipairs(roomInstance.roomInfo.playerids) do
-            local score = skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zscore", rankKey, userid) or 0
-            playerScores[seat] = score
+            local player = roomInstance.players[userid]
+            local cp = player and player.cp or config.SCORING.MATCH.initial_score
+            playerScores[seat] = cp
+            log.info("[Room] 匹配模式获取玩家CP: 座位%d 用户%d cp=%d", seat, userid, cp)
         end
         
         local scoreResults = roomInstance.scoringMatch:calculateMatchScore(playerScores, rankings)
@@ -116,8 +126,14 @@ function roomHandler.onGameEnd(endType, rankings)
             local result = scoreResults[seat]
             if result then
                 local newScore = result.newScore
-                skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zadd", rankKey, newScore, userid)
-                skynet.call(roomInstance.svrDB, "lua", "dbRedis", "expire", rankKey, 86400 * 7)
+                
+                -- 更新玩家cp值
+                local player = roomInstance.players[userid]
+                if player then
+                    player.cp = newScore
+                end
+
+                addCombatPower(userid, newScore - result.oldScore)
                 
                 roundScores[seat] = {
                     oldScore = result.oldScore,
@@ -126,7 +142,7 @@ function roomHandler.onGameEnd(endType, rankings)
                     rank = result.rank or 0,
                 }
                 
-                log.info("[Room] 匹配模式计分: 座位%d 用户%d 分数%d->%d (delta:%d)",
+                log.info("[Room] 匹配模式计分: 座位%d 用户%d cp %d->%d (delta:%d)",
                     seat, userid, result.oldScore, result.newScore, result.delta)
             end
         end
