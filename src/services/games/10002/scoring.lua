@@ -97,6 +97,14 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
         return results
     end
 
+    -- 计算所有完成玩家的平均分
+    local totalScore = 0
+    for _, r in ipairs(finishedPlayers) do
+        local score = playerScores[r.seat] or self.initial_score
+        totalScore = totalScore + score
+    end
+    local avgScore = totalScore / #finishedPlayers
+
     -- 遍历每个玩家计算分数
     for _, r in ipairs(rankings) do
         local seat = r.seat
@@ -124,36 +132,25 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
                 }
             end
         else
-            -- 已完成的玩家：计算ELO分数变化
-            local myExpected = 0  -- 预期胜率总和
+            -- 已完成的玩家：基于平均分计算ELO分数变化
             local totalPlayers = #finishedPlayers
 
-            -- 计算与所有其他完成玩家的预期胜率
-            for _, other in ipairs(finishedPlayers) do
-                if other.seat ~= seat then
-                    local otherScore = playerScores[other.seat] or self.initial_score
-                    myExpected = myExpected + self:calculateExpectedScore(oldScore, otherScore)
-                end
-            end
+            -- 计算相对于平均分的预期胜率
+            local expected = self:calculateExpectedScore(oldScore, avgScore)
 
             -- 计算实际得分：排名越高越接近1
             -- 第1名 actual=1，最后一名 actual接近0
             local rank = r.rank
-            myActual = 1 - (rank - 1) / math.max(1, totalPlayers - 1)
-
-            -- 平均预期胜率
-            if #finishedPlayers > 1 then
-                myExpected = myExpected / (#finishedPlayers - 1)
-            end
+            local actual = 1 - (rank - 1) / math.max(1, totalPlayers - 1)
 
             -- 根据实际与预期的差异计算分数变化
             -- actual > expected：加分（表现超预期）
             -- actual < expected：扣分（表现低于预期）
             local delta = 0
-            if myActual > myExpected then
-                delta = math.floor(self:calculateDynamicK(oldScore) * (myActual - myExpected) * 2)
+            if actual > expected then
+                delta = math.floor(self:calculateDynamicK(oldScore) * (actual - expected) * 2)
             else
-                delta = -math.floor(self:calculateDynamicK(oldScore) * (myExpected - myActual) * 2)
+                delta = -math.floor(self:calculateDynamicK(oldScore) * (expected - actual) * 2)
             end
 
             local newScore = math.max(self.min_score, oldScore + delta)
@@ -162,8 +159,8 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
                 newScore = newScore,
                 delta = delta,
                 rank = rank,
-                expected = myExpected,
-                actual = myActual,
+                expected = expected,
+                actual = actual,
                 reason = "finished"
             }
         end
