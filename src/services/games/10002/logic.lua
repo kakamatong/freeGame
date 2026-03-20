@@ -322,6 +322,128 @@ function logic._generatePlayerMaps()
 end
 
 --[[
+    打乱指定玩家的地图
+    @param seat: number 玩家座位
+    @return table | nil 打乱后的地图数据
+]]
+function logic._shuffleMap(seat)
+    local playerMap = logic.playerMaps[seat]
+    if not playerMap then
+        log.error("[Logic] 座位%d地图不存在", seat)
+        return nil
+    end
+    
+    local mapData = playerMap:getMap()
+    local rows = #mapData
+    local cols = #mapData[1]
+    
+    -- 收集可消除方块和装饰物位置
+    local blocks = {}
+    local decorations = {}
+    
+    for row = 1, rows do
+        for col = 1, cols do
+            local value = mapData[row][col]
+            if value >= 100 then
+                -- 装饰物，记录位置
+                table.insert(decorations, {row = row, col = col})
+            elseif value > 0 then
+                -- 可消除方块
+                table.insert(blocks, value)
+            end
+        end
+    end
+    
+    -- Fisher-Yates 打乱方块
+    for i = #blocks, 2, -1 do
+        local j = math.random(1, i)
+        blocks[i], blocks[j] = blocks[j], blocks[i]
+    end
+    
+    -- 重新填充地图
+    local blockIndex = 1
+    for row = 1, rows do
+        for col = 1, cols do
+            local value = mapData[row][col]
+            if value >= 100 then
+                -- 装饰物位置保持不变
+            elseif value > 0 then
+                -- 填充打乱后的方块
+                if blockIndex <= #blocks then
+                    mapData[row][col] = blocks[blockIndex]
+                    blockIndex = blockIndex + 1
+                else
+                    mapData[row][col] = 0
+                end
+            end
+        end
+    end
+    
+    -- 更新地图
+    playerMap:initMap(mapData)
+    
+    log.info("[Logic] 座位%d地图打乱完成，剩余方块数: %d", seat, playerMap:getRemainingBlockCount())
+    return mapData
+end
+
+--[[
+    重新生成指定玩家的地图
+    @param seat: number 玩家座位
+]]
+function logic._regeneratePlayerMap(seat)
+    local playerMap = logic.playerMaps[seat]
+    if not playerMap then
+        log.error("[Logic] 座位%d地图不存在", seat)
+        return
+    end
+    
+    local rows = logic.rule.mapRows
+    local cols = logic.rule.mapCols
+    local iconTypes = logic.rule.iconTypes
+    
+    local mapData = mapGenerator.generate(rows, cols, iconTypes)
+    if not mapData then
+        log.error("[Logic] 重新生成地图失败")
+        return
+    end
+    
+    playerMap:initMap(mapData)
+    
+    log.info("[Logic] 座位%d地图重新生成完成", seat)
+end
+
+--[[
+    广播地图打乱通知
+    @param seat: number 触发打乱的玩家座位
+    @param reason: number 原因 1:打乱 2:重新生成
+]]
+function logic._broadcastMapShuffled(seat, reason)
+    logic.roomHandler.sendToAll("mapShuffled", {
+        seat = seat,
+        reason = reason,
+    })
+end
+
+--[[
+    下发指定玩家的地图给所有玩家
+    @param seat: number 玩家座位
+]]
+function logic._broadcastMapData(seat)
+    local playerMap = logic.playerMaps[seat]
+    if not playerMap then
+        log.error("[Logic] 座位%d地图不存在", seat)
+        return
+    end
+    
+    local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+    logic.roomHandler.sendToAll("mapData", {
+        mapData = cjson.encode(playerMap:getMap()),
+        totalBlocks = totalBlocks,
+        seat = seat,
+    })
+end
+
+--[[
     开始一局游戏
     @param roundNum: number 当前局数（由 Room 传入，用于消息下发）
 ]]
@@ -405,6 +527,44 @@ function logicHandler.clickTiles(seat, args)
     local remaining = playerMap:getRemainingBlockCount()
     
     log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
+    
+    -- 检查剩余地图是否可消除，如不可消除则打乱（仅在未完成时执行）
+    local maxAttempts = 9
+    local shuffled = false
+    local regenerated = false
+    
+    if not playerMap:isComplete() then
+        for attempt = 1, maxAttempts do
+            if playerMap:hasAnyValidPair() then
+                break
+            end
+            
+            log.info("[Logic] 座位%d的地图不可消除，执行第%d次打乱", seat, attempt)
+            local newMapData = logic._shuffleMap(seat)
+            if not newMapData then
+                log.error("[Logic] 打乱失败，尝试重新生成地图")
+                break
+            end
+            shuffled = true
+        end
+        
+        -- 如果9次打乱后仍不可消除，重新生成地图
+        if not playerMap:hasAnyValidPair() then
+            log.info("[Logic] 打乱后仍不可消除，重新生成地图")
+            logic._regeneratePlayerMap(seat)
+            regenerated = true
+        end
+        
+        -- 广播打乱/重新生成通知
+        if regenerated then
+            logic._broadcastMapShuffled(seat, 2)
+        elseif shuffled then
+            logic._broadcastMapShuffled(seat, 1)
+        end
+        
+        -- 下发新地图给所有玩家
+        logic._broadcastMapData(seat)
+    end
     
     -- 转换lines格式以匹配sproto协议: {start={row, col}, dest={row, col}}
     local formattedLines = {}

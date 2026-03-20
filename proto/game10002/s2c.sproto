@@ -321,3 +321,11 @@ logicInfo 41 {
         ext 2 : string               # 扩展字段
     }
 }
+
+# 地图打乱/重新生成通知
+mapShuffled 42 {
+    request {
+        seat 0 : integer         # 触发打乱的玩家座位
+        reason 1 : integer        # 原因: 1=打乱, 2=重新生成
+    }
+}
