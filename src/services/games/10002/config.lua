@@ -90,7 +90,7 @@ config.PRIVATE_ROOM = {
 -- AI配置
 config.AI = {
     TICK_INTERVAL = 5,           -- AI执行间隔（秒）
-    ACTION_PROBABILITY = 70,      -- AI行动概率（百分比）
+    ACTION_PROBABILITY = 60,      -- AI行动概率（百分比）
 }
 
 -- 计分配置

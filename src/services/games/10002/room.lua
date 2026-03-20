@@ -353,10 +353,6 @@ function Room:_initMatchRoomPlayers(data)
         if bRobot then
             status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
-            -- 为机器人注册AI
-            if self.aiHandler and self.aiHandler.addRobot then
-                self.aiHandler.addRobot(seat)
-            end
         else
             self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
         end
@@ -378,6 +374,12 @@ function Room:initLogic()
     
     self.logicHandler.init(ruleData, roomHandler)
     self.aiHandler.init(roomHandlerAi, self.roomInfo.robotCnt)
+    for seat, _ in pairs(self.roomInfo.playerids) do
+        local bRobot = self:isRobotBySeat(seat)
+        if bRobot then
+            self.aiHandler.addRobot(seat)
+        end
+    end
 end
 
 -- 启动定时任务

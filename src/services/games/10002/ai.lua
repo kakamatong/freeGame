@@ -280,7 +280,7 @@ end
 ]]
 function aiHandler.addRobot(seat)
     -- 随机生成执行间隔 3-6 秒
-    local tickInterval = math.random(3, 6)
+    local tickInterval = math.random(1, 5)
     aiLogic.data[seat] = {
         stepid = config.GAME_STEP.NONE,
         lastActionTime = 0,
