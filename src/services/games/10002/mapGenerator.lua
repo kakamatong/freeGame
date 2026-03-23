@@ -17,9 +17,9 @@ local mapGenerator = {}
     @return table | nil 生成的地图（二维数组），失败返回nil
 ]]
 function mapGenerator.generate(rows, cols, iconTypes)
-    rows = rows or 8
-    cols = cols or 12
-    iconTypes = iconTypes or 8
+    rows = rows or 10
+    cols = cols or 10
+    iconTypes = iconTypes or 10
     
     -- 确保图标类型在有效范围内
     iconTypes = math.min(iconTypes, 20)
@@ -55,11 +55,7 @@ end
 ]]
 function mapGenerator._generateRandomMap(rows, cols, iconTypes)
     local map = {}
-    
-    -- 内部可玩区域（去掉外圈）
-    local innerRows = rows - 2
-    local innerCols = cols - 2
-    local totalTiles = innerRows * innerCols
+    local totalTiles = rows * cols
     
     -- 平均分配图标（每种图标数量尽量接近，差值不超过1）
     local baseCount = math.floor(totalTiles / iconTypes)
@@ -89,19 +85,24 @@ function mapGenerator._generateRandomMap(rows, cols, iconTypes)
         end
     end
     
-    -- 初始化地图（最外圈为0）
-    for row = 1, rows do
+    -- 初始化10x10地图（最外圈为0）
+    local MAP_SIZE = 10
+    for row = 1, MAP_SIZE do
         map[row] = {}
-        for col = 1, cols do
+        for col = 1, MAP_SIZE do
             map[row][col] = 0
         end
     end
     
-    -- 填充内部可玩区域
+    -- 计算居中起始位置
+    local startRow = math.floor((MAP_SIZE - rows) / 2) + 1
+    local startCol = math.floor((MAP_SIZE - cols) / 2) + 1
+    
+    -- 填充可玩区域（居中）
     local poolIndex = 1
-    for row = 2, rows - 1 do
-        for col = 2, cols - 1 do
-            map[row][col] = iconPool[poolIndex]
+    for r = 1, rows do
+        for c = 1, cols do
+            map[startRow + r - 1][startCol + c - 1] = iconPool[poolIndex]
             poolIndex = poolIndex + 1
         end
     end

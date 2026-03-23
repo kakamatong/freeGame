@@ -74,8 +74,8 @@ config.RATING_CONFIG = {
 
 -- 地图配置
 config.MAP = {
-    DEFAULT_ROWS = 10, --10
-    DEFAULT_COLS = 10, --10
+    DEFAULT_ROWS = 6, --10
+    DEFAULT_COLS = 6, --10
     ICON_TYPES = 11, --10
     
     MIN_PLAYERS = 2,
