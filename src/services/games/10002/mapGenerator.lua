@@ -24,6 +24,9 @@ function mapGenerator.generate(rows, cols, iconTypes)
     -- 确保图标类型在有效范围内
     iconTypes = math.min(iconTypes, 20)
     iconTypes = math.max(iconTypes, 4)
+
+    -- 设置随机种子，确保每次生成不同
+    math.randomseed(os.time() + math.random(1000000))
     
     local maxAttempts = 100
     
@@ -81,10 +84,13 @@ function mapGenerator._generateRandomMap(rows, cols, iconTypes)
         remainingTiles = remainingTiles - 2
     end
     
-    -- Fisher-Yates 洗牌算法
-    for i = #iconPool, 2, -1 do
-        local j = math.random(1, i)
-        iconPool[i], iconPool[j] = iconPool[j], iconPool[i]
+    -- Fisher-Yates 洗牌算法（多轮打乱）
+    local shuffleRounds = 3
+    for round = 1, shuffleRounds do
+        for i = #iconPool, 2, -1 do
+            local j = math.random(1, i)
+            iconPool[i], iconPool[j] = iconPool[j], iconPool[i]
+        end
     end
     
     -- 初始化地图（最外圈为0）

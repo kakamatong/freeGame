@@ -76,7 +76,7 @@ config.RATING_CONFIG = {
 config.MAP = {
     DEFAULT_ROWS = 10, --10
     DEFAULT_COLS = 10, --10
-    ICON_TYPES = 10, --10
+    ICON_TYPES = 11, --10
     
     MIN_PLAYERS = 2,
     MAX_PLAYERS = 6,
