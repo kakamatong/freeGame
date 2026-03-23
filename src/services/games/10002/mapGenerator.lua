@@ -61,27 +61,23 @@ function mapGenerator._generateRandomMap(rows, cols, iconTypes)
     local innerCols = cols - 2
     local totalTiles = innerRows * innerCols
     
-    -- 计算每种图标需要的数量（必须是偶数）
-    local tilesPerIcon = math.floor(totalTiles / iconTypes)
-    -- 确保每种图标数量是偶数
-    tilesPerIcon = tilesPerIcon - (tilesPerIcon % 2)
+    -- 平均分配图标（每种图标数量尽量接近，差值不超过1）
+    local baseCount = math.floor(totalTiles / iconTypes)
+    if baseCount % 2 ~= 0 then
+        baseCount = baseCount - 1
+    end
+    local remainder = totalTiles - (baseCount * iconTypes)
+    local typesWithExtra = remainder / 2
     
-    -- 创建图标池
     local iconPool = {}
     for iconType = 1, iconTypes do
-        for i = 1, tilesPerIcon do
+        local count = baseCount
+        if iconType <= typesWithExtra then
+            count = count + 2
+        end
+        for i = 1, count do
             table.insert(iconPool, iconType)
         end
-    end
-    
-    -- 填充剩余的格子
-    local remainingTiles = totalTiles - (#iconPool)
-    while remainingTiles > 0 do
-        local randomIcon = math.random(1, iconTypes)
-        -- 每次加2保持偶数
-        table.insert(iconPool, randomIcon)
-        table.insert(iconPool, randomIcon)
-        remainingTiles = remainingTiles - 2
     end
     
     -- Fisher-Yates 洗牌算法（多轮打乱）
