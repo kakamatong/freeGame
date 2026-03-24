@@ -66,7 +66,7 @@ config.ROOM_END_FLAG = {
 -- 评分配置（ELO系统）
 config.RATING_CONFIG = {
     K_base = 65,
-    S_max = 6000,
+    S_max = 10000,
     initial_score = 1000,
     min_score = 0,
     zero_sum_mode = false
@@ -74,8 +74,8 @@ config.RATING_CONFIG = {
 
 -- 地图配置
 config.MAP = {
-    DEFAULT_ROWS = 6, --10
-    DEFAULT_COLS = 6, --10
+    DEFAULT_ROWS = 8, --10
+    DEFAULT_COLS = 8, --10
     ICON_TYPES = 11, --10
     
     MIN_PLAYERS = 2,
