@@ -74,8 +74,8 @@ config.RATING_CONFIG = {
 
 -- 地图配置，地图默认是10*10的，配置最大为8*8（外面需要留一圈空白消除）
 config.MAP = {
-    DEFAULT_ROWS = 5, --10
-    DEFAULT_COLS = 6, --10
+    DEFAULT_ROWS = 8, --10
+    DEFAULT_COLS = 8, --10
     ICON_TYPES = 11, --10
     
     MIN_PLAYERS = 2,

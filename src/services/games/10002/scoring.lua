@@ -60,32 +60,17 @@ end
     @param playerScores: table 玩家当前分数 { [seat] = score }
     @param rankings: table 排名列表 { { seat, rank, usedTime, eliminated } }
     @return table 计分结果 { [seat] = { oldScore, newScore, delta, rank, reason } }
-    
+
     计分规则：
-    1. 完成游戏的玩家根据ELO系统计算分数变化
-    2. 未完成的玩家：
-       - 分数 < low_score_threshold：+0分（保护低分玩家）
-       - 分数 >= low_score_threshold：扣分
-    3. 排名越高，实际得分越高；分数越高，加分越少
+    1. 所有玩家统一排名：完成的按用时升序，未完成的按原顺序排在后面
+    2. 统一使用ELO公式计算分数变化
+    3. 未完成玩家用时设为最大值，确保排在最后
 ]]
 function ScoringSystem:calculateMatchScore(playerScores, rankings)
     local results = {}
-    local finishedPlayers = {}
 
-    -- 筛选出已完成的玩家
-    for _, r in ipairs(rankings) do
-        if r.rank > 0 then
-            table.insert(finishedPlayers, r)
-        end
-    end
-
-    -- 按排名排序
-    table.sort(finishedPlayers, function(a, b)
-        return a.rank < b.rank
-    end)
-
-    -- 玩家数不足2人时不计算分数变化
-    if #finishedPlayers < 2 then
+    local playerCnt = #rankings
+    if playerCnt < 2 then
         for _, r in ipairs(rankings) do
             local score = playerScores[r.seat] or self.initial_score
             results[r.seat] = {
@@ -98,64 +83,69 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
         return results
     end
 
-    -- 计算所有完成玩家的平均分
+    local allPlayers = {}
+    local maxUsedTime = 0
+    for _, r in ipairs(rankings) do
+        if r.usedTime and r.usedTime > maxUsedTime then
+            maxUsedTime = r.usedTime
+        end
+    end
+    maxUsedTime = maxUsedTime + 1
+
+    for _, r in ipairs(rankings) do
+        local isFinished = r.rank > 0
+        local usedTime = isFinished and r.usedTime or maxUsedTime
+        table.insert(allPlayers, {
+            seat = r.seat,
+            usedTime = usedTime,
+            isFinished = isFinished,
+            originalIndex = #allPlayers + 1,
+        })
+    end
+
+    table.sort(allPlayers, function(a, b)
+        if a.usedTime ~= b.usedTime then
+            return a.usedTime < b.usedTime
+        end
+        return a.originalIndex < b.originalIndex
+    end)
+
+    for i, p in ipairs(allPlayers) do
+        p.rank = i
+    end
+
     local totalScore = 0
-    for _, r in ipairs(finishedPlayers) do
-        local score = playerScores[r.seat] or self.initial_score
+    for _, p in ipairs(allPlayers) do
+        local score = playerScores[p.seat] or self.initial_score
         totalScore = totalScore + score
     end
-    local avgScore = totalScore / #finishedPlayers
+    local avgScore = totalScore / playerCnt
 
-    -- 遍历每个玩家计算分数
-    for _, r in ipairs(rankings) do
-        local seat = r.seat
+    for _, p in ipairs(allPlayers) do
+        local seat = p.seat
         local oldScore = playerScores[seat] or self.initial_score
         local k = self:calculateDynamicK(oldScore)
+        local expected = self:calculateExpectedScore(oldScore, avgScore)
+        local rank = p.isFinished and p.rank or playerCnt
+        local actual = 1 - (rank - 1) / math.max(1, playerCnt - 1)
 
-        -- 未完成的玩家：扣分最多
-        if r.rank == 0 then
-            -- 直接扣K值（最多扣分）
-            local delta = -math.floor(k)
-            local newScore = math.floor(math.max(self.min_score, oldScore + delta))
-            results[seat] = {
-                oldScore = math.floor(oldScore),
-                newScore = newScore,
-                delta = delta,
-                reason = "unfinished"
-            }
+        local delta = 0
+        if actual > expected then
+            delta = math.floor(k * (actual - expected) * 2)
         else
-            -- 已完成的玩家：基于平均分计算ELO分数变化
-            local totalPlayers = #finishedPlayers
-
-            -- 计算相对于平均分的预期胜率
-            local expected = self:calculateExpectedScore(oldScore, avgScore)
-
-            -- 计算实际得分：排名越高越接近1
-            -- 第1名 actual=1，最后一名 actual接近0
-            local rank = r.rank
-            local actual = 1 - (rank - 1) / math.max(1, totalPlayers - 1)
-
-            -- 根据实际与预期的差异计算分数变化
-            -- actual > expected：加分（表现超预期）
-            -- actual < expected：扣分（表现低于预期）
-            local delta = 0
-            if actual > expected then
-                delta = math.floor(k * (actual - expected) * 2)
-            else
-                delta = -math.floor(k * (expected - actual) * 2)
-            end
-
-            local newScore = math.floor(math.max(self.min_score, oldScore + delta))
-            results[seat] = {
-                oldScore = math.floor(oldScore),
-                newScore = newScore,
-                delta = delta,
-                rank = rank,
-                expected = expected,
-                actual = actual,
-                reason = "finished"
-            }
+            delta = -math.floor(k * (expected - actual) * 2)
         end
+
+        local newScore = math.floor(math.max(self.min_score, oldScore + delta))
+        results[seat] = {
+            oldScore = math.floor(oldScore),
+            newScore = newScore,
+            delta = delta,
+            rank = p.rank,
+            expected = expected,
+            actual = actual,
+            reason = p.isFinished and "finished" or "unfinished"
+        }
     end
 
     return results
@@ -166,36 +156,55 @@ end
     @param playerCnt: number 游戏人数
     @param rankings: table 排名列表 { { seat, rank, usedTime, eliminated } }
     @return table 计分结果 { [seat] = { rank, score, reason } }
-    
+
     计分规则：
+    - 所有玩家统一排名：完成的按用时升序，未完成的按原顺序排在后面
     - 第1名：playerCnt 分
     - 第2名：playerCnt - 1 分
     - 第3名：playerCnt - 2 分
     - ...
-    - 未完成：0分
+    - 未完成：按最后一名计分
 ]]
 function ScoringSystem:calculatePrivateScore(playerCnt, rankings)
     local results = {}
 
+    local allPlayers = {}
+    local maxUsedTime = 0
     for _, r in ipairs(rankings) do
-        local seat = r.seat
-        local score = 0
+        if r.usedTime and r.usedTime > maxUsedTime then
+            maxUsedTime = r.usedTime
+        end
+    end
+    maxUsedTime = maxUsedTime + 1
 
-        -- 已完成的玩家按排名得分
-        if r.rank > 0 then
-            score = playerCnt - r.rank + 1
-            if score < 0 then
-                score = 0
-            end
-        else
-            -- 未完成得0分
+    for _, r in ipairs(rankings) do
+        local isFinished = r.rank > 0
+        local usedTime = isFinished and r.usedTime or maxUsedTime
+        table.insert(allPlayers, {
+            seat = r.seat,
+            usedTime = usedTime,
+            isFinished = isFinished,
+            originalIndex = #allPlayers + 1,
+        })
+    end
+
+    table.sort(allPlayers, function(a, b)
+        if a.usedTime ~= b.usedTime then
+            return a.usedTime < b.usedTime
+        end
+        return a.originalIndex < b.originalIndex
+    end)
+
+    for i, p in ipairs(allPlayers) do
+        local rank = p.isFinished and i or playerCnt
+        local score = playerCnt - rank + 1
+        if score < 0 then
             score = 0
         end
-
-        results[seat] = {
-            rank = r.rank,
+        results[p.seat] = {
+            rank = rank,
             score = score,
-            reason = r.rank > 0 and "finished" or "unfinished"
+            reason = p.isFinished and "finished" or "unfinished"
         }
     end
 
