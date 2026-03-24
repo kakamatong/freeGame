@@ -148,7 +148,9 @@ function logic.startStepStart()
         logic.roomHandler.sendToAll("mapData", {
             mapData = cjson.encode(playerMap:getMap()),
             totalBlocks = totalBlocks,
-            seat = seat,  -- 标识这是哪个玩家的地图
+            seat = seat,
+            col = logic.rule.mapCols,
+            row = logic.rule.mapRows,
         })
     end
     
@@ -440,6 +442,8 @@ function logic._broadcastMapData(seat)
         mapData = cjson.encode(playerMap:getMap()),
         totalBlocks = totalBlocks,
         seat = seat,
+        col = logic.rule.mapCols,
+        row = logic.rule.mapRows,
     })
 end
 
@@ -836,6 +840,8 @@ function logicHandler.relink(seat)
             mapData = cjson.encode(targetMap:getMap()),
             totalBlocks = totalBlocks,
             seat = targetSeat,
+            col = logic.rule.mapCols,
+            row = logic.rule.mapRows,
         })
     end
     

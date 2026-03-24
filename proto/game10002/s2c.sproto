@@ -310,6 +310,8 @@ mapData 40 {
         mapData 0 : string       # 地图数据JSON
         totalBlocks 1 : integer  # 总方块数
         seat 2 : integer         # 座位号，标识这是哪个玩家的地图
+        col 3 : integer          # 地图列数
+        row 4 : integer           # 地图行数
     }
 }
 
