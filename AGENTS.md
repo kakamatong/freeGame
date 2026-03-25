@@ -53,6 +53,10 @@ cd skynet && lua test/testecho.lua
 ./skynet/skynet config/configDB         # 数据库服务
 ```
 
+### 协议说明
+- **sproto协议**: 存放在 `proto/` 目录，无需编译，运行时自动加载
+- 修改 sproto 文件后重启服务即可生效，无需重新构建Skynet
+
 ## 代码风格指南
 
 ### 文件结构和组织
