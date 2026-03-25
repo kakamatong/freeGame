@@ -30,6 +30,29 @@ local function addCombatPower(userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
+-- 增加每日积分
+local function addDayScore(userid, seat, rank, playerCount)
+    if not roomInstance or roomInstance:isPrivateRoom() then
+        return
+    end
+    
+    local day = os.date("%Y%m%d")
+    local rankKey = "game10002DayRank:" .. day
+    
+    local score = 1
+    if rank > 0 then
+        score = playerCount - rank + 1
+    end
+    
+    local totalScore = skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zscore", rankKey, userid) or 0
+    totalScore = totalScore + score
+    skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zadd", rankKey, totalScore, userid)
+    skynet.call(roomInstance.svrDB, "lua", "dbRedis", "expire", rankKey, 86400 * 7)
+    
+    log.info("addDayScore game10002 userid=%d seat=%d rank=%d playerCount=%d score=%d totalScore=%.0f", 
+        userid, seat, rank, playerCount, score, totalScore)
+end
+
 -- Room -> Logic 的通信接口
 local roomHandler = {}
 
@@ -182,6 +205,21 @@ function roomHandler.gameResult(endType, rankings)
         
         roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
         roomInstance.roomInfo.record[currentRound].scores = roundScores
+        
+        -- 添加每日积分
+        local playerCount = #roomInstance.roomInfo.playerids
+        for seat, userid in ipairs(roomInstance.roomInfo.playerids) do
+            local rank = 0
+            if rankings then
+                for _, r in ipairs(rankings) do
+                    if r.seat == seat then
+                        rank = r.rank or 0
+                        break
+                    end
+                end
+            end
+            addDayScore(userid, seat, rank, playerCount)
+        end
     elseif roomInstance:isPrivateRoom() then
         local playerCnt = roomInstance.roomInfo.nowPlayerNum
         local scoreResults = roomInstance.scoringMatch:calculatePrivateScore(playerCnt, rankings)
