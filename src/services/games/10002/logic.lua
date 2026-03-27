@@ -639,16 +639,15 @@ function logic._onPlayerFinish(seat)
     end
     
     if finishedCount == 1 then
-        -- 第一个玩家完成，设置10秒后结束
+        local endCountdown = logic.rule.endTime or 10
         local elapsed = os.time() - logic.stepBeginTime
-        config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + 10
+        config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + endCountdown
         
-        -- 通知所有玩家剩余10秒
         logic.roomHandler.sendToAll("gameClock", {
-            time = 10,
+            time = endCountdown,
             seat = 0,
         })
-        log.info("[Logic] 第一个玩家完成，设置10秒倒计时")
+        log.info("[Logic] 第一个玩家完成，设置%d秒倒计时", endCountdown)
     end
     
     logic.roomHandler.onPlayerFinish(seat, progress.usedTime, logic.finishOrder)
