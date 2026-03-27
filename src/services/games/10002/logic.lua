@@ -641,13 +641,19 @@ function logic._onPlayerFinish(seat)
     if finishedCount == 1 then
         local endCountdown = logic.rule.endTime or 10
         local elapsed = os.time() - logic.stepBeginTime
-        config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + endCountdown
+        local remaining = config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] - elapsed
         
-        logic.roomHandler.sendToAll("gameClock", {
-            time = endCountdown,
-            seat = 0,
-        })
-        log.info("[Logic] 第一个玩家完成，设置%d秒倒计时", endCountdown)
+        if remaining > endCountdown then
+            config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + endCountdown
+            
+            logic.roomHandler.sendToAll("gameClock", {
+                time = endCountdown,
+                seat = 0,
+            })
+            log.info("[Logic] 第一个玩家完成，设置%d秒倒计时", endCountdown)
+        else
+            log.info("[Logic] 第一个玩家完成，剩余时间%d秒不超过倒计时%d秒，不重置", remaining, endCountdown)
+        end
     end
     
     logic.roomHandler.onPlayerFinish(seat, progress.usedTime, logic.finishOrder)
