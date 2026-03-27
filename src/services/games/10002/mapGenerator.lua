@@ -14,9 +14,10 @@ local mapGenerator = {}
     @param rows: number 行数
     @param cols: number 列数
     @param iconTypes: number 图标种类数（1-99）
+    @param designMap: table 可选的10x10模板地图（0=空白,1=可消除,9=障碍）
     @return table | nil 生成的地图（二维数组），失败返回nil
 ]]
-function mapGenerator.generate(rows, cols, iconTypes)
+function mapGenerator.generate(rows, cols, iconTypes, designMap)
     rows = rows or 10
     cols = cols or 10
     iconTypes = iconTypes or 10
@@ -32,10 +33,15 @@ function mapGenerator.generate(rows, cols, iconTypes)
     
     for attempt = 1, maxAttempts do
         -- 生成随机地图
-        local map = mapGenerator._generateRandomMap(rows, cols, iconTypes)
+        local map
+        if designMap then
+            map = mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
+        else
+            map = mapGenerator._generateRandomMap(rows, cols, iconTypes)
+        end
         
         -- 检查地图是否有解
-        if mapGenerator._hasSolution(map) then
+        if map and mapGenerator._hasSolution(map) then
             log.info("[MapGenerator] 地图生成成功，尝试次数: %d，尺寸: %dx%d，图标种类: %d", 
                 attempt, rows, cols, iconTypes)
             return map
@@ -44,6 +50,92 @@ function mapGenerator.generate(rows, cols, iconTypes)
     
     log.error("[MapGenerator] 地图生成失败，尝试%d次后仍未找到可解地图", maxAttempts)
     return nil
+end
+
+--[[
+    根据设计模板生成地图
+    @param designMap: table 10x10模板地图（0=空白,1=可消除,9=障碍）
+    @param rows: number 实际行数
+    @param cols: number 实际列数
+    @param iconTypes: number 图标种类数
+    @return table 生成的地图
+]]
+function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
+    local MAP_SIZE = 10
+    
+    -- 统计需要填充的位置数量
+    local fillPositions = {}
+    local obstacleCount = 0
+    
+    for row = 1, MAP_SIZE do
+        for col = 1, MAP_SIZE do
+            local val = designMap[row][col]
+            if val == 1 then
+                table.insert(fillPositions, {row = row, col = col})
+            elseif val == 9 then
+                obstacleCount = obstacleCount + 1
+            end
+        end
+    end
+    
+    local totalBlocks = #fillPositions
+    local totalTiles = totalBlocks + obstacleCount
+    
+    -- 平均分配图标（每种图标数量尽量接近，差值不超过1）
+    local baseCount = math.floor(totalBlocks / iconTypes)
+    if baseCount % 2 ~= 0 then
+        baseCount = baseCount - 1
+    end
+    local remainder = totalBlocks - (baseCount * iconTypes)
+    local typesWithExtra = remainder / 2
+    
+    local iconPool = {}
+    for iconType = 1, iconTypes do
+        local count = baseCount
+        if iconType <= typesWithExtra then
+            count = count + 2
+        end
+        for i = 1, count do
+            table.insert(iconPool, iconType)
+        end
+    end
+    
+    -- Fisher-Yates 洗牌算法（多轮打乱）
+    local shuffleRounds = 3
+    for round = 1, shuffleRounds do
+        for i = #iconPool, 2, -1 do
+            local j = math.random(1, i)
+            iconPool[i], iconPool[j] = iconPool[j], iconPool[i]
+        end
+    end
+    
+    -- 创建地图
+    local map = {}
+    for row = 1, MAP_SIZE do
+        map[row] = {}
+        for col = 1, MAP_SIZE do
+            map[row][col] = 0
+        end
+    end
+    
+    -- 填充可消除方块
+    for i, pos in ipairs(fillPositions) do
+        map[pos.row][pos.col] = iconPool[i]
+    end
+    
+    -- 填充障碍物
+    local decorationValue = 100
+    local obstacleIdx = 1
+    for row = 1, MAP_SIZE do
+        for col = 1, MAP_SIZE do
+            if designMap[row][col] == 9 then
+                map[row][col] = decorationValue + obstacleIdx
+                obstacleIdx = obstacleIdx + 1
+            end
+        end
+    end
+    
+    return map
 end
 
 --[[

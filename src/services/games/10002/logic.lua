@@ -273,6 +273,7 @@ function logicHandler.init(rule, roomHandler)
     logic.rule.iconTypes = logic.rule.iconTypes or 8
     logic.rule.playerCnt = logic.rule.playerCnt or 2
     logic.rule.maxTime = logic.rule.maxTime or 120  -- 默认10分钟超时
+    logic.rule.designMap = logic.rule.designMap or nil
     
     -- 更新PLAYING阶段时间
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
@@ -296,12 +297,13 @@ function logic._generatePlayerMaps()
     local cols = logic.rule.mapCols
     local iconTypes = logic.rule.iconTypes
     local playerCnt = logic.rule.playerCnt
+    local designMap = logic.rule.designMap
     
     log.info("[Logic] 生成玩家地图，尺寸: %dx%d，图标种类: %d，玩家数: %d", 
         rows, cols, iconTypes, playerCnt)
     
     -- 生成一张公共地图，所有玩家使用相同的地图
-    local mapData = mapGenerator.generate(rows, cols, iconTypes)
+    local mapData = mapGenerator.generate(rows, cols, iconTypes, designMap)
     if not mapData then
         log.error("[Logic] 生成地图失败")
         return

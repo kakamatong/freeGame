@@ -6,34 +6,6 @@
 
 local config = {}
 
--- 地图配置
-config.MAP_CONFIG = {
-    -- 默认地图大小（可以根据难度调整）
-    DEFAULT_ROWS = 8,
-    DEFAULT_COLS = 12,
-    
-    -- 简单模式
-    EASY = {
-        rows = 6,
-        cols = 10,
-        iconTypes = 6,  -- 图标种类数
-    },
-    
-    -- 普通模式
-    NORMAL = {
-        rows = 8,
-        cols = 12,
-        iconTypes = 8,
-    },
-    
-    -- 困难模式
-    HARD = {
-        rows = 10,
-        cols = 14,
-        iconTypes = 10,
-    },
-}
-
 -- 游戏阶段（参考10001，简化为3个阶段）
 config.GAME_STEP = {
     NONE = 0,           -- 无阶段

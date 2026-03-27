@@ -9,6 +9,7 @@ local skynet = require "skynet"
 local log = require "log"
 local cjson = require "cjson"
 local config = require "games.10002.config"
+local mapConfig = require "games.10002.mapConfig"
 local PrivateRoom = require "games.privateRoom"
 local logicHandler = require "games.10002.logic"
 local aiHandler = require "games.10002.ai"
@@ -403,11 +404,17 @@ end
 
 -- 初始化游戏逻辑
 function Room:initLogic()
+    local designCount = #mapConfig.MAP_DESIGN
+    local selectedDesign = mapConfig.MAP_DESIGN[math.random(1, designCount)]
+    
     local ruleData = {
         playerCnt = self.roomInfo.nowPlayerNum,
-        mapRows = config.MAP.DEFAULT_ROWS,
-        mapCols = config.MAP.DEFAULT_COLS,
-        iconTypes = config.MAP.ICON_TYPES,
+        mapRows = selectedDesign.DEFAULT_ROWS,
+        mapCols = selectedDesign.DEFAULT_COLS,
+        iconTypes = selectedDesign.ICON_TYPES,
+        maxTime = selectedDesign.TOTAL_TIME,
+        endTime = selectedDesign.END_TIME,
+        designMap = selectedDesign.MAP,
     }
     
     self.logicHandler.init(ruleData, roomHandler)
