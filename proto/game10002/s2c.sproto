@@ -257,6 +257,7 @@ playerFinished 35 {
     usedTime 1 : integer     # -1表示未完成
     eliminated 2 : integer   # 消除数量
     rank 3 : integer         # 排名（1开始，未完成则为0）
+    maxCombo 4 : integer     # 最大连击数
 }
 
 # 分数信息
@@ -329,5 +330,15 @@ mapShuffled 42 {
     request {
         seat 0 : integer         # 触发打乱的玩家座位
         reason 1 : integer        # 原因: 1=打乱, 2=重新生成
+    }
+}
+
+# 连击成功通知
+comboSuccess 43 {
+    request {
+        seat 0 : integer         # 执行消除的玩家座位号
+        comboCount 1 : integer   # 当前连击数
+        comboTime 2 : integer    # 当前连击时间(ms)
+        comboDuration 3 : integer # 连击持续时间(ms)
     }
 }

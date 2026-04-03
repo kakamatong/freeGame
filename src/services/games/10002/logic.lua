@@ -321,6 +321,9 @@ function logic._generatePlayerMaps()
             finishTime = 0,          -- 完成时间
             rank = 0,                -- 排名
             finished = false,        -- 是否完成
+            comboCount = 0,          -- 当前连击数
+            maxCombo = 0,            -- 最大连击数
+            lastEliminateTime = 0,   -- 上次消除时间(ms)
         }
     end
 end
@@ -534,6 +537,27 @@ function logicHandler.clickTiles(seat, args)
     
     log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
     
+    -- 连击判定
+    local currentTime = math.floor(skynet.time() * 1000)
+    local comboTimeWindow = config.COMBO.COMBO_TIME_WINDOW * 1000
+    if progress.lastEliminateTime > 0 and (currentTime - progress.lastEliminateTime) < comboTimeWindow then
+        progress.comboCount = progress.comboCount + 1
+        log.info("[Logic] 座位%d连击成功，当前连击数: %d", seat, progress.comboCount)
+    else
+        progress.comboCount = 1
+        log.info("[Logic] 座位%d连击中断，重新开始，当前连击数: %d", seat, progress.comboCount)
+    end
+    progress.maxCombo = math.max(progress.maxCombo, progress.comboCount)
+    progress.lastEliminateTime = currentTime
+    
+    -- 发送连击成功协议
+    logic.roomHandler.sendToAll("comboSuccess", {
+        seat = seat,
+        comboCount = progress.comboCount,
+        comboTime = currentTime,
+        comboDuration = comboTimeWindow,
+    })
+    
     -- 检查剩余地图是否可消除，如不可消除则打乱（仅在未完成时执行）
     local maxAttempts = 9
     local shuffled = false
@@ -745,6 +769,7 @@ function logicHandler.endGame()
                 usedTime = progress.usedTime,
                 eliminated = progress.eliminated,
                 rank = progress.rank,
+                maxCombo = progress.maxCombo,
             })
         else
             -- 未完成，用时为-1，排名为0
@@ -753,6 +778,7 @@ function logicHandler.endGame()
                 usedTime = -1,
                 eliminated = progress.eliminated,
                 rank = 0,
+                maxCombo = progress.maxCombo,
             })
         end
     end

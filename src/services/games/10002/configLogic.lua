@@ -82,4 +82,9 @@ config.SCORING = {
     FINISH_BONUS = 500,
 }
 
+-- 连击配置
+config.COMBO = {
+    COMBO_TIME_WINDOW = 3,  -- 连击判定时间窗口（秒），两次消除间隔小于此值算连击
+}
+
 return config
