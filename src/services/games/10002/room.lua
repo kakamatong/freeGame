@@ -242,6 +242,28 @@ function roomHandler.gameResult(endType, rankings)
         roomInstance.roomInfo.record[currentRound].scores = roundScores
     end
     
+    -- 记录游戏输赢结果，有排名的算赢，其他算输
+    for _, r in ipairs(rankings) do
+        local userid = roomInstance.roomInfo.playerids[r.seat]
+        local flag = config.RESULT_TYPE.NONE
+        local addType = "other"
+        
+        if r.rank > 0 then
+            flag = config.RESULT_TYPE.WIN
+            addType = "win"
+        else
+            flag = config.RESULT_TYPE.LOSE
+            addType = "lose"
+        end
+        
+        local tmp = {
+            playerids = roomInstance.roomInfo.playerids,
+            rankings = rankings,
+        }
+        roomInstance:pushLogResult(config.LOG_RESULT_TYPE.GAME_END, userid, flag, 0, 0, 0, 0, 0, cjson.encode(tmp))
+        roomInstance:pushUserGameRecords(userid, addType, 1)
+    end
+
     return roundScores
 end
 
