@@ -149,6 +149,7 @@ useItem 22 {
     response {
         code 0 : integer
         msg 1 : string
+        richNum 2 : integer # 剩余道具数量
     }
 }
 
