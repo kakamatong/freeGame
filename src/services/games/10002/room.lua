@@ -828,6 +828,7 @@ end
 
 -- 使用道具
 function REQUEST:useItem(userid, args)
+    log.info("Room:useItem %d %s", userid, UTILS.tableToString(args))
     if not roomInstance then
         return {code = 0, msg = "房间未初始化"}
     end
@@ -846,7 +847,6 @@ function REQUEST:useItem(userid, args)
     if not reduceRiches(userid, CONFIG.RICH_TYPE.UPSET, 1) then
         return {code = 0, msg = "道具不足"}
     end
-    
     -- 打乱地图
     local shuffleResult = {success = false, reason = "逻辑模块未初始化"}
     if roomInstance.logicHandler and roomInstance.logicHandler.shufflePlayerMap then
@@ -854,6 +854,7 @@ function REQUEST:useItem(userid, args)
     end
     
     if not shuffleResult.success then
+        log.debug("Room:useItem shuffle failed: %s", shuffleResult.reason)
         -- 打乱失败，补偿道具
         skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.UPSET, 1)
         return {code = 0, msg = shuffleResult.reason or "打乱失败"}
@@ -862,6 +863,7 @@ function REQUEST:useItem(userid, args)
     -- 查询剩余道具数量
     local left = getRiches(userid, CONFIG.RICH_TYPE.UPSET)
     local richNum = left and left.richNums or 0
+    log.debug("Room:useItem shuffle success")
     
     return {code = 1, msg = "success", richNum = richNum}
 end

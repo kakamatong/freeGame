@@ -186,7 +186,7 @@ end
 -- 减少用户财富,如果不够扣直接扣到0
 function db.reduceUserRiches(mysql,...)
     local userid,richType,richNums =...
-    local nums = db.getUserRichesByType(mysql,userid,richType)
+    local nums = db.getUserRichesByType(mysql,userid,richType) or {richNums = 0 }
     if nums.richNums < richNums then
         richNums = nums.richNums
     end
@@ -200,7 +200,7 @@ end
 -- 减少用户财富,如果不够扣不执行
 function db.reduceUserRiches2(mysql,...)
     local userid,richType,richNums =...
-    local nums = db.getUserRichesByType(mysql,userid,richType)
+    local nums = db.getUserRichesByType(mysql,userid,richType) or {richNums = 0 }
     if nums.richNums < richNums then
         return false
     end
