@@ -14,6 +14,7 @@
 ]]
 
 local config = require("games.10002.configLogic")
+local gameConfig = require "gameConfig"
 local log = require "log"
 local cjson = require "cjson"
 local Map = require "games.10002.map"
@@ -477,6 +478,60 @@ function logic._shufflePlayerMap(seat)
     logic._broadcastMapData(seat)
     log.info("[Logic] 座位%d地图打乱完成", seat)
     return {success = true, reason = "打乱成功"}
+end
+
+--[[
+    使用道具自动消除一对可消除方块
+    @param seat: number 玩家座位
+    @return table {success, reason} 消除结果
+]]
+function logic._autoRemovePair(seat)
+    log.info("[Logic] 使用道具自动消除座位%d的方块", seat)
+
+    local playerMap = logic.playerMaps[seat]
+    if not playerMap then
+        log.error("[Logic] 座位%d地图不存在", seat)
+        return {success = false, reason = "地图不存在"}
+    end
+
+    local progress = logic.playerProgress[seat]
+    if progress and progress.finished then
+        log.warn("[Logic] 座位%d已完成游戏，无法自动消除", seat)
+        return {success = false, reason = "游戏已完成"}
+    end
+
+    if playerMap:isComplete() then
+        log.warn("[Logic] 座位%d地图已清空，无法自动消除", seat)
+        return {success = false, reason = "无方块可消除"}
+    end
+
+    if logic.stepId ~= config.GAME_STEP.PLAYING then
+        log.warn("[Logic] 当前不在PLAYING阶段，无法自动消除")
+        return {success = false, reason = "不在游戏阶段"}
+    end
+
+    local hint = playerMap:getHint()
+    if not hint then
+        log.warn("[Logic] 座位%d没有可消除的方块对", seat)
+        return {success = false, reason = "无可消除方块"}
+    end
+
+    local p1, p2 = hint[1], hint[2]
+    local args = {
+        row1 = p1.row - 1,
+        col1 = p1.col - 1,
+        row2 = p2.row - 1,
+        col2 = p2.col - 1,
+    }
+
+    local result = logicHandler.clickTiles(seat, args)
+    if result and result.code == 1 then
+        log.info("[Logic] 座位%d自动消除成功", seat)
+        return {success = true, reason = "消除成功"}
+    end
+
+    log.error("[Logic] 座位%d自动消除失败: %s", seat, result and result.msg or "未知错误")
+    return {success = false, reason = result and result.msg or "消除失败"}
 end
 
 --[[
@@ -1033,12 +1088,18 @@ function logicHandler.getRankings()
 end
 
 --[[
-    使用道具打乱指定玩家的地图
+    使用道具统一入口
     @param seat: number 玩家座位
-    @return table {success, reason} 打乱结果
+    @param itemId: number 道具ID
+    @return table {success, reason}
 ]]
-function logicHandler.shufflePlayerMap(seat)
-    return logic._shufflePlayerMap(seat)
+function logicHandler.useItem(seat, itemId)
+    if itemId == gameConfig.RICH_TYPE.UPSET then
+        return logic._shufflePlayerMap(seat)
+    elseif itemId == gameConfig.RICH_TYPE.AUTO_REMOVE then
+        return logic._autoRemovePair(seat)
+    end
+    return {success = false, reason = "无效的道具ID"}
 end
 
 return logicHandler

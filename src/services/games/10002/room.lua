@@ -834,9 +834,6 @@ function REQUEST:useItem(userid, args)
     end
     
     local itemId = args.itemId
-    if itemId ~= CONFIG.RICH_TYPE.UPSET then
-        return {code = 0, msg = "无效的道具ID"}
-    end
     
     local seat = roomInstance:getPlayerSeat(userid)
     if not seat then
@@ -844,26 +841,27 @@ function REQUEST:useItem(userid, args)
     end
     
     -- 扣除道具
-    if not reduceRiches(userid, CONFIG.RICH_TYPE.UPSET, 1) then
+    if not reduceRiches(userid, itemId, 1) then
         return {code = 0, msg = "道具不足"}
     end
-    -- 打乱地图
-    local shuffleResult = {success = false, reason = "逻辑模块未初始化"}
-    if roomInstance.logicHandler and roomInstance.logicHandler.shufflePlayerMap then
-        shuffleResult = roomInstance.logicHandler.shufflePlayerMap(seat)
+    
+    -- 调用逻辑模块使用道具
+    local result = {success = false, reason = "逻辑模块未初始化"}
+    if roomInstance.logicHandler and roomInstance.logicHandler.useItem then
+        result = roomInstance.logicHandler.useItem(seat, itemId)
     end
     
-    if not shuffleResult.success then
-        log.debug("Room:useItem shuffle failed: %s", shuffleResult.reason)
-        -- 打乱失败，补偿道具
-        skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.UPSET, 1)
-        return {code = 0, msg = shuffleResult.reason or "打乱失败"}
+    if not result.success then
+        log.debug("Room:useItem failed: %s", result.reason)
+        -- 操作失败，补偿道具
+        skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, itemId, 1)
+        return {code = 0, msg = result.reason or "操作失败"}
     end
     
     -- 查询剩余道具数量
-    local left = getRiches(userid, CONFIG.RICH_TYPE.UPSET)
+    local left = getRiches(userid, itemId)
     local richNum = left and left.richNums or 0
-    log.debug("Room:useItem shuffle success")
+    log.debug("Room:useItem success")
     
     return {code = 1, msg = "success", richNum = richNum}
 end
