@@ -19,7 +19,8 @@ call 2 {
     }
     response {
         code 0 : integer
-        result 1 : string
+        msg 1 : string
+        richNum 2 : integer  # 剩余道具数量
     }
 }
 
@@ -143,7 +144,7 @@ clickTiles 21 {
 # 道具使用 (预留)
 useItem 22 {
     request {
-        itemId 0 : integer  # 道具ID (1:重排, 2:提示, 3:加时等)
+        itemId 0 : integer  # 道具ID
     }
     response {
         code 0 : integer

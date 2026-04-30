@@ -31,6 +31,22 @@ local function addCombatPower(userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
+-- 扣除财富
+local function reduceRiches(userid, richType, cnt)
+    if not roomInstance then
+        return false
+    end
+    return skynet.call(roomInstance.svrDB, "lua", "db", "reduceUserRiches2", userid, richType, cnt)
+end
+
+-- 获取用户财富
+local function getRiches(userid, richType)
+    if not roomInstance then
+        return nil
+    end
+    return skynet.call(roomInstance.svrDB, "lua", "db", "getUserRichesByType", userid, richType)
+end
+
 -- 增加每日积分
 local function addDayScore(userid, seat, rank, playerCount)
     if not roomInstance or roomInstance:isPrivateRoom() then
@@ -808,6 +824,46 @@ function REQUEST:forwardMessage(userid, args)
         return roomInstance:forwardMessage(userid, args)
     end
     return {code = 0, msg = "房间未初始化"}
+end
+
+-- 使用道具
+function REQUEST:useItem(userid, args)
+    if not roomInstance then
+        return {code = 0, msg = "房间未初始化"}
+    end
+    
+    local itemId = args.itemId
+    if itemId ~= CONFIG.RICH_TYPE.UPSET then
+        return {code = 0, msg = "无效的道具ID"}
+    end
+    
+    local seat = roomInstance:getPlayerSeat(userid)
+    if not seat then
+        return {code = 0, msg = "玩家不在房间中"}
+    end
+    
+    -- 扣除道具
+    if not reduceRiches(userid, CONFIG.RICH_TYPE.UPSET, 1) then
+        return {code = 0, msg = "道具不足"}
+    end
+    
+    -- 打乱地图
+    local shuffleResult = {success = false, reason = "逻辑模块未初始化"}
+    if roomInstance.logicHandler and roomInstance.logicHandler.shufflePlayerMap then
+        shuffleResult = roomInstance.logicHandler.shufflePlayerMap(seat)
+    end
+    
+    if not shuffleResult.success then
+        -- 打乱失败，补偿道具
+        skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.UPSET, 1)
+        return {code = 0, msg = shuffleResult.reason or "打乱失败"}
+    end
+    
+    -- 查询剩余道具数量
+    local left = getRiches(userid, CONFIG.RICH_TYPE.UPSET)
+    local richNum = left and left.richNums or 0
+    
+    return {code = 1, msg = "success", richNum = richNum}
 end
 
 -- 客户端请求分发

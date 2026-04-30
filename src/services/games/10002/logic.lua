@@ -420,6 +420,66 @@ function logic._regeneratePlayerMap(seat)
 end
 
 --[[
+    使用道具打乱指定玩家的地图
+    @param seat: number 玩家座位
+    @return table {success, reason} 打乱结果
+]]
+function logic._shufflePlayerMap(seat)
+    log.info("[Logic] 使用道具打乱座位%d的地图", seat)
+
+    local playerMap = logic.playerMaps[seat]
+    if not playerMap then
+        log.error("[Logic] 座位%d地图不存在", seat)
+        return {success = false, reason = "地图不存在"}
+    end
+
+    local progress = logic.playerProgress[seat]
+    if progress and progress.finished then
+        log.warn("[Logic] 座位%d已完成游戏，无法打乱", seat)
+        return {success = false, reason = "游戏已完成"}
+    end
+
+    if playerMap:isComplete() then
+        log.warn("[Logic] 座位%d地图已清空，无法打乱", seat)
+        return {success = false, reason = "无方块可打乱"}
+    end
+
+    if logic.stepId ~= config.GAME_STEP.PLAYING then
+        log.warn("[Logic] 当前不在PLAYING阶段，无法打乱")
+        return {success = false, reason = "不在游戏阶段"}
+    end
+
+    local maxAttempts = 9
+    local solvable = false
+
+    for attempt = 1, maxAttempts do
+        log.info("[Logic] 座位%d执行第%d次打乱", seat, attempt)
+        local newMapData = logic._shuffleMap(seat)
+        if not newMapData then
+            log.error("[Logic] 打乱失败")
+            break
+        end
+
+        solvable = playerMap:hasAnyValidPair()
+        if solvable then
+            break
+        end
+    end
+
+    if not solvable then
+        log.info("[Logic] 打乱后仍不可消除，重新生成地图")
+        logic._regeneratePlayerMap(seat)
+        logic._broadcastMapShuffled(seat, 2)
+    else
+        logic._broadcastMapShuffled(seat, 1)
+    end
+
+    logic._broadcastMapData(seat)
+    log.info("[Logic] 座位%d地图打乱完成", seat)
+    return {success = true, reason = "打乱成功"}
+end
+
+--[[
     广播地图打乱通知
     @param seat: number 触发打乱的玩家座位
     @param reason: number 原因 1:打乱 2:重新生成
@@ -970,6 +1030,15 @@ function logicHandler.getRankings()
     end)
     
     return rankings
+end
+
+--[[
+    使用道具打乱指定玩家的地图
+    @param seat: number 玩家座位
+    @return table {success, reason} 打乱结果
+]]
+function logicHandler.shufflePlayerMap(seat)
+    return logic._shufflePlayerMap(seat)
 end
 
 return logicHandler
