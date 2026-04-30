@@ -524,6 +524,7 @@ function logic._autoRemovePair(seat)
         col2 = p2.col - 1,
     }
 
+    -- todo:下发消除协议
     local result = logicHandler.clickTiles(seat, args)
     if result and result.code == 1 then
         log.info("[Logic] 座位%d自动消除成功", seat)
@@ -703,12 +704,15 @@ function logicHandler.clickTiles(seat, args)
         -- 广播打乱/重新生成通知
         if regenerated then
             logic._broadcastMapShuffled(seat, 2)
+            -- 下发新地图给所有玩家
+            logic._broadcastMapData(seat)
         elseif shuffled then
             logic._broadcastMapShuffled(seat, 1)
+            -- 下发新地图给所有玩家
+            logic._broadcastMapData(seat)
         end
         
-        -- 下发新地图给所有玩家
-        logic._broadcastMapData(seat)
+        
     end
     
     -- 转换lines格式以匹配sproto协议: {start={row, col}, dest={row, col}}
