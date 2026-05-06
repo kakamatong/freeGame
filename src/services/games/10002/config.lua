@@ -63,15 +63,6 @@ config.ROOM_END_FLAG = {
     OWNER_DISBAND = 5,
 }
 
--- 评分配置（ELO系统）
-config.RATING_CONFIG = {
-    K_base = 65,
-    S_max = 10000,
-    initial_score = 1000,
-    min_score = 0,
-    zero_sum_mode = false
-}
-
 -- 地图配置，地图默认是10*10的，配置最大为8*8（外面需要留一圈空白消除）
 config.MAP = {
     -- DEFAULT_ROWS = 8, --10
@@ -95,18 +86,20 @@ config.AI = {
 
 -- 计分配置
 config.SCORING = {
-    -- 普通匹配ELO配置（炉石模式）
+    -- 匹配模式计分
     MATCH = {
-        K_base = 32,                -- 基础K值
-        S_max = 3000,              -- 高分阈值（超过此分后加分减少）
         initial_score = 1000,       -- 初始分数
         min_score = 0,             -- 最低分数
-        low_score_threshold = 1000, -- 低分阈值（低于此分未完成得0分）
+        -- 未完成扣分档位（threshold: 当前分数低于此值时适用）
+        unfinished_penalty = {
+            {threshold = 200,  penalty = 0},   -- 0-199分: 0分
+            {threshold = 500,  penalty = 1},   -- 200-499分: -1分
+            {threshold = 1000, penalty = 2},   -- 500-999分: -2分
+            {threshold = nil,  penalty = 3},   -- 1000分以上: -3分
+        },
     },
-    -- 私人房计分配置
-    PRIVATE = {
-        -- 第一名得分 = 玩家数，其余名次递减，未完成得0分
-    }
+    -- 私人房计分（完成者按排名计分，未完成0分）
+    PRIVATE = {}
 }
 
 -- 消息转发类型
