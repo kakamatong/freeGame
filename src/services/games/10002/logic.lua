@@ -972,6 +972,11 @@ function logicHandler.relink(seat)
     
     -- 如果是PLAYING阶段，下发剩余时间
     if logic.stepId == config.GAME_STEP.PLAYING then
+        logic.roomHandler.sendToSeat(seat, "gameStart", {
+            roundNum = logic.roundNum,
+            startTime = logic.startTime,
+            brelink = 1,
+        })
         local elapsed = os.time() - logic.stepBeginTime
         local totalTime = config.STEP_TIME_LEN[config.GAME_STEP.PLAYING]
         local remainingTime = totalTime - elapsed
@@ -983,39 +988,39 @@ function logicHandler.relink(seat)
             })
             log.info("[Logic] 座位%d重连，PLAYING阶段剩余时间:%d秒", seat, remainingTime)
         end
-    end
-    
-    -- 发送所有玩家的地图给重连玩家
-    local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
-    for targetSeat, targetMap in pairs(logic.playerMaps) do
-        logic.roomHandler.sendToSeat(seat, "mapData", {
-            mapData = cjson.encode(targetMap:getMap()),
-            totalBlocks = totalBlocks,
-            seat = targetSeat,
-            col = logic.rule.mapCols,
-            row = logic.rule.mapRows,
-        })
-    end
-    
-    local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
-    logic.roomHandler.sendToSeat(seat, "progressUpdate", {
-        seat = seat,
-        eliminated = progress.eliminated,
-        remaining = playerMap:getRemainingBlockCount(),
-        percentage = percentage,
-        finished = progress.finished and 1 or 0,
-        usedTime = progress.usedTime or 0,
-    })
-    
-    -- 下发房间内已完成玩家的finishInfo
-    for targetSeat, targetProgress in pairs(logic.playerProgress) do
-        if targetProgress.finished then
-            logic.roomHandler.sendToSeat(seat, "playerFinished", {
+
+            -- 发送所有玩家的地图给重连玩家
+        local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
+        for targetSeat, targetMap in pairs(logic.playerMaps) do
+            logic.roomHandler.sendToSeat(seat, "mapData", {
+                mapData = cjson.encode(targetMap:getMap()),
+                totalBlocks = totalBlocks,
                 seat = targetSeat,
-                usedTime = targetProgress.usedTime,
-                rank = targetProgress.rank,
+                col = logic.rule.mapCols,
+                row = logic.rule.mapRows,
             })
-            log.info("[Logic] 重连下发座位%d的完成信息，排名%d", targetSeat, targetProgress.rank)
+        end
+        
+        local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
+        logic.roomHandler.sendToSeat(seat, "progressUpdate", {
+            seat = seat,
+            eliminated = progress.eliminated,
+            remaining = playerMap:getRemainingBlockCount(),
+            percentage = percentage,
+            finished = progress.finished and 1 or 0,
+            usedTime = progress.usedTime or 0,
+        })
+        
+        -- 下发房间内已完成玩家的finishInfo
+        for targetSeat, targetProgress in pairs(logic.playerProgress) do
+            if targetProgress.finished then
+                logic.roomHandler.sendToSeat(seat, "playerFinished", {
+                    seat = targetSeat,
+                    usedTime = targetProgress.usedTime,
+                    rank = targetProgress.rank,
+                })
+                log.info("[Logic] 重连下发座位%d的完成信息，排名%d", targetSeat, targetProgress.rank)
+            end
         end
     end
 end
