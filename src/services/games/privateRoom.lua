@@ -396,7 +396,7 @@ function PrivateRoom:roomEnd(code)
 
         -- 通知游戏管理器销毁房间
         self:sendToAllClient("roomEnd", {code = code})
-        skynet.send(self.gameManager, "lua", "destroyGame", self:getRoomLogTag())
+        skynet.send(self.gameManager, "lua", "destroyGame", self.roomInfo.gameid, self.roomInfo.roomid)
         
         -- 更新玩家状态
         for _, userid in pairs(self.roomInfo.playerids) do

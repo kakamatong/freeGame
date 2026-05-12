@@ -537,8 +537,8 @@ function logicHandler.outHand(seatid, args)
 end
 
 -- 初始化
-function logicHandler.init(rule, roomHandler)
-    logic.init(rule, roomHandler)
+function logicHandler.init(rule, roomHandler, gameid, roomid)
+    logic.init(rule, roomHandler, gameid, roomid)
 end
 
 -- 定时器每0.1s调用一次
