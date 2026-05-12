@@ -1,7 +1,7 @@
 local config = require("games.10001.configLogic")
 local log = require "log"
 local cjson = require "cjson"
-local logic = {}
+local logic = {gameid = 0, roomid = 0}
 local function getRoomLogTag()
     return string.format("[%d][%d]", logic.gameid, logic.roomid)
 end

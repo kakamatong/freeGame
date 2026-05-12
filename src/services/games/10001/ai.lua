@@ -2,7 +2,7 @@ require "skynet"
 local log = require "log"
 local config = require "games.10001.configLogic"
 local aiHandler = {}
-local aiLogic = {}
+local aiLogic = {gameid = 0, roomid = 0}
 local function getRoomLogTag()
     return string.format("[%d][%d]", aiLogic.gameid, aiLogic.roomid)
 end

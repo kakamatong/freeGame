@@ -21,7 +21,7 @@ local Map = require "games.10002.map"
 local mapGenerator = require "games.10002.mapGenerator"
 local skynet = require "skynet"
 
-local logic = {}
+local logic = {gameid = 0, roomid = 0}
 local function getRoomLogTag()
     return string.format("[%d][%d]", logic.gameid, logic.roomid)
 end
