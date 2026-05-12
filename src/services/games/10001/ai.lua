@@ -1,5 +1,9 @@
 require "skynet"
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 local config = require "games.10001.configLogic"
 local aiHandler = {}
 local aiLogic = {}
@@ -24,7 +28,7 @@ aiLogic.STEP_TIME = {
 
 -- 处理出牌
 function aiLogic.dealGameOutHand(seat)
-    log.info("XY.dealGameOutHand")
+    log.info("%s XY.dealGameOutHand", getRoomLogTag())
     local data = aiLogic.data[seat]
     data.timeFlag = data.timeFlag or {}
     data.timeFlag[config.GAME_STEP.OUT_HAND] = false
@@ -71,7 +75,7 @@ end
 
 -- 收到玩家态度消息
 function XY.playerAtt(seat, data)
-    log.info("XY.reportGamePlayerAttitude", seat, data)
+    log.info("%s XY.reportGamePlayerAttitude", getRoomLogTag(), seat, data)
     if seat == data.seat then
         local uData = aiLogic.data[seat]
         uData.seat = seat
@@ -86,11 +90,13 @@ function aiHandler.onMsg(seat, name, data)
     if XY[name] then
         XY[name](seat, data)
     else
-        log.info("aiHandler.onMsg not found")
+        log.info("%s aiHandler.onMsg not found", getRoomLogTag())
     end
 end
 
-function aiHandler.init(roomHandlerAi, robotCnt)
+function aiHandler.init(roomHandlerAi, robotCnt, gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
     aiLogic.roomHandlerAi = roomHandlerAi
 end
 

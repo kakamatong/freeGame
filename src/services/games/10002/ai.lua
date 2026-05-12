@@ -11,6 +11,10 @@
 ]]
 
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 local config = require "games.10002.configLogic"
 
 local aiHandler = {}
@@ -45,8 +49,7 @@ function aiHandler.setConfig(cfg)
         aiLogic.config.TICK_INTERVAL = cfg.tickInterval or aiLogic.config.TICK_INTERVAL
         aiLogic.config.ACTION_PROBABILITY = cfg.actionProbability or aiLogic.config.ACTION_PROBABILITY
     end
-    log.info("[AI] 配置更新: 间隔=%d秒, 概率=%d%%", 
-        aiLogic.config.TICK_INTERVAL, aiLogic.config.ACTION_PROBABILITY)
+    log.info("%s [AI] 配置更新: 间隔=%d秒, 概率=%d%%", getRoomLogTag(), aiLogic.config.TICK_INTERVAL, aiLogic.config.ACTION_PROBABILITY)
 end
 
 --[[
@@ -62,32 +65,31 @@ end
     @param seat: number 机器人座位号
 ]]
 function aiLogic.doEliminate(seat)
-    log.info("[AI] 座位%d尝试消除", seat)
+    log.info("%s [AI] 座位%d尝试消除", getRoomLogTag(), seat)
     
     local data = aiLogic.data[seat]
     if not data then
-        log.warn("[AI] 座位%d数据不存在", seat)
+        log.warn("%s [AI] 座位%d数据不存在", getRoomLogTag(), seat)
         return
     end
     
     -- 检查当前阶段是否为 PLAYING
     if data.stepid ~= config.GAME_STEP.PLAYING then
-        log.debug("[AI] 座位%d当前不在PLAYING阶段，跳过", seat)
+        log.debug("%s [AI] 座位%d当前不在PLAYING阶段，跳过", getRoomLogTag(), seat)
         return
     end
     
     -- 检查概率
     local rand = math.random(1, 100)
     if rand > aiLogic.config.ACTION_PROBABILITY then
-        log.debug("[AI] 座位%d本次不执行消除 (随机数:%d > 概率:%d)", 
-            seat, rand, aiLogic.config.ACTION_PROBABILITY)
+        log.debug("%s [AI] 座位%d本次不执行消除 (随机数:%d > 概率:%d)", getRoomLogTag(), seat, rand, aiLogic.config.ACTION_PROBABILITY)
         return
     end
     
     -- 获取可消除的方块对（从logicHandler获取）
     local validPairs = aiLogic.roomHandlerAi.getValidPairs(seat)
     if not validPairs or #validPairs == 0 then
-        log.debug("[AI] 座位%d没有可消除的方块对", seat)
+        log.debug("%s [AI] 座位%d没有可消除的方块对", getRoomLogTag(), seat)
         return
     end
     
@@ -95,8 +97,7 @@ function aiLogic.doEliminate(seat)
     local pairIndex = math.random(1, #validPairs)
     local pair = validPairs[pairIndex]
     
-    log.info("[AI] 座位%d执行消除: (%d,%d) -> (%d,%d)", 
-        seat, pair[1].row, pair[1].col, pair[2].row, pair[2].col)
+    log.info("%s [AI] 座位%d执行消除: (%d,%d) -> (%d,%d)", getRoomLogTag(), seat, pair[1].row, pair[1].col, pair[2].row, pair[2].col)
     
     -- 构建消除请求参数（注意：转换为客户端坐标0-based）
     local args = {
@@ -123,7 +124,7 @@ function aiLogic.startStep(seat, stepid)
     aiLogic.data[seat].stepid = stepid
     aiLogic.data[seat].stepBeginTime = os.time()
     
-    log.info("[AI] 座位%d进入阶段%d", seat, stepid)
+    log.info("%s [AI] 座位%d进入阶段%d", getRoomLogTag(), seat, stepid)
     
     -- 如果是PLAYING阶段，初始化最后行动时间
     if stepid == config.GAME_STEP.PLAYING then
@@ -158,7 +159,7 @@ end
 function aiLogic.clearSeat(seat)
     if aiLogic.data[seat] then
         aiLogic.data[seat] = nil
-        log.info("[AI] 清理座位%d数据", seat)
+        log.info("%s [AI] 清理座位%d数据", getRoomLogTag(), seat)
     end
 end
 
@@ -167,7 +168,7 @@ end
 ]]
 function aiLogic.clearAll()
     aiLogic.data = {}
-    log.info("[AI] 清理所有数据")
+    log.info("%s [AI] 清理所有数据", getRoomLogTag())
 end
 
 --[[
@@ -191,7 +192,7 @@ end
 function XY.gameStart(seat, data)
     aiLogic.data[seat] = aiLogic.data[seat] or {}
     aiLogic.data[seat].roundNum = data.roundNum
-    log.info("[AI] 座位%d游戏开始，局数:%d", seat, data.roundNum)
+    log.info("%s [AI] 座位%d游戏开始，局数:%d", getRoomLogTag(), seat, data.roundNum)
 end
 
 --[[
@@ -202,7 +203,7 @@ end
 function XY.mapData(seat, data)
     aiLogic.data[seat] = aiLogic.data[seat] or {}
     -- 可以在这里解析和存储地图数据，如果需要AI做更复杂的决策
-    log.debug("[AI] 座位%d收到地图数据", seat)
+    log.debug("%s [AI] 座位%d收到地图数据", getRoomLogTag(), seat)
 end
 
 --[[
@@ -212,7 +213,7 @@ end
 ]]
 function XY.tilesRemoved(seat, data)
     if data.code == 1 then
-        log.debug("[AI] 座位%d消除成功，剩余方块:%d", data.seat, data.remaining)
+        log.debug("%s [AI] 座位%d消除成功，剩余方块:%d", getRoomLogTag(), data.seat, data.remaining)
     end
 end
 
@@ -223,7 +224,7 @@ end
 ]]
 function XY.gameEnd(seat, data)
     aiLogic.clearSeat(seat)
-    log.info("[AI] 座位%d游戏结束", seat)
+    log.info("%s [AI] 座位%d游戏结束", getRoomLogTag(), seat)
 end
 
 --[[
@@ -233,8 +234,7 @@ end
 ]]
 function XY.playerFinished(seat, data)
     if seat == data.seat then
-        log.info("[AI] 座位%d已完成游戏，用时:%d秒，排名:%d", 
-            seat, data.usedTime, data.rank)
+        log.info("%s [AI] 座位%d已完成游戏，用时:%d秒，排名:%d", getRoomLogTag(), seat, data.usedTime, data.rank)
     end
 end
 
@@ -252,7 +252,7 @@ function aiHandler.onMsg(seat, name, data)
     if XY[name] then
         XY[name](seat, data)
     else
-        log.debug("[AI] 未处理的消息: %s", name)
+        log.debug("%s [AI] 未处理的消息: %s", getRoomLogTag(), name)
     end
 end
 
@@ -261,10 +261,12 @@ end
     @param roomHandlerAi: table Room提供的回调接口
     @param robotCnt: number 机器人数量
 ]]
-function aiHandler.init(roomHandlerAi, robotCnt)
+function aiHandler.init(roomHandlerAi, robotCnt, gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
     aiLogic.roomHandlerAi = roomHandlerAi
     aiLogic.clearAll()
-    log.info("[AI] 初始化完成，机器人数量:%d", robotCnt or 0)
+    log.info("%s [AI] 初始化完成，机器人数量:%d", getRoomLogTag(), robotCnt or 0)
 end
 
 --[[
@@ -286,7 +288,7 @@ function aiHandler.addRobot(seat)
         lastActionTime = 0,
         tickInterval = tickInterval,  -- 每个AI独立的执行间隔
     }
-    log.info("[AI] 添加机器人座位%d，执行间隔:%d秒", seat, tickInterval)
+    log.info("%s [AI] 添加机器人座位%d，执行间隔:%d秒", getRoomLogTag(), seat, tickInterval)
 end
 
 --[[

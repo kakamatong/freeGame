@@ -77,8 +77,6 @@ end
 
 -- 初始化房间数据
 function BaseRoom:init(data)
-    log.info("BaseRoom:init %s", UTILS.tableToString(data))
-    
     self.roomInfo.roomid = data.roomid
     self.roomInfo.gameid = data.gameid
     self.roomInfo.playerids = data.players
@@ -92,12 +90,14 @@ function BaseRoom:init(data)
     -- 初始化服务引用
     self.svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
     self.svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
+
+    log.info("%s BaseRoom:init %s", self:getRoomLogTag(), UTILS.tableToString(data))
 end
 
 -- 加载sproto协议
 function BaseRoom:loadSproto()
     if not self.config or not self.config.SPROTO then
-        log.error("BaseRoom:loadSproto config.SPROTO not found")
+        log.error("%s BaseRoom:loadSproto config.SPROTO not found", self:getRoomLogTag())
         return
     end
     
@@ -137,6 +137,11 @@ function BaseRoom:getUseridByFd(fd)
         end
     end
     return nil
+end
+
+-- 获取房间日志标签
+function BaseRoom:getRoomLogTag()
+    return string.format("[%d][%d]", self.roomInfo.gameid, self.roomInfo.roomid)
 end
 
 -- 房间状态检查方法
@@ -260,13 +265,13 @@ end
 -- 发送消息给单个玩家
 function BaseRoom:sendToOneClient(userid, name, data)
     if not self.send_request then
-        log.error("sendToOneClient error: send_request not started")
+        log.error("%s sendToOneClient error: send_request not started", self:getRoomLogTag())
         return 
     end
     
     local player = self.players[userid]
     if not player then
-        log.error("sendToOneClient error: player %s not found", userid)
+        log.error("%s sendToOneClient error: player %s not found", self:getRoomLogTag(), userid)
         return
     end
     
@@ -286,7 +291,7 @@ end
 -- 发送消息给所有玩家
 function BaseRoom:sendToAllClient(name, data)
     if not self.send_request then
-        log.error("sendToAllClient error: send_request not started")
+        log.error("%s sendToAllClient error: send_request not started", self:getRoomLogTag())
         return 
     end
 
@@ -370,7 +375,7 @@ end
 
 -- 房间结束 (虚方法，由子类实现)
 function BaseRoom:roomEnd(code)
-    log.error("BaseRoom:roomEnd should be implemented by subclass")
+    log.error("%s BaseRoom:roomEnd should be implemented by subclass", self:getRoomLogTag())
 end
 
 -- 销毁房间资源
@@ -398,7 +403,7 @@ end
 
 -- 连接游戏 (基础实现)
 function BaseRoom:connectGame(userid, client_fd)
-    log.info("BaseRoom:connectGame userid = %d", userid)
+    log.info("%s BaseRoom:connectGame userid = %d", self:getRoomLogTag(), userid)
     
     for i, playerid in pairs(self.roomInfo.playerids) do
         if playerid == userid then
@@ -427,7 +432,7 @@ end
 
 -- 客户端准备 (基础实现)
 function BaseRoom:clientReady(userid, args)
-    log.info("BaseRoom:clientReady userid = %d", userid)
+    log.info("%s BaseRoom:clientReady userid = %d", self:getRoomLogTag(), userid)
     
     if self:isRoomStatusWaittingConnect() then
         self.players[userid].status = self.config.PLAYER_STATUS.READY
@@ -467,14 +472,14 @@ end
 function BaseRoom:handleClientMessage(fd, name, args, response)
     local userid = self:getUseridByFd(fd)
     if not userid then
-        log.error("handleClientMessage fd %d not found userid", fd)
+        log.error("%s handleClientMessage fd %d not found userid", self:getRoomLogTag(), fd)
         return
     end
     
     -- 检查方法是否存在
     local func = self[name]
     if not func then
-        log.error("handleClientMessage method %s not found", name)
+        log.error("%s handleClientMessage method %s not found", self:getRoomLogTag(), name)
         return
     end
     

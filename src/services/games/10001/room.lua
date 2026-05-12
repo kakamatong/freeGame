@@ -61,7 +61,7 @@ local function addCombatPower(userid, n)
     if not roomInstance then
         return
     end
-    log.info("addCombatPower %d %d", userid, n)
+    log.info("%s addCombatPower %d %d", roomInstance:getRoomLogTag(), userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
@@ -121,7 +121,7 @@ end
 
 -- 初始化房间逻辑
 function Room:init(data)
-    log.info("game10001 Room:init %s", UTILS.tableToString(data))
+    log.info("%s game10001 Room:init %s", roomInstance:getRoomLogTag(), UTILS.tableToString(data))
     
     -- 调用父类初始化
     PrivateRoom.init(self, data)
@@ -218,8 +218,8 @@ function Room:initLogic()
         ruleData.rule = self.roomInfo.privateRule
     end
     
-    self.logicHandler.init(ruleData, self.roomHandler)
-    self.aiHandler.init(self.roomHandlerAi, self.roomInfo.robotCnt)
+    self.logicHandler.init(ruleData, self.roomHandler, self.roomInfo.gameid, self.roomInfo.roomid)
+    self.aiHandler.init(self.roomHandlerAi, self.roomInfo.robotCnt, self.roomInfo.gameid, self.roomInfo.roomid)
 end
 
 -- 重写开始游戏方法
@@ -245,7 +245,7 @@ function Room:startGame()
     end
     
     self:pushLog(config.LOG_TYPE.GAME_START, 0, "")
-    log.info("game start")
+    log.info("%s game start", self:getRoomLogTag())
 end
 
 -- 重写重连方法
@@ -262,7 +262,7 @@ function Room:forwardMessage(userid, args)
     local toUserid = args.to
     local msg = args.msg
     local from = userid 
-    log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
+    log.info("%s Room:forwardMessage %d %s", roomInstance:getRoomLogTag(), userid, UTILS.tableToString(args))
 
     local data = {
         type = msgType,
@@ -286,7 +286,7 @@ end
 function Room:talkUse(userid, args)
     local id = args.id
     local from = userid 
-    log.info("Room:talkUse %d %s", userid, UTILS.tableToString(args))
+    log.info("%s Room:talkUse %d %s", roomInstance:getRoomLogTag(), userid, UTILS.tableToString(args))
 
     local info = getTalkInfo(id)
     if not info then
@@ -300,7 +300,7 @@ function Room:talkUse(userid, args)
     if not left then
         return {code = 0, msg = "get riches error"}
     end
-    log.info("talk use left %s", UTILS.tableToString(left))
+    log.info("%s talk use left %s", roomInstance:getRoomLogTag(), UTILS.tableToString(left))
 
     local data = {
         from = from,
@@ -313,13 +313,13 @@ end
 
 -- AI消息处理
 function roomHandlerAi.onAiMsg(seat, name, data)
-    log.info("roomHandlerAi.onAiMsg %d, %s, %s", seat, name, UTILS.tableToString(data))
+    log.info("%s roomHandlerAi.onAiMsg %d, %s, %s", roomInstance:getRoomLogTag(), seat, name, UTILS.tableToString(data))
     if roomInstance and roomInstance.logicHandler then
         local func = roomInstance.logicHandler[name]
         if func then
             func(seat, data)
         else
-            log.error("roomHandlerAi.onAiMsg method %s not found", name)
+            log.error("%s roomHandlerAi.onAiMsg method %s not found", roomInstance:getRoomLogTag(), name)
         end
     end
 end
@@ -368,7 +368,7 @@ function roomHandler.gameResult(data)
         tmpcp[1].dcp = tmp.delta_a
         tmpcp[2].cpNew = tmp.new_score_b
         tmpcp[2].dcp = tmp.delta_b
-        log.info(UTILS.tableToString(tmpcp))
+        log.info("%s %s", roomInstance:getRoomLogTag(), UTILS.tableToString(tmpcp))
         -- 记录战力
         addCombatPower(tmpcp[1].userid, tmpcp[1].dcp)
         addCombatPower(tmpcp[2].userid, tmpcp[2].dcp)
@@ -571,19 +571,19 @@ end
 -- 客户端请求分发
 local function request(fd, name, args, response)
     if not roomInstance then
-        log.error("request error: roomInstance not initialized")
+        log.error("[0][0] request error: roomInstance not initialized")
         return
     end
     
     local userid = roomInstance:getUseridByFd(fd)
     if not userid then
-        log.error("request fd %d not found userid", fd)
+        log.error("%s request fd %d not found userid", roomInstance:getRoomLogTag(), fd)
         return
     end
     
     local func = REQUEST[name]
     if not func then
-        log.error("request method %s not found", name)
+        log.error("%s request method %s not found", roomInstance:getRoomLogTag(), name)
         return
     end
     
@@ -605,7 +605,7 @@ skynet.register_protocol {
         return nil
     end,
     dispatch = function (fd, _, type, ...)
-        log.info("room dispatch fd %d, type %s", fd, type)
+        log.info("%s room dispatch fd %d, type %s", roomInstance:getRoomLogTag(), fd, type)
         skynet.ignoreret() -- session是fd，不需要返回
         if type == "REQUEST" then
             local ok, result = pcall(request, fd, ...)
@@ -614,7 +614,7 @@ skynet.register_protocol {
                     roomInstance:send_package(fd, result)
                 end
             else
-                log.error(result)
+                log.error("%s %s", roomInstance:getRoomLogTag(), result)
             end
         else
             assert(type == "RESPONSE")

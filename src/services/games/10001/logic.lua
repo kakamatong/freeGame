@@ -1,6 +1,10 @@
 local config = require("games.10001.configLogic")
 local log = require "log"
 local cjson = require "cjson"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 local logic = {}
 logic.outHandInfo = {} -- 出招信息
 logic.roundNum = 0 -- 轮次
@@ -36,7 +40,9 @@ function logic.dealRule()
     end
 end
 
-function logic.init(rule, roomHandler)
+function logic.init(rule, roomHandler, gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
     logic.outHandInfo = {} -- 出招信息
     logic.roundNum = 0 -- 轮次
     logic.roundResult = 0 -- 轮次
@@ -59,7 +65,7 @@ end
 
 -- 开始游戏
 function logic.startGame()
-    log.info("startGame")
+    log.info("%s startGame", getRoomLogTag())
     logic.startStep(config.GAME_STEP.START)
 end
 
@@ -69,7 +75,7 @@ function logic.outHand(seatid, args)
         return
     end
     local flag = args.flag
-    log.info("outHand %d %d", seatid, flag)
+    log.info("%s outHand %d %d", getRoomLogTag(), seatid, flag)
     if not logic.outHandInfo[seatid] then
         logic.outHandInfo[seatid] = flag
     else
@@ -113,7 +119,7 @@ end
 
 -- 比较大小
 function logic.compare()
-    log.info("compare")
+    log.info("%s compare", getRoomLogTag())
     local result = config.HAND_RESULT.DRAW
     for _, flag in pairs(logic.outHandInfo) do
         result = result | flag
@@ -361,7 +367,7 @@ end
 
 -- 开始步骤
 function logic.startStep(stepid)
-    log.info("startStep %d", stepid)
+    log.info("%s startStep %d", getRoomLogTag(), stepid)
     logic.setStepBeginTime()
     logic.stepid = stepid
     if stepid == config.GAME_STEP.START then
@@ -377,7 +383,7 @@ end
 
 -- 停止步骤
 function logic.stopStep(stepid)
-    log.info("stopStep %d", stepid)
+    log.info("%s stopStep %d", getRoomLogTag(), stepid)
     if stepid == config.GAME_STEP.START then
         logic.stopStepStartGame()
     elseif stepid == config.GAME_STEP.OUT_HAND then
@@ -391,7 +397,7 @@ end
 
 -- 步骤超时
 function logic.onStepTimeout(stepid)
-    --log.info("onStepTimeout %d", stepid)
+    --log.info("%s onStepTimeout %d", getRoomLogTag(), stepid)
     if stepid == config.GAME_STEP.START then
         logic.onStepStartGameTimeout()
     elseif stepid == config.GAME_STEP.OUT_HAND then
@@ -440,7 +446,7 @@ end
 
 -- 重新连接
 function logic.onRelink(seat)
-    log.info("onRelink %d", seat)
+    log.info("%s onRelink %d", getRoomLogTag(), seat)
     local stepid = logic.getStepId()
     logic.sendToOneClient(seat, "stepId", {
         stepid = stepid,
@@ -459,7 +465,7 @@ end
 
 -- 定时器每0.1s调用一次
 function logic.update()
-    --log.info("update")
+    --log.info("%s update", getRoomLogTag())
     if not logic.binit then
         return
     end
@@ -469,7 +475,7 @@ function logic.update()
         return
     end
     local currentTime = os.time()
-    --log.info("currentTime %d, logic.stepBeginTime %d", currentTime, logic.stepBeginTime)
+    --log.info("%s currentTime %d, logic.stepBeginTime %d", getRoomLogTag(), currentTime, logic.stepBeginTime)
     local timeLen = currentTime - logic.stepBeginTime
     if timeLen >= logic.getStepTimeLen(stepid) then
         logic.onStepTimeout(stepid)

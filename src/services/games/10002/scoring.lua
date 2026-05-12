@@ -1,4 +1,8 @@
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 
 local ScoringSystem = {}
 ScoringSystem.__index = ScoringSystem
@@ -62,8 +66,7 @@ function ScoringSystem:calculateMatchScore(playerScores, rankings)
             reason = isFinished and "finished" or "unfinished"
         }
 
-        log.info("[Scoring] 匹配模式 座位%d 分数%d->%d (delta:%d) reason:%s",
-            seat, oldScore, newScore, delta, isFinished and "finished" or "unfinished")
+        log.info("%s [Scoring] 匹配模式 座位%d 分数%d->%d (delta:%d) reason:%s", getRoomLogTag(), seat, oldScore, newScore, delta, isFinished and "finished" or "unfinished")
     end
 
     return results
@@ -98,11 +101,16 @@ function ScoringSystem:calculatePrivateScore(playerCnt, rankings)
             reason = isFinished and "finished" or "unfinished"
         }
 
-        log.info("[Scoring] 私人房 座位%d 得分%d reason:%s",
-            r.seat, score, isFinished and "finished" or "unfinished")
+        log.info("%s [Scoring] 私人房 座位%d 得分%d reason:%s", getRoomLogTag(), r.seat, score, isFinished and "finished" or "unfinished")
     end
 
     return results
+end
+
+-- 设置房间上下文（由 Room 调用）
+function ScoringSystem.setGameContext(gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
 end
 
 return ScoringSystem

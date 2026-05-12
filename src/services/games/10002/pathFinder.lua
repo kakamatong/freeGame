@@ -6,6 +6,10 @@
 
 local tileUtils = require "games.10002.tileUtils"
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 
 local pathFinder = {}
 pathFinder.__index = pathFinder
@@ -31,7 +35,7 @@ end
 ]]
 function pathFinder:setMap(map)
     if not map or #map == 0 or not map[1] or #map[1] == 0 then
-        log.error("[PathFinder] 地图数据无效")
+        log.error("%s [PathFinder] 地图数据无效", getRoomLogTag())
         return
     end
     
@@ -396,6 +400,12 @@ end
 ]]
 function pathFinder:_isValidPosition(row, col)
     return row >= 1 and row <= self._rows and col >= 1 and col <= self._cols
+end
+
+-- 设置房间上下文（由 Room 调用）
+function pathFinder.setGameContext(gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
 end
 
 return pathFinder

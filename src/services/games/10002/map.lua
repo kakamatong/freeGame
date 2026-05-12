@@ -12,6 +12,10 @@
 local tileUtils = require "games.10002.tileUtils"
 local pathFinder = require "games.10002.pathFinder"
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 
 local Map = {}
 Map.__index = Map
@@ -37,7 +41,7 @@ end
 ]]
 function Map:initMap(map)
     if not map or #map == 0 or not map[1] or #map[1] == 0 then
-        log.error("[Map] 地图数据无效")
+        log.error("%s [Map] 地图数据无效", getRoomLogTag())
         return
     end
     
@@ -57,7 +61,7 @@ function Map:initMap(map)
     self._pathFinder = pathFinder:new()
     self._pathFinder:setMap(self._map)
     
-    log.info("[Map] 地图初始化完成，尺寸: %dx%d", self._rows, self._cols)
+    log.info("%s [Map] 地图初始化完成，尺寸: %dx%d", getRoomLogTag(), self._rows, self._cols)
 end
 
 --[[
@@ -91,7 +95,7 @@ end
 ]]
 function Map:getTile(row, col)
     if not self:_isValidPosition(row, col) then
-        log.warn("[Map] 坐标越界: (%d, %d)", row, col)
+        log.warn("%s [Map] 坐标越界: (%d, %d)", getRoomLogTag(), row, col)
         return -1
     end
     return self._map[row][col]
@@ -106,7 +110,7 @@ end
 ]]
 function Map:setTile(row, col, value)
     if not self:_isValidPosition(row, col) then
-        log.warn("[Map] 坐标越界，无法更新: (%d, %d)", row, col)
+        log.warn("%s [Map] 坐标越界，无法更新: (%d, %d)", getRoomLogTag(), row, col)
         return false
     end
     
@@ -128,7 +132,7 @@ end
 ]]
 function Map:removeTiles(p1, p2)
     if not self:_isValidPosition(p1.row, p1.col) or not self:_isValidPosition(p2.row, p2.col) then
-        log.warn("[Map] 消除失败，坐标越界")
+        log.warn("%s [Map] 消除失败，坐标越界", getRoomLogTag())
         return false
     end
     
@@ -136,19 +140,19 @@ function Map:removeTiles(p1, p2)
     local value2 = self._map[p2.row][p2.col]
     
     if not tileUtils.isBlock(value1) or not tileUtils.isBlock(value2) then
-        log.warn("[Map] 消除失败，选择的不是可消除方块")
+        log.warn("%s [Map] 消除失败，选择的不是可消除方块", getRoomLogTag())
         return false
     end
     
     if value1 ~= value2 then
-        log.warn("[Map] 消除失败，两个方块类型不同")
+        log.warn("%s [Map] 消除失败，两个方块类型不同", getRoomLogTag())
         return false
     end
     
     -- 检查是否可以连接
     local pathResult = self:canConnect(p1, p2)
     if not pathResult.canConnect then
-        log.warn("[Map] 消除失败，两个方块无法连接")
+        log.warn("%s [Map] 消除失败，两个方块无法连接", getRoomLogTag())
         return false
     end
     
@@ -161,7 +165,7 @@ function Map:removeTiles(p1, p2)
         self._pathFinder:setMap(self._map)
     end
     
-    log.info("[Map] 消除方块: (%d,%d) 和 (%d,%d)", p1.row, p1.col, p2.row, p2.col)
+    log.info("%s [Map] 消除方块: (%d,%d) 和 (%d,%d)", getRoomLogTag(), p1.row, p1.col, p2.row, p2.col)
     return true, pathResult.lines
 end
 
@@ -173,7 +177,7 @@ end
 ]]
 function Map:canConnect(p1, p2)
     if not self._pathFinder then
-        log.error("[Map] 寻路器未初始化")
+        log.error("%s [Map] 寻路器未初始化", getRoomLogTag())
         return { canConnect = false, lines = {} }
     end
     return self._pathFinder:canConnect(p1, p2)
@@ -326,7 +330,7 @@ function Map:reset()
     self._rows = 0
     self._cols = 0
     self._pathFinder = nil
-    log.info("[Map] 地图管理器已重置")
+    log.info("%s [Map] 地图管理器已重置", getRoomLogTag())
 end
 
 --[[
@@ -337,6 +341,12 @@ end
 ]]
 function Map:_isValidPosition(row, col)
     return row >= 1 and row <= self._rows and col >= 1 and col <= self._cols
+end
+
+-- 设置房间上下文（由 Room 调用）
+function Map.setGameContext(gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
 end
 
 return Map

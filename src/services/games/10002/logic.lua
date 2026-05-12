@@ -16,6 +16,10 @@
 local config = require("games.10002.configLogic")
 local gameConfig = require "gameConfig"
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 local cjson = require "cjson"
 local Map = require "games.10002.map"
 local mapGenerator = require "games.10002.mapGenerator"
@@ -72,7 +76,7 @@ end
     @param stepid: number 阶段ID (GAME_STEP.START/PLAYING/END)
 ]]
 function logic.startStep(stepid)
-    log.info("[Logic] 开始阶段 %d", stepid)
+    log.info("%s [Logic] 开始阶段 %d", getRoomLogTag(), stepid)
     
     logic.setStepBeginTime()
     logic.stepId = stepid
@@ -96,7 +100,7 @@ end
     @param stepid: number 阶段ID
 ]]
 function logic.stopStep(stepid)
-    log.info("[Logic] 停止阶段 %d", stepid)
+    log.info("%s [Logic] 停止阶段 %d", getRoomLogTag(), stepid)
     
     if stepid == config.GAME_STEP.START then
         logic.stopStepStart()
@@ -112,7 +116,7 @@ end
     @param stepid: number 阶段ID
 ]]
 function logic.onStepTimeout(stepid)
-    log.info("[Logic] 阶段 %d 超时", stepid)
+    log.info("%s [Logic] 阶段 %d 超时", getRoomLogTag(), stepid)
     
     if stepid == config.GAME_STEP.START then
         logic.onStepStartTimeout()
@@ -131,7 +135,7 @@ end
     START阶段开始：广播阶段ID，下发所有玩家的地图数据给所有玩家
 ]]
 function logic.startStepStart()
-    log.info("[Logic] START阶段开始")
+    log.info("%s [Logic] START阶段开始", getRoomLogTag())
 
     logic._generatePlayerMaps()
     
@@ -173,7 +177,7 @@ end
     START阶段停止：进入PLAYING阶段
 ]]
 function logic.stopStepStart()
-    log.info("[Logic] START阶段停止")
+    log.info("%s [Logic] START阶段停止", getRoomLogTag())
     logic.startStep(config.GAME_STEP.PLAYING)
 end
 
@@ -181,7 +185,7 @@ end
     START阶段超时处理
 ]]
 function logic.onStepStartTimeout()
-    log.info("[Logic] START阶段超时，进入PLAYING阶段")
+    log.info("%s [Logic] START阶段超时，进入PLAYING阶段", getRoomLogTag())
     logic.stopStep(config.GAME_STEP.START)
 end
 
@@ -193,7 +197,7 @@ end
     PLAYING阶段开始：广播阶段ID，允许玩家消除
 ]]
 function logic.startStepPlaying()
-    log.info("[Logic] PLAYING阶段开始，玩家可以开始消除")
+    log.info("%s [Logic] PLAYING阶段开始，玩家可以开始消除", getRoomLogTag())
     
     -- 发送倒计时时间给所有玩家
     logic.roomHandler.sendToAll("gameClock", {
@@ -203,12 +207,12 @@ function logic.startStepPlaying()
 end
 
 function logic.stopStepPlaying()
-    log.info("[Logic] PLAYING阶段停止")
+    log.info("%s [Logic] PLAYING阶段停止", getRoomLogTag())
     logic.startStep(config.GAME_STEP.END)
 end
 
 function logic.onStepPlayingTimeout()
-    log.info("[Logic] PLAYING阶段超时，强制结束游戏")
+    log.info("%s [Logic] PLAYING阶段超时，强制结束游戏", getRoomLogTag())
     
     if logic._checkAllUnfinished() then
         logic.endType = config.END_TYPE.TIMEOUT
@@ -223,7 +227,7 @@ end
 ]]
 
 function logic.startStepEnd()
-    log.info("[Logic] END阶段开始")
+    log.info("%s [Logic] END阶段开始", getRoomLogTag())
     logicHandler.endGame()
 end
 
@@ -231,7 +235,7 @@ end
     END阶段停止：通知Room游戏结束
 ]]
 function logic.stopStepEnd()
-    log.info("[Logic] END阶段停止，游戏结束")
+    log.info("%s [Logic] END阶段停止，游戏结束", getRoomLogTag())
     logic.stepId = config.GAME_STEP.NONE
 end
 
@@ -251,8 +255,10 @@ end
     @param rule: table 游戏规则 { playerCnt, mapRows, mapCols, iconTypes }
     @param roomHandler: table Room 提供的回调接口
 ]]
-function logicHandler.init(rule, roomHandler)
-    log.info("[Logic] 初始化单局游戏逻辑")
+function logicHandler.init(rule, roomHandler, gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
+    log.info("%s [Logic] 初始化单局游戏逻辑", getRoomLogTag())
     
     -- 重置所有状态（关键：每局必须完全重置）
     logic.playerMaps = {}
@@ -279,8 +285,7 @@ function logicHandler.init(rule, roomHandler)
     -- 更新PLAYING阶段时间
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
     
-    log.info("[Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒",
-        logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
+    log.info("%s [Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒", getRoomLogTag(), logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
     
     -- 发送游戏逻辑信息给所有玩家
     logic.roomHandler.sendToAll("logicInfo", {
@@ -300,13 +305,12 @@ function logic._generatePlayerMaps()
     local playerCnt = logic.rule.playerCnt
     local designMap = logic.rule.designMap
     
-    log.info("[Logic] 生成玩家地图，尺寸: %dx%d，图标种类: %d，玩家数: %d", 
-        rows, cols, iconTypes, playerCnt)
+    log.info("%s [Logic] 生成玩家地图，尺寸: %dx%d，图标种类: %d，玩家数: %d", getRoomLogTag(), rows, cols, iconTypes, playerCnt)
     
     -- 生成一张公共地图，所有玩家使用相同的地图
     local mapData = mapGenerator.generate(rows, cols, iconTypes, designMap)
     if not mapData then
-        log.error("[Logic] 生成地图失败")
+        log.error("%s [Logic] 生成地图失败", getRoomLogTag())
         return
     end
     
@@ -337,7 +341,7 @@ end
 function logic._shuffleMap(seat)
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.error("[Logic] 座位%d地图不存在", seat)
+        log.error("%s [Logic] 座位%d地图不存在", getRoomLogTag(), seat)
         return nil
     end
     
@@ -390,7 +394,7 @@ function logic._shuffleMap(seat)
     -- 更新地图
     playerMap:initMap(mapData)
     
-    log.info("[Logic] 座位%d地图打乱完成，剩余方块数: %d", seat, playerMap:getRemainingBlockCount())
+    log.info("%s [Logic] 座位%d地图打乱完成，剩余方块数: %d", getRoomLogTag(), seat, playerMap:getRemainingBlockCount())
     return mapData
 end
 
@@ -401,7 +405,7 @@ end
 function logic._regeneratePlayerMap(seat)
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.error("[Logic] 座位%d地图不存在", seat)
+        log.error("%s [Logic] 座位%d地图不存在", getRoomLogTag(), seat)
         return
     end
     
@@ -411,13 +415,13 @@ function logic._regeneratePlayerMap(seat)
     
     local mapData = mapGenerator.generate(rows, cols, iconTypes)
     if not mapData then
-        log.error("[Logic] 重新生成地图失败")
+        log.error("%s [Logic] 重新生成地图失败", getRoomLogTag())
         return
     end
     
     playerMap:initMap(mapData)
     
-    log.info("[Logic] 座位%d地图重新生成完成", seat)
+    log.info("%s [Logic] 座位%d地图重新生成完成", getRoomLogTag(), seat)
 end
 
 --[[
@@ -426,27 +430,27 @@ end
     @return table {success, reason} 打乱结果
 ]]
 function logic._shufflePlayerMap(seat)
-    log.info("[Logic] 使用道具打乱座位%d的地图", seat)
+    log.info("%s [Logic] 使用道具打乱座位%d的地图", getRoomLogTag(), seat)
 
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.error("[Logic] 座位%d地图不存在", seat)
+        log.error("%s [Logic] 座位%d地图不存在", getRoomLogTag(), seat)
         return {success = false, reason = "地图不存在"}
     end
 
     local progress = logic.playerProgress[seat]
     if progress and progress.finished then
-        log.warn("[Logic] 座位%d已完成游戏，无法打乱", seat)
+        log.warn("%s [Logic] 座位%d已完成游戏，无法打乱", getRoomLogTag(), seat)
         return {success = false, reason = "游戏已完成"}
     end
 
     if playerMap:isComplete() then
-        log.warn("[Logic] 座位%d地图已清空，无法打乱", seat)
+        log.warn("%s [Logic] 座位%d地图已清空，无法打乱", getRoomLogTag(), seat)
         return {success = false, reason = "无方块可打乱"}
     end
 
     if logic.stepId ~= config.GAME_STEP.PLAYING then
-        log.warn("[Logic] 当前不在PLAYING阶段，无法打乱")
+        log.warn("%s [Logic] 当前不在PLAYING阶段，无法打乱", getRoomLogTag())
         return {success = false, reason = "不在游戏阶段"}
     end
 
@@ -454,10 +458,10 @@ function logic._shufflePlayerMap(seat)
     local solvable = false
 
     for attempt = 1, maxAttempts do
-        log.info("[Logic] 座位%d执行第%d次打乱", seat, attempt)
+        log.info("%s [Logic] 座位%d执行第%d次打乱", getRoomLogTag(), seat, attempt)
         local newMapData = logic._shuffleMap(seat)
         if not newMapData then
-            log.error("[Logic] 打乱失败")
+            log.error("%s [Logic] 打乱失败", getRoomLogTag())
             break
         end
 
@@ -468,7 +472,7 @@ function logic._shufflePlayerMap(seat)
     end
 
     if not solvable then
-        log.info("[Logic] 打乱后仍不可消除，重新生成地图")
+        log.info("%s [Logic] 打乱后仍不可消除，重新生成地图", getRoomLogTag())
         logic._regeneratePlayerMap(seat)
         logic._broadcastMapShuffled(seat, 2)
     else
@@ -476,7 +480,7 @@ function logic._shufflePlayerMap(seat)
     end
 
     logic._broadcastMapData(seat)
-    log.info("[Logic] 座位%d地图打乱完成", seat)
+    log.info("%s [Logic] 座位%d地图打乱完成", getRoomLogTag(), seat)
     return {success = true, reason = "打乱成功"}
 end
 
@@ -486,33 +490,33 @@ end
     @return table {success, reason} 消除结果
 ]]
 function logic._autoRemovePair(seat)
-    log.info("[Logic] 使用道具自动消除座位%d的方块", seat)
+    log.info("%s [Logic] 使用道具自动消除座位%d的方块", getRoomLogTag(), seat)
 
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.error("[Logic] 座位%d地图不存在", seat)
+        log.error("%s [Logic] 座位%d地图不存在", getRoomLogTag(), seat)
         return {success = false, reason = "地图不存在"}
     end
 
     local progress = logic.playerProgress[seat]
     if progress and progress.finished then
-        log.warn("[Logic] 座位%d已完成游戏，无法自动消除", seat)
+        log.warn("%s [Logic] 座位%d已完成游戏，无法自动消除", getRoomLogTag(), seat)
         return {success = false, reason = "游戏已完成"}
     end
 
     if playerMap:isComplete() then
-        log.warn("[Logic] 座位%d地图已清空，无法自动消除", seat)
+        log.warn("%s [Logic] 座位%d地图已清空，无法自动消除", getRoomLogTag(), seat)
         return {success = false, reason = "无方块可消除"}
     end
 
     if logic.stepId ~= config.GAME_STEP.PLAYING then
-        log.warn("[Logic] 当前不在PLAYING阶段，无法自动消除")
+        log.warn("%s [Logic] 当前不在PLAYING阶段，无法自动消除", getRoomLogTag())
         return {success = false, reason = "不在游戏阶段"}
     end
 
     local hint = playerMap:getHint()
     if not hint then
-        log.warn("[Logic] 座位%d没有可消除的方块对", seat)
+        log.warn("%s [Logic] 座位%d没有可消除的方块对", getRoomLogTag(), seat)
         return {success = false, reason = "无可消除方块"}
     end
 
@@ -527,11 +531,11 @@ function logic._autoRemovePair(seat)
     -- todo:下发消除协议
     local result = logicHandler.clickTiles(seat, args)
     if result and result.code == 1 then
-        log.info("[Logic] 座位%d自动消除成功", seat)
+        log.info("%s [Logic] 座位%d自动消除成功", getRoomLogTag(), seat)
         return {success = true, reason = "消除成功"}
     end
 
-    log.error("[Logic] 座位%d自动消除失败: %s", seat, result and result.msg or "未知错误")
+    log.error("%s [Logic] 座位%d自动消除失败: %s", getRoomLogTag(), seat, result and result.msg or "未知错误")
     return {success = false, reason = result and result.msg or "消除失败"}
 end
 
@@ -554,7 +558,7 @@ end
 function logic._broadcastMapData(seat)
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.error("[Logic] 座位%d地图不存在", seat)
+        log.error("%s [Logic] 座位%d地图不存在", getRoomLogTag(), seat)
         return
     end
     
@@ -576,10 +580,10 @@ function logicHandler.startGame(roundNum)
     roundNum = roundNum or 1
     logic.roundNum = roundNum
     
-    log.info("[Logic] 开始第%d局游戏", roundNum)
+    log.info("%s [Logic] 开始第%d局游戏", getRoomLogTag(), roundNum)
     
     if not logic.binit then
-        log.error("[Logic] 游戏逻辑未初始化，请先调用 init()")
+        log.error("%s [Logic] 游戏逻辑未初始化，请先调用 init()", getRoomLogTag())
         return false
     end
     
@@ -598,7 +602,7 @@ function logicHandler.startGame(roundNum)
     
     logic.startStep(config.GAME_STEP.START)
     
-    log.info("[Logic] 第%d局游戏开始，玩家数: %d", roundNum, logic.rule.playerCnt)
+    log.info("%s [Logic] 第%d局游戏开始，玩家数: %d", getRoomLogTag(), roundNum, logic.rule.playerCnt)
     return true
 end
 
@@ -614,22 +618,21 @@ end
 function logicHandler.clickTiles(seat, args)
     -- 检查当前阶段
     if logic.stepId ~= config.GAME_STEP.PLAYING then
-        log.warn("[Logic] 当前不在PLAYING阶段，无法消除")
+        log.warn("%s [Logic] 当前不在PLAYING阶段，无法消除", getRoomLogTag())
         return {code = 0, msg = "当前不在PLAYING阶段"}
     end
     
-    log.info("[Logic] 玩家%d点击消除: (%d,%d) -> (%d,%d)", 
-        seat, args.row1, args.col1, args.row2, args.col2)
+    log.info("%s [Logic] 玩家%d点击消除: (%d,%d) -> (%d,%d)", getRoomLogTag(), seat, args.row1, args.col1, args.row2, args.col2)
     
     local playerMap = logic.playerMaps[seat]
     if not playerMap then
-        log.warn("[Logic] 座位%d地图未初始化", seat)
+        log.warn("%s [Logic] 座位%d地图未初始化", getRoomLogTag(), seat)
         return {code = 0, msg = "地图未初始化"}
     end
     
     local progress = logic.playerProgress[seat]
     if not progress or progress.finished then
-        log.warn("[Logic] 座位%d已结束游戏或进度不存在", seat)
+        log.warn("%s [Logic] 座位%d已结束游戏或进度不存在", getRoomLogTag(), seat)
         return {code = 0, msg = "已结束游戏或进度不存在"}
     end
     
@@ -638,30 +641,30 @@ function logicHandler.clickTiles(seat, args)
     local p2 = { row = args.row2 + 1, col = args.col2 + 1 }
     
     if not playerMap:isValidBlock(p1) or not playerMap:isValidBlock(p2) then
-        log.warn("[Logic] 无效的方块坐标")
+        log.warn("%s [Logic] 无效的方块坐标", getRoomLogTag())
         return {code = 0, msg = "无效的方块坐标", eliminated = progress.eliminated, remaining = playerMap:getRemainingBlockCount()}
     end
     
     local success, lines = playerMap:removeTiles(p1, p2)
     if not success then
-        log.warn("[Logic] 无法消除这两个方块")
+        log.warn("%s [Logic] 无法消除这两个方块", getRoomLogTag())
         return {code = 0, msg = "无法消除这两个方块", eliminated = progress.eliminated, remaining = playerMap:getRemainingBlockCount()}
     end
     
     progress.eliminated = progress.eliminated + 2
     local remaining = playerMap:getRemainingBlockCount()
     
-    log.info("[Logic] 座位%d消除成功，剩余方块: %d", seat, remaining)
+    log.info("%s [Logic] 座位%d消除成功，剩余方块: %d", getRoomLogTag(), seat, remaining)
     
     -- 连击判定
     local currentTime = math.floor(skynet.time() * 1000)
     local comboTimeWindow = config.COMBO.COMBO_TIME_WINDOW * 1000
     if progress.lastEliminateTime > 0 and (currentTime - progress.lastEliminateTime) < comboTimeWindow then
         progress.comboCount = progress.comboCount + 1
-        log.info("[Logic] 座位%d连击成功，当前连击数: %d", seat, progress.comboCount)
+        log.info("%s [Logic] 座位%d连击成功，当前连击数: %d", getRoomLogTag(), seat, progress.comboCount)
     else
         progress.comboCount = 1
-        log.info("[Logic] 座位%d连击中断，重新开始，当前连击数: %d", seat, progress.comboCount)
+        log.info("%s [Logic] 座位%d连击中断，重新开始，当前连击数: %d", getRoomLogTag(), seat, progress.comboCount)
     end
     progress.maxCombo = math.max(progress.maxCombo, progress.comboCount)
     progress.lastEliminateTime = currentTime
@@ -685,10 +688,10 @@ function logicHandler.clickTiles(seat, args)
                 break
             end
             
-            log.info("[Logic] 座位%d的地图不可消除，执行第%d次打乱", seat, attempt)
+            log.info("%s [Logic] 座位%d的地图不可消除，执行第%d次打乱", getRoomLogTag(), seat, attempt)
             local newMapData = logic._shuffleMap(seat)
             if not newMapData then
-                log.error("[Logic] 打乱失败，尝试重新生成地图")
+                log.error("%s [Logic] 打乱失败，尝试重新生成地图", getRoomLogTag())
                 break
             end
             shuffled = true
@@ -696,7 +699,7 @@ function logicHandler.clickTiles(seat, args)
         
         -- 如果9次打乱后仍不可消除，重新生成地图
         if not playerMap:hasAnyValidPair() then
-            log.info("[Logic] 打乱后仍不可消除，重新生成地图")
+            log.info("%s [Logic] 打乱后仍不可消除，重新生成地图", getRoomLogTag())
             logic._regeneratePlayerMap(seat)
             regenerated = true
         end
@@ -773,7 +776,7 @@ function logic._onPlayerFinish(seat)
     logic.finishOrder = logic.finishOrder + 1
     progress.rank = logic.finishOrder
     
-    log.info("[Logic] 座位%d完成本局，用时: %d毫秒，排名: %d", seat, progress.usedTime, progress.rank)
+    log.info("%s [Logic] 座位%d完成本局，用时: %d毫秒，排名: %d", getRoomLogTag(), seat, progress.usedTime, progress.rank)
     
     -- 检查是否是第一个完成（用于设置10秒倒计时）
     local finishedCount = 0
@@ -793,9 +796,9 @@ function logic._onPlayerFinish(seat)
                 time = endCountdown,
                 seat = 0,
             })
-            log.info("[Logic] 第一个玩家完成，设置%d秒倒计时", endCountdown)
+            log.info("%s [Logic] 第一个玩家完成，设置%d秒倒计时", getRoomLogTag(), endCountdown)
         else
-            log.info("[Logic] 第一个玩家完成，剩余时间%d秒不超过倒计时%d秒，不重置", remaining, endCountdown)
+            log.info("%s [Logic] 第一个玩家完成，剩余时间%d秒不超过倒计时%d秒，不重置", getRoomLogTag(), remaining, endCountdown)
         end
     end
     
@@ -817,7 +820,7 @@ end
 function logic._checkGameEnd()
     local allFinished, finishedPlayers, totalPlayers = logic._checkAllFinished()
     
-    log.info("[Logic] 检查本局结束: %d/%d 已完成", finishedPlayers, totalPlayers)
+    log.info("%s [Logic] 检查本局结束: %d/%d 已完成", getRoomLogTag(), finishedPlayers, totalPlayers)
     
     -- 如果所有人都完成了，结束本局
     if allFinished and totalPlayers > 0 then
@@ -870,11 +873,11 @@ end
 ]]
 function logicHandler.endGame()
     if logic.gameStatus == config.GAME_STATUS.END then
-        log.warn("[Logic] 本局已结束，跳过")
+        log.warn("%s [Logic] 本局已结束，跳过", getRoomLogTag())
         return
     end
     
-    log.info("[Logic] 本局游戏结束，类型: %d", logic.endType)
+    log.info("%s [Logic] 本局游戏结束，类型: %d", getRoomLogTag(), logic.endType)
     
     logic.gameStatus = config.GAME_STATUS.END
     local endTime = os.time()
@@ -944,13 +947,13 @@ end
     @param seat: number 玩家座位
 ]]
 function logicHandler.relink(seat)
-    log.info("[Logic] 座位%d重连", seat)
+    log.info("%s [Logic] 座位%d重连", getRoomLogTag(), seat)
     
     local playerMap = logic.playerMaps[seat]
     local progress = logic.playerProgress[seat]
     
     if not playerMap or not progress then
-        log.warn("[Logic] 座位%d数据不存在，无法重连", seat)
+        log.warn("%s [Logic] 座位%d数据不存在，无法重连", getRoomLogTag(), seat)
         return
     end
 
@@ -986,7 +989,7 @@ function logicHandler.relink(seat)
                 time = remainingTime,
                 seat = 0,
             })
-            log.info("[Logic] 座位%d重连，PLAYING阶段剩余时间:%d秒", seat, remainingTime)
+            log.info("%s [Logic] 座位%d重连，PLAYING阶段剩余时间:%d秒", getRoomLogTag(), seat, remainingTime)
         end
 
             -- 发送所有玩家的地图给重连玩家
@@ -1019,7 +1022,7 @@ function logicHandler.relink(seat)
                     usedTime = targetProgress.usedTime,
                     rank = targetProgress.rank,
                 })
-                log.info("[Logic] 重连下发座位%d的完成信息，排名%d", targetSeat, targetProgress.rank)
+                log.info("%s [Logic] 重连下发座位%d的完成信息，排名%d", getRoomLogTag(), targetSeat, targetProgress.rank)
             end
         end
     end

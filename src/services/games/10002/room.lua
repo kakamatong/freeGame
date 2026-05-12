@@ -27,7 +27,7 @@ local function addCombatPower(userid, n)
     if not roomInstance then
         return
     end
-    log.info("addCombatPower %d %d", userid, n)
+    log.info("%s addCombatPower %d %d", roomInstance:getRoomLogTag(), userid, n)
     skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, CONFIG.RICH_TYPE.COMBAT_POWER, n)
 end
 
@@ -66,7 +66,7 @@ local function addDayScore(userid, seat, rank, playerCount)
     skynet.call(roomInstance.svrDB, "lua", "dbRedis", "zadd", rankKey, totalScore, userid)
     skynet.call(roomInstance.svrDB, "lua", "dbRedis", "expire", rankKey, 86400 * 7)
     
-    log.info("addDayScore game10002 userid=%d seat=%d rank=%d playerCount=%d score=%d totalScore=%.0f", 
+    log.info("%s addDayScore game10002 userid=%d seat=%d rank=%d playerCount=%d score=%d totalScore=%.0f", roomInstance:getRoomLogTag(), 
         userid, seat, rank, playerCount, score, totalScore)
 end
 
@@ -133,7 +133,7 @@ end
 ]]
 function roomHandler.onPlayerFinish(seat, usedTime, rank)
     if not roomInstance then return end
-    log.info("[Room] 玩家座位%d完成游戏，用时: %d秒，排名: %d", seat, usedTime, rank)
+    log.info("%s [Room] 玩家座位%d完成游戏，用时: %d秒，排名: %d", roomInstance:getRoomLogTag(), seat, usedTime, rank)
     -- 可以在这里记录日志、更新统计数据等
 end
 
@@ -144,7 +144,7 @@ end
 ]]
 function roomHandler.onGameEnd(endType, rankings)
     if not roomInstance then return end
-    log.info("[Room] 第%d局结束，类型: %d", roomInstance.roomInfo.playedCnt, endType)
+    log.info("%s [Room] 第%d局结束，类型: %d", roomInstance:getRoomLogTag(), roomInstance.roomInfo.playedCnt, endType)
     
     local currentRound = roomInstance.roomInfo.playedCnt
     
@@ -157,7 +157,7 @@ function roomHandler.onGameEnd(endType, rankings)
     if roomInstance:isPrivateRoom() then
         local mode = roomInstance.roomInfo.mode
         if mode and currentRound < mode.maxCnt then
-            log.info("[Room] 第%d/%d局结束，等待玩家准备下一局", currentRound, mode.maxCnt)
+            log.info("%s [Room] 第%d/%d局结束，等待玩家准备下一局", roomInstance:getRoomLogTag(), currentRound, mode.maxCnt)
             roomInstance.roomInfo.roomStatus = config.ROOM_STATUS.HALFTIME
             
             for _, player in pairs(roomInstance.players) do
@@ -167,7 +167,7 @@ function roomHandler.onGameEnd(endType, rankings)
         end
     end
     
-    log.info("[Room] 所有局结束，房间关闭")
+    log.info("%s [Room] 所有局结束，房间关闭", roomInstance:getRoomLogTag())
     roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
 end
 
@@ -179,7 +179,7 @@ end
 ]]
 function roomHandler.gameResult(endType, rankings)
     if not roomInstance then return {} end
-    log.info("[Room] gameResult 第%d局结束，类型: %d", roomInstance.roomInfo.playedCnt, endType)
+    log.info("%s [Room] gameResult 第%d局结束，类型: %d", roomInstance:getRoomLogTag(), roomInstance.roomInfo.playedCnt, endType)
     
     local currentRound = roomInstance.roomInfo.playedCnt
     local roundScores = {}
@@ -192,7 +192,7 @@ function roomHandler.gameResult(endType, rankings)
             local player = roomInstance.players[userid]
             local cp = player and player.cp or config.SCORING.MATCH.initial_score
             playerScores[seat] = cp
-            log.info("[Room] 匹配模式获取玩家CP: 座位%d 用户%d cp=%d", seat, userid, cp)
+            log.info("%s [Room] 匹配模式获取玩家CP: 座位%d 用户%d cp=%d", roomInstance:getRoomLogTag(), seat, userid, cp)
         end
         
         local scoreResults = roomInstance.scoringMatch:calculateMatchScore(playerScores, rankings)
@@ -215,8 +215,8 @@ function roomHandler.gameResult(endType, rankings)
                     delta = result.delta,
                 }
                 
-                log.info("[Room] 匹配模式计分: 座位%d 用户%d cp %d->%d (delta:%d)",
-                    seat, userid, result.oldScore, result.newScore, result.delta)
+                log.info("%s [Room] 匹配模式计分: 座位%d 用户%d cp %d->%d (delta:%d)",
+                    roomInstance:getRoomLogTag(), seat, userid, result.oldScore, result.newScore, result.delta)
             end
         end
         
@@ -250,8 +250,8 @@ function roomHandler.gameResult(endType, rankings)
                 newScore = newTotal,
                 delta = result.score,
             }
-            log.info("[Room] 私人房计分: 座位%d 得分%d 排名%d 总积分%d",
-                seat, result.score, result.rank, newTotal)
+            log.info("%s [Room] 私人房计分: 座位%d 得分%d 排名%d 总积分%d",
+                roomInstance:getRoomLogTag(), seat, result.score, result.rank, newTotal)
         end
         
         roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
@@ -303,14 +303,14 @@ end
     @param data: table 消息数据
 ]]
 function roomHandlerAi.onAiMsg(seat, name, data)
-    log.info("[RoomHandlerAi] 座位%d AI消息: %s", seat, name)
+    log.info("%s [RoomHandlerAi] 座位%d AI消息: %s", roomInstance:getRoomLogTag(), seat, name)
     if roomInstance and roomInstance.logicHandler then
         local func = roomInstance.logicHandler[name]
         if func then
             local result = func(seat, data)
-            log.info("[RoomHandlerAi] 座位%d AI消息处理结果: %s", seat, UTILS.tableToString(result or {}))
+            log.info("%s [RoomHandlerAi] 座位%d AI消息处理结果: %s", roomInstance:getRoomLogTag(), seat, UTILS.tableToString(result or {}))
         else
-            log.error("[RoomHandlerAi] 未找到处理方法: %s", name)
+            log.error("%s [RoomHandlerAi] 未找到处理方法: %s", roomInstance:getRoomLogTag(), name)
         end
     end
 end
@@ -328,7 +328,7 @@ function roomHandlerAi.getValidPairs(seat)
         local playerMap = roomInstance.logicHandler.getPlayerMap(seat)
         if playerMap and playerMap.getAllValidPairs then
             local pairs = playerMap:getAllValidPairs()
-            log.debug("[RoomHandlerAi] 座位%d可消除方块对数量: %d", seat, #pairs)
+            log.debug("%s [RoomHandlerAi] 座位%d可消除方块对数量: %d", roomInstance:getRoomLogTag(), seat, #pairs)
             return pairs
         end
     end
@@ -365,7 +365,7 @@ end
 
 -- 初始化房间逻辑
 function Room:init(data)
-    log.info("game10002 Room:init %s", UTILS.tableToString(data))
+    log.info("%s game10002 Room:init %s", roomInstance:getRoomLogTag(), UTILS.tableToString(data))
     
     -- 调用父类初始化
     PrivateRoom.init(self, data)
@@ -457,8 +457,13 @@ function Room:initLogic()
         designMap = selectedDesign.MAP,
     }
     
-    self.logicHandler.init(ruleData, roomHandler)
-    self.aiHandler.init(roomHandlerAi, self.roomInfo.robotCnt)
+    self.logicHandler.init(ruleData, roomHandler, self.roomInfo.gameid, self.roomInfo.roomid)
+    self.aiHandler.init(roomHandlerAi, self.roomInfo.robotCnt, self.roomInfo.gameid, self.roomInfo.roomid)
+    -- 传递房间信息给子模块
+    require("games.10002.map").setGameContext(self.roomInfo.gameid, self.roomInfo.roomid)
+    require("games.10002.mapGenerator").setGameContext(self.roomInfo.gameid, self.roomInfo.roomid)
+    require("games.10002.pathFinder").setGameContext(self.roomInfo.gameid, self.roomInfo.roomid)
+    require("games.10002.scoring").setGameContext(self.roomInfo.gameid, self.roomInfo.roomid)
     for seat, _ in pairs(self.roomInfo.playerids) do
         local bRobot = self:isRobotBySeat(seat)
         if bRobot then
@@ -485,7 +490,7 @@ end
 
 -- 重写testStart方法（支持房主直接开始或所有玩家准备后开始）
 function Room:testStart()
-    log.info("Room10002:testStart")
+    log.info("%s Room10002:testStart", roomInstance:getRoomLogTag())
     
     -- 非私人房沿用旧逻辑：所有玩家都准备才能开始
     if not self:isPrivateRoom() then
@@ -536,12 +541,12 @@ function Room:startGame()
     end
     
     self:pushLog(config.LOG_TYPE.GAME_START, 0, "")
-    log.info("game10002 game start, player count: %d", self.roomInfo.playerNum)
+    log.info("%s game10002 game start, player count: %d", roomInstance:getRoomLogTag(), self.roomInfo.playerNum)
 end
 
 -- 重写重连方法
 function Room:relink(userid)
-    log.info("game10002 Room:relink %d", userid)
+    log.info("%s game10002 Room:relink %d", roomInstance:getRoomLogTag(), userid)
     local seat = self:getPlayerSeat(userid)
     if not seat then
         return
@@ -602,7 +607,7 @@ function Room:forwardMessage(userid, args)
     local toUserid = args.to
     local msg = args.msg
     local from = userid
-    log.info("Room:forwardMessage %d %s", userid, UTILS.tableToString(args))
+    log.info("%s Room:forwardMessage %d %s", roomInstance:getRoomLogTag(), userid, UTILS.tableToString(args))
 
     local data = {
         type = msgType,
@@ -828,7 +833,7 @@ end
 
 -- 使用道具
 function REQUEST:useItem(userid, args)
-    log.info("Room:useItem %d %s", userid, UTILS.tableToString(args))
+    log.info("%s Room:useItem %d %s", roomInstance:getRoomLogTag(), userid, UTILS.tableToString(args))
     if not roomInstance then
         return {code = 0, msg = "房间未初始化"}
     end
@@ -852,7 +857,7 @@ function REQUEST:useItem(userid, args)
     end
     
     if not result.success then
-        log.debug("Room:useItem failed: %s", result.reason)
+        log.debug("%s Room:useItem failed: %s", roomInstance:getRoomLogTag(), result.reason)
         -- 操作失败，补偿道具
         skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, itemId, 1)
         return {code = 0, msg = result.reason or "操作失败"}
@@ -861,7 +866,7 @@ function REQUEST:useItem(userid, args)
     -- 查询剩余道具数量
     local left = getRiches(userid, itemId)
     local richNum = left and left.richNums or 0
-    log.debug("Room:useItem success")
+    log.debug("%s Room:useItem success", roomInstance:getRoomLogTag())
     
     return {code = 1, msg = "success", richNum = richNum}
 end
@@ -869,19 +874,19 @@ end
 -- 客户端请求分发
 local function request(fd, name, args, response)
     if not roomInstance then
-        log.error("request error: roomInstance not initialized")
+        log.error("[0][0] request error: roomInstance not initialized")
         return
     end
     
     local userid = roomInstance:getUseridByFd(fd)
     if not userid then
-        log.error("request fd %d not found userid", fd)
+        log.error("%s request fd %d not found userid", roomInstance:getRoomLogTag(), fd)
         return
     end
     
     local func = REQUEST[name]
     if not func then
-        log.error("request method %s not found", name)
+        log.error("%s request method %s not found", roomInstance:getRoomLogTag(), name)
         return
     end
     
@@ -903,7 +908,7 @@ skynet.register_protocol {
         return nil
     end,
     dispatch = function (fd, _, type, ...)
-        log.info("room10002 dispatch fd %d, type %s", fd, type)
+        log.info("%s room10002 dispatch fd %d, type %s", roomInstance:getRoomLogTag(), fd, type)
         skynet.ignoreret()
         if type == "REQUEST" then
             local ok, result = pcall(request, fd, ...)
@@ -912,7 +917,7 @@ skynet.register_protocol {
                     roomInstance:send_package(fd, result)
                 end
             else
-                log.error(result)
+                log.error("%s %s", roomInstance:getRoomLogTag(), result)
             end
         else
             assert(type == "RESPONSE")

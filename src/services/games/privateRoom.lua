@@ -158,7 +158,7 @@ end
 
 -- 玩家离开房间
 function PrivateRoom:leaveRoom(userid)
-    log.info("PrivateRoom:leaveRoom userid = %d", userid)
+    log.info("%s PrivateRoom:leaveRoom userid = %d", self:getRoomLogTag(), userid)
     
     if not self:isPrivateRoom() then
         return {code = 0, msg = "非私人房间"}
@@ -187,7 +187,7 @@ function PrivateRoom:playerLeave(userid)
     self.roomInfo.playerids[seat] = nil
     self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum - 1
     self.players[userid] = nil
-    log.info("userid:%s leave", userid)
+    log.info("%s userid:%s leave", self:getRoomLogTag(), userid)
 
     -- 设置用户状态
     self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
@@ -240,7 +240,7 @@ end
 
 -- 测试是否可以开始游戏
 function PrivateRoom:testStart()
-    log.info("PrivateRoom:testStart")
+    log.info("%s PrivateRoom:testStart", self:getRoomLogTag())
     local readyCount = self:getReadyCnt()
 
     if readyCount == self.roomInfo.playerNum then
@@ -253,7 +253,7 @@ end
 
 -- 开始游戏 (虚方法，由子类实现具体游戏逻辑)
 function PrivateRoom:startGame()
-    log.error("PrivateRoom:startGame should be implemented by subclass")
+    log.error("%s PrivateRoom:startGame should be implemented by subclass", self:getRoomLogTag())
 end
 
 -- 玩家加入事件处理
@@ -272,7 +272,7 @@ end
 
 -- 重写客户端准备方法
 function PrivateRoom:clientReady(userid, args)
-    log.info("PrivateRoom:clientReady userid = %d", userid)
+    log.info("%s PrivateRoom:clientReady userid = %d", self:getRoomLogTag(), userid)
     
     if self:isRoomStatusWaittingConnect() then
         if self:isPrivateRoom() then
@@ -396,7 +396,7 @@ function PrivateRoom:roomEnd(code)
 
         -- 通知游戏管理器销毁房间
         self:sendToAllClient("roomEnd", {code = code})
-        skynet.send(self.gameManager, "lua", "destroyGame", self.roomInfo.gameid, self.roomInfo.roomid)
+        skynet.send(self.gameManager, "lua", "destroyGame", self:getRoomLogTag())
         
         -- 更新玩家状态
         for _, userid in pairs(self.roomInfo.playerids) do
@@ -434,7 +434,7 @@ end
 
 -- 发起投票解散
 function PrivateRoom:voteDisbandRoom(userid, reason)
-    log.info("PrivateRoom:voteDisbandRoom userid=%d, reason=%s", userid, reason or "")
+    log.info("%s PrivateRoom:voteDisbandRoom userid=%d, reason=%s", self:getRoomLogTag(), userid, reason or "")
     
     -- 1. 基础检查
     if not self:isPrivateRoom() then
@@ -532,7 +532,7 @@ end
 
 -- 投票解散响应
 function PrivateRoom:voteDisbandResponse(userid, voteId, agree)
-    log.info("PrivateRoom:voteDisbandResponse userid=%d, voteId=%d, agree=%d", userid, voteId, agree)
+    log.info("%s PrivateRoom:voteDisbandResponse userid=%d, voteId=%d, agree=%d", self:getRoomLogTag(), userid, voteId, agree)
     
     -- 1. 基础检查
     if not self.voteDisbandInfo.inProgress then
@@ -635,7 +635,7 @@ function PrivateRoom:endVoteDisband(result, reason)
         return
     end
     
-    log.info("PrivateRoom:endVoteDisband result=%d, reason=%s", result, reason)
+    log.info("%s PrivateRoom:endVoteDisband result=%d, reason=%s", self:getRoomLogTag(), result, reason)
     
     -- 1. 停止定时器
     if self.voteDisbandInfo.timer then

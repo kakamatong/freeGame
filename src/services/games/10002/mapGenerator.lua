@@ -6,6 +6,10 @@
 local tileUtils = require "games.10002.tileUtils"
 local pathFinder = require "games.10002.pathFinder"
 local log = require "log"
+local _gameid, _roomid = 0, 0
+local function getRoomLogTag()
+    return string.format("[%d][%d]", _gameid, _roomid)
+end
 
 local mapGenerator = {}
 
@@ -42,13 +46,12 @@ function mapGenerator.generate(rows, cols, iconTypes, designMap)
         
         -- 检查地图是否有解
         if map and mapGenerator._hasSolution(map) then
-            log.info("[MapGenerator] 地图生成成功，尝试次数: %d，尺寸: %dx%d，图标种类: %d", 
-                attempt, rows, cols, iconTypes)
+            log.info("%s [MapGenerator] 地图生成成功，尝试次数: %d，尺寸: %dx%d，图标种类: %d", getRoomLogTag(), attempt, rows, cols, iconTypes)
             return map
         end
     end
     
-    log.error("[MapGenerator] 地图生成失败，尝试%d次后仍未找到可解地图", maxAttempts)
+    log.error("%s [MapGenerator] 地图生成失败，尝试%d次后仍未找到可解地图", getRoomLogTag(), maxAttempts)
     return nil
 end
 
@@ -320,6 +323,12 @@ function mapGenerator.validate(map)
     end
     
     return true, "验证通过"
+end
+
+-- 设置房间上下文（由 Room 调用）
+function mapGenerator.setGameContext(gameid, roomid)
+    _gameid = gameid or 0
+    _roomid = roomid or 0
 end
 
 return mapGenerator
