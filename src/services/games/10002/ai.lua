@@ -11,14 +11,13 @@
 ]]
 
 local log = require "log"
-local _gameid, _roomid = 0, 0
-local function getRoomLogTag()
-    return string.format("[%d][%d]", _gameid, _roomid)
-end
 local config = require "games.10002.configLogic"
 
 local aiHandler = {}
 local aiLogic = {}
+local function getRoomLogTag()
+    return string.format("[%d][%d]", aiLogic.gameid, aiLogic.roomid)
+end
 local XY = {}  -- 消息处理函数表
 
 -- AI数据存储 { [seat] = { stepid, lastActionTime, mapData, ... } }
@@ -262,8 +261,8 @@ end
     @param robotCnt: number 机器人数量
 ]]
 function aiHandler.init(roomHandlerAi, robotCnt, gameid, roomid)
-    _gameid = gameid or 0
-    _roomid = roomid or 0
+    aiLogic.gameid = gameid or 0
+    aiLogic.roomid = roomid or 0
     aiLogic.roomHandlerAi = roomHandlerAi
     aiLogic.clearAll()
     log.info("%s [AI] 初始化完成，机器人数量:%d", getRoomLogTag(), robotCnt or 0)

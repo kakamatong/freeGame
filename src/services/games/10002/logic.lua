@@ -16,16 +16,15 @@
 local config = require("games.10002.configLogic")
 local gameConfig = require "gameConfig"
 local log = require "log"
-local _gameid, _roomid = 0, 0
-local function getRoomLogTag()
-    return string.format("[%d][%d]", _gameid, _roomid)
-end
 local cjson = require "cjson"
 local Map = require "games.10002.map"
 local mapGenerator = require "games.10002.mapGenerator"
 local skynet = require "skynet"
 
 local logic = {}
+local function getRoomLogTag()
+    return string.format("[%d][%d]", logic.gameid, logic.roomid)
+end
 
 -- 游戏状态（单局）
 logic.playerMaps = {}           -- 玩家地图 { [seat] = Map实例 }
@@ -256,8 +255,8 @@ end
     @param roomHandler: table Room 提供的回调接口
 ]]
 function logicHandler.init(rule, roomHandler, gameid, roomid)
-    _gameid = gameid or 0
-    _roomid = roomid or 0
+    logic.gameid = gameid or 0
+    logic.roomid = roomid or 0
     log.info("%s [Logic] 初始化单局游戏逻辑", getRoomLogTag())
     
     -- 重置所有状态（关键：每局必须完全重置）

@@ -1,12 +1,11 @@
 require "skynet"
 local log = require "log"
-local _gameid, _roomid = 0, 0
-local function getRoomLogTag()
-    return string.format("[%d][%d]", _gameid, _roomid)
-end
 local config = require "games.10001.configLogic"
 local aiHandler = {}
 local aiLogic = {}
+local function getRoomLogTag()
+    return string.format("[%d][%d]", aiLogic.gameid, aiLogic.roomid)
+end
 local XY = {}
 aiLogic.data = {}
 
@@ -95,8 +94,8 @@ function aiHandler.onMsg(seat, name, data)
 end
 
 function aiHandler.init(roomHandlerAi, robotCnt, gameid, roomid)
-    _gameid = gameid or 0
-    _roomid = roomid or 0
+    aiLogic.gameid = gameid or 0
+    aiLogic.roomid = roomid or 0
     aiLogic.roomHandlerAi = roomHandlerAi
 end
 

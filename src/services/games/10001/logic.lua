@@ -1,11 +1,10 @@
 local config = require("games.10001.configLogic")
 local log = require "log"
 local cjson = require "cjson"
-local _gameid, _roomid = 0, 0
-local function getRoomLogTag()
-    return string.format("[%d][%d]", _gameid, _roomid)
-end
 local logic = {}
+local function getRoomLogTag()
+    return string.format("[%d][%d]", logic.gameid, logic.roomid)
+end
 logic.outHandInfo = {} -- 出招信息
 logic.roundNum = 0 -- 轮次
 logic.roundResult = 0 -- 回合结构
@@ -41,8 +40,8 @@ function logic.dealRule()
 end
 
 function logic.init(rule, roomHandler, gameid, roomid)
-    _gameid = gameid or 0
-    _roomid = roomid or 0
+    logic.gameid = gameid or 0
+    logic.roomid = roomid or 0
     logic.outHandInfo = {} -- 出招信息
     logic.roundNum = 0 -- 轮次
     logic.roundResult = 0 -- 轮次
