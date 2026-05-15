@@ -370,6 +370,13 @@ function Room:init(data)
     -- 调用父类初始化
     PrivateRoom.init(self, data)
     
+    -- 道具使用开关（默认为开启，可通过 gameData.itemEnabled 传入）
+    if data.gameData and data.gameData.itemEnabled ~= nil then
+        self.roomInfo.itemEnabled = data.gameData.itemEnabled == 1
+    else
+        self.roomInfo.itemEnabled = true
+    end
+    
     -- 区分匹配房间和私人房间配置
     if self:isMatchRoom() then
         self.roomInfo.playerNum = #self.roomInfo.playerids
@@ -381,6 +388,8 @@ function Room:init(data)
     elseif self:isPrivateRoom() then
         -- 动态获取人数，基于实际加入的玩家
         local playNum = self.roomInfo.privateRule.playNum or 1
+        -- 使用道具
+        self.roomInfo.itemEnabled = self.roomInfo.privateRule.enableProp == 1
         -- 设置房间最大人数（dispatchSeat需要用到）
         self.roomInfo.playerNum = config.PRIVATE_ROOM.MAX_PLAYERS
         self.roomInfo.nowPlayerNum = #self.roomInfo.playerids
@@ -836,6 +845,11 @@ function REQUEST:useItem(userid, args)
     log.info("%s Room:useItem %d %s", roomInstance:getRoomLogTag(), userid, UTILS.tableToString(args))
     if not roomInstance then
         return {code = 0, msg = "房间未初始化"}
+    end
+    
+    -- 检查道具开关（默认为开启）
+    if roomInstance.roomInfo.itemEnabled == false then
+        return {code = 0, msg = "道具使用已关闭"}
     end
     
     local itemId = args.itemId
