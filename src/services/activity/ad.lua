@@ -15,6 +15,15 @@ local adConfigs = {
         }
     },
     -- 在此追加更多配置，如 [2] = { maxDailyRewardCount = 3, rewards = { ... } }
+    [2] = {
+        maxDailyRewardCount = 5,
+        rewards = {
+            {
+                richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE},
+                richNums = {5}
+            }
+        }
+    }
 }
 
 -- 获取指定配置（不存在则返回默认配置 #1）
