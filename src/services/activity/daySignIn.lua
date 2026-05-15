@@ -27,6 +27,25 @@ local signInConfigs = {
         },
     },
     -- 在此追加更多配置，如 [2] = { maxSignInIndex = 7, awards = { ... } }
+    [2] = {
+        maxSignInIndex = 7,
+        awards = {
+            -- 第一天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE}, richNums = {2},  richNums2 = {4} },
+            -- 第二天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE}, richNums = {3}, richNums2 = {6} },
+            -- 第三天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE}, richNums = {4}, richNums2 = {8} },
+            -- 第四天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE}, richNums = {5}, richNums2 = {10} },
+            -- 第五天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE}, richNums = {6}, richNums2 = {12} },
+            -- 第六天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE,CONFIG.RICH_TYPE.UPSET}, richNums = {6,2}, richNums2 = {12,4} },
+            -- 第七天
+            { richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE,CONFIG.RICH_TYPE.UPSET}, richNums = {6,3}, richNums2 = {12,6} },
+        },
+    },
 }
 
 -- 获取指定配置（不存在则返回默认配置 #1）
