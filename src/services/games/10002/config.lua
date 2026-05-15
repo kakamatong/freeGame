@@ -73,6 +73,12 @@ config.MAP = {
     MAX_PLAYERS = 6,
 }
 
+-- 道具使用次数限制（key 为道具ID，值 为每局最大使用次数，-1 表示不限制）
+config.ITEM_LIMITS = {
+    [10001] = 3,   -- UPSET 打乱道具
+    [10002] = 5,   -- AUTO_REMOVE 自动消除道具
+}
+
 -- 私人房配置
 config.PRIVATE_ROOM = {
     MAX_PLAYERS = 6,  -- 私人房最大玩家数

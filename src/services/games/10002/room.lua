@@ -370,6 +370,9 @@ function Room:init(data)
     -- 调用父类初始化
     PrivateRoom.init(self, data)
     
+    -- 初始化道具使用记录（{ [userid] = { [itemId] = count } }，每局清空）
+    self.roomInfo.itemUsage = {}
+    
     -- 道具使用开关（默认为开启，可通过 gameData.itemEnabled 传入）
     if data.gameData and data.gameData.itemEnabled ~= nil then
         self.roomInfo.itemEnabled = data.gameData.itemEnabled == 1
@@ -529,6 +532,7 @@ function Room:startGame()
     self.roomInfo.roomStatus = config.ROOM_STATUS.START
     self.roomInfo.playedCnt = self.roomInfo.playedCnt + 1
     self.roomInfo.gameStartTime = os.time()
+    self.roomInfo.itemUsage = {}  -- 每局清空道具使用记录
     
     -- 初始化逻辑
     self:initLogic()
@@ -854,6 +858,16 @@ function REQUEST:useItem(userid, args)
     
     local itemId = args.itemId
     
+    -- 检查道具使用次数限制
+    local limit = config.ITEM_LIMITS[itemId]
+    if limit and limit ~= -1 then
+        roomInstance.roomInfo.itemUsage[userid] = roomInstance.roomInfo.itemUsage[userid] or {}
+        local used = roomInstance.roomInfo.itemUsage[userid][itemId] or 0
+        if used >= limit then
+            return {code = 0, msg = "道具使用次数已达上限"}
+        end
+    end
+    
     local seat = roomInstance:getPlayerSeat(userid)
     if not seat then
         return {code = 0, msg = "玩家不在房间中"}
@@ -876,6 +890,10 @@ function REQUEST:useItem(userid, args)
         skynet.call(roomInstance.svrDB, "lua", "db", "addUserRiches", userid, itemId, 1)
         return {code = 0, msg = result.reason or "操作失败"}
     end
+    
+    -- 记录道具使用次数
+    roomInstance.roomInfo.itemUsage[userid] = roomInstance.roomInfo.itemUsage[userid] or {}
+    roomInstance.roomInfo.itemUsage[userid][itemId] = (roomInstance.roomInfo.itemUsage[userid][itemId] or 0) + 1
     
     -- 查询剩余道具数量
     local left = getRiches(userid, itemId)
