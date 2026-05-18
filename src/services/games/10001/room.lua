@@ -181,7 +181,7 @@ function Room:_initMatchRoomPlayers(data)
             status = config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
-            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
+            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid, self.roomInfo.gatewayUrl)
         end
         -- 匹配场的战力是匹配的时候传过来的
         self:checkUserInfo(userid, seat, status, bRobot, data.gameData.rate[seat] or 0)

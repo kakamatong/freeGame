@@ -50,6 +50,7 @@ function BaseRoom:_init()
         playedCnt = 0, -- 玩过的次数
         logicData = {},
         totalScores = {}, -- 玩家总积分 { [seat] = totalScore }
+        gatewayUrl = "",
     }
     
     -- 玩家信息
@@ -86,6 +87,7 @@ function BaseRoom:init(data)
     self.gameManager = data.gameManager
     self.roomInfo.createRoomTime = os.time()
     self.roomInfo.logicData = {}
+    self.roomInfo.gatewayUrl = data.gatewayUrl
     
     -- 初始化服务引用
     self.svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
@@ -179,8 +181,8 @@ function BaseRoom:setPlayerStatusBySeat(seat, status)
     end
 end
 
-function BaseRoom:setUserStatus(userid, status, gameid, roomid, addr, shortRoomid)
-    send(self.svrUser, "setUserStatus", userid, status, gameid, roomid, addr, shortRoomid)
+function BaseRoom:setUserStatus(userid, status, gameid, roomid, addr, shortRoomid, gatewayUrl)
+    send(self.svrUser, "setUserStatus", userid, status, gameid, roomid, addr, shortRoomid, gatewayUrl)
 end
 
 function BaseRoom:getUserStatus(userid)

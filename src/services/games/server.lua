@@ -129,6 +129,7 @@ local function createGameRoom(roomType, gameid, players, gameData)
         gameManager = skynet.self(),
         roomType = roomType,
         shortRoomid = shortRoomid,
+        gatewayUrl = gatewayUrl,
     }
     
     -- 初始化房间服务

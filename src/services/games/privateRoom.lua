@@ -93,7 +93,7 @@ function PrivateRoom:_initPrivateRoomPlayers(data)
             status = self.config.PLAYER_STATUS.READY
             robotCnt = robotCnt + 1
         else
-            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
+            self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid, self.roomInfo.gatewayUrl)
         end
 
         -- 私人房战力拉去
@@ -135,7 +135,7 @@ function PrivateRoom:joinPrivateRoom(userid)
             if seat then
                 self.roomInfo.playerids[seat] = userid
                 self.roomInfo.nowPlayerNum = self.roomInfo.nowPlayerNum + 1
-                self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid)
+                self:setUserStatus(userid, self.gConfig.USER_STATUS.GAMEING, self.roomInfo.gameid, self.roomInfo.roomid, self.roomInfo.addr, self.roomInfo.shortRoomid, self.roomInfo.gatewayUrl)
                 -- 私人房战力拉去
                 local rices = skynet.call(self.svrDB, "lua", "db", "getUserRichesByType", userid, CONFIG.RICH_TYPE.COMBAT_POWER)
                 local cp = 0
@@ -190,7 +190,7 @@ function PrivateRoom:playerLeave(userid)
     log.info("%s userid:%s leave", self:getRoomLogTag(), userid)
 
     -- 设置用户状态
-    self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
+    self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0, "")
     -- 通知其他玩家
     self:notifyPlayerLeave(userid, seat)
 end
@@ -401,7 +401,7 @@ function PrivateRoom:roomEnd(code)
         -- 更新玩家状态
         for _, userid in pairs(self.roomInfo.playerids) do
             if not self:isRobotByUserid(userid) then
-                self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0)
+                self:setUserStatus(userid, self.gConfig.USER_STATUS.ONLINE, 0, 0, "", 0, "")
             end
         end
     end
