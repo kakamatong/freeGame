@@ -174,6 +174,7 @@ function REQUEST:joinPrivateRoom(args)
 				gameid = info.gameid,
 				addr = info.addr,
 				gatewayUrl = info.gatewayUrl,
+				shortRoomid = info.shortRoomid,
 				rule = info.rule
 			}
 		end

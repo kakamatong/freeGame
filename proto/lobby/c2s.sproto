@@ -174,7 +174,8 @@ joinPrivateRoom 13 {
         roomid 3 : string
         addr 4 : string
         rule 5 : string
-        gatewayUrl 6 : string
+        shortRoomid 6 : integer
+        gatewayUrl 7 : string
     }
 }
 
