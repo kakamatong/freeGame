@@ -14,6 +14,7 @@ local gConfig = CONFIG
 require "skynet.manager"          -- 服务注册模块
 local svrDB = nil
 local addr = ""
+local gatewayUrl = ""
 --[[
 加载文件内容
 @param filename 文件名
@@ -105,7 +106,7 @@ local function createGameRoom(roomType, gameid, players, gameData)
     local shortRoomid = 0
     if roomType == gConfig.ROOM_TYPE.PRIVATE then
         for i = 1,5 do
-            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1], addr, gameid, gameData.rule or "")
+            shortRoomid = skynet.call(svrDB, "lua", "db", "getPrivateShortRommid", roomid, players[1], addr, gameid, gameData.rule or "", gatewayUrl)
             if shortRoomid then
                 break
             end
@@ -137,8 +138,9 @@ local function createGameRoom(roomType, gameid, players, gameData)
         allGames[gameid] = {}
     end
     allGames[gameid][roomid] = gameRoom
+    log.info("createGameRoom %d %d %d %s %s", gameid, roomid, shortRoomid,addr, gatewayUrl)
     
-    return roomid,addr,shortRoomid
+    return roomid,addr,shortRoomid,gatewayUrl
 end
 
 --[[
@@ -242,6 +244,7 @@ skynet.start(function()
         skynet.ret(skynet.pack(f(...)))
     end)
     addr = skynet.getenv("clusterName")
+    gatewayUrl = skynet.getenv("gatewayUrl")
     -- 注册服务名称
     skynet.register(CONFIG.SVR_NAME.GAMES)
     -- 启动服务

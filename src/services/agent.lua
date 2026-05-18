@@ -70,7 +70,7 @@ end
 function REQUEST:matchJoin(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl }
     end
 	
 	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
@@ -125,11 +125,11 @@ end
 function REQUEST:createPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl}
     end
 
 	log.info("createPrivateRoom %s", args.rule)
-	local roomid,addr,shortRoomid = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
+	local roomid,addr,shortRoomid,gatewayUrl = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
 
 	if not roomid then
 		return {code=0,msg="创建失败"}
@@ -140,6 +140,7 @@ function REQUEST:createPrivateRoom(args)
 		shortRoomid = shortRoomid,
 		gameid = args.gameid,
 		rule = args.rule,
+		gatewayUrl = gatewayUrl,
 		code = 1,
 		msg = "创建成功"
 	}
@@ -151,7 +152,7 @@ end
 function REQUEST:joinPrivateRoom(args)
 	local status = userStatus(userid)
     if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr}
+        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl}
     end
 
 	local info = call(svrPrivateRoom, "joinPrivateRoom", userid, args.shortRoomid)
@@ -172,6 +173,7 @@ function REQUEST:joinPrivateRoom(args)
 				roomid = tostring(info.roomid),
 				gameid = info.gameid,
 				addr = info.addr,
+				gatewayUrl = info.gatewayUrl,
 				rule = info.rule
 			}
 		end

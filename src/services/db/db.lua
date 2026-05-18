@@ -213,11 +213,11 @@ end
 
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
 function db.setUserStatus(mysql,...)
-    local userid,status,gameid,roomid,addr,shortRoomid =...
+    local userid,status,gameid,roomid,addr,shortRoomid,gatewayUrl =...
     -- 默认gameid为0，如果有传gameid则用传入的
-    local sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr,shortRoomid) VALUES (%d, %d, %d, %d,'%s',%d) ON DUPLICATE KEY UPDATE status = %d;",userid,status,0,0,addr,shortRoomid,status)
+    local sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr,shortRoomid,gatewayUrl) VALUES (%d, %d, %d, %d,'%s',%d,'%s') ON DUPLICATE KEY UPDATE status = %d;",userid,status,0,0,addr,shortRoomid,gatewayUrl,status)
     if gameid and roomid then
-        sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr,shortRoomid) VALUES (%d, %d, %d, %d,'%s',%d) ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d,addr='%s',shortRoomid=%d;",userid,status,gameid,roomid,addr,shortRoomid,status,gameid,roomid,addr,shortRoomid)
+        sql = string.format("INSERT INTO userStatus (userid, status, gameid, roomid, addr,shortRoomid,gatewayUrl) VALUES (%d, %d, %d, %d,'%s',%d,'%s') ON DUPLICATE KEY UPDATE status = %d,gameid=%d,roomid=%d,addr='%s',shortRoomid=%d,gatewayUrl='%s';",userid,status,gameid,roomid,addr,shortRoomid,gatewayUrl,status,gameid,roomid,addr,shortRoomid,gatewayUrl)
     end
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
@@ -395,7 +395,7 @@ end
 -- 参数: roomid(长房间ID), owner(房主ID)
 -- 返回: shortRoomid(成功) 或 nil(失败)
 function db.getPrivateShortRommid(mysql, ...)
-    local roomid, owner, addr, gameid, rule = ...
+    local roomid, owner, addr, gameid, rule, gatewayUrl = ...
     local now = os.time()
     local limitRoomID = 5000 -- 先限制10000条数据，提升性能
     STAT.timing_start("db1")
@@ -439,8 +439,8 @@ function db.getPrivateShortRommid(mysql, ...)
     
     -- 更新为已分配状态，并记录房间ID和房主
     local updateSql = string.format(
-        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', available_at = %d WHERE shortRoomid = %d and status = 0;",
-        roomid, owner, gameid, addr, rule, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
+        "UPDATE privateRoomid SET status = 1, roomid = %d, owner = %d, gameid = %d, addr = '%s', rule = '%s', gatewayUrl = '%s', available_at = %d WHERE shortRoomid = %d and status = 0;",
+        roomid, owner, gameid, addr, rule, gatewayUrl, now + CONFIG.PRIVATE_ROOM_SHORTID_TIME, shortRoomid
     )
     log.info(sql)
     local updateRes = mysql:query(updateSql)
@@ -478,7 +478,7 @@ end
 function db.clearPrivateRoomid(mysql, ...)
     local shortRoomid = ...
     local now = os.time()
-    local sql = string.format("UPDATE privateRoomid SET status = 0, roomid = 0, owner = 0, gameid = 0, addr = '', rule = '', available_at = %d WHERE shortRoomid = %d;", now + CONFIG.PRIVATE_ROOM_SHORTID_TIME2, shortRoomid)
+    local sql = string.format("UPDATE privateRoomid SET status = 0, roomid = 0, owner = 0, gameid = 0, addr = '', rule = '', gatewayUrl = '', available_at = %d WHERE shortRoomid = %d;", now + CONFIG.PRIVATE_ROOM_SHORTID_TIME2, shortRoomid)
     local res = mysql:query(sql)
     log.info(UTILS.tableToString(res))
     assert(sqlResult(res))

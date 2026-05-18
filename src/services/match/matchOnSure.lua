@@ -35,15 +35,15 @@ local function sendSvrMsg(userid,xyName, data)
     end
 end
 
-local function setUserStatus(userid, status, gameid, roomid, addr)
-    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr, 0)
+local function setUserStatus(userid, status, gameid, roomid, addr, gatewayUrl)
+    send(svrUser, "setUserStatus", userid, status, gameid, roomid, addr, 0, gatewayUrl)
 end
 
 -- 创建游戏
 local function createMatchGameRoom(gameid, playerids, gameData)
-    local roomid,addr = call(svrGame, "createMatchGameRoom", gameid, playerids, gameData)
-    log.info("-----createMatchGameRoom %d %s", roomid, addr)
-    return roomid,addr
+    local roomid,addr,shortRoomid,gatewayUrl = call(svrGame, "createMatchGameRoom", gameid, playerids, gameData)
+    log.info("createMatchGameRoom %d %s %d %s", roomid, addr, shortRoomid, gatewayUrl)
+    return roomid,addr,gatewayUrl
 end
 
 local function returnRobot( userids)
@@ -141,14 +141,14 @@ function matchOnSure.checkOnSure()
     for i, v in ipairs(waitingOnSure) do
         if #v.readys == #v.playerids then
             --matchSuccess(item.gameid, item.queueid, item.playerids[1], item.playerids[2])
-            local roomid,addr = onSureSuccess(i, v)
+            local roomid,addr,gatewayUrl = onSureSuccess(i, v)
             i = i - 1
             if roomid then
                 for _, userid in ipairs(v.playerids) do
-                    setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid, addr)
+                    setUserStatus(userid, gConfig.USER_STATUS.GAMEING, v.gameid, roomid, addr, gatewayUrl)
                     if v.data.robots and isRobot(userid, v.data.robots) then
                     else
-                        sendSvrMsg(userid, "gameRoomReady", {roomid = tostring(roomid), gameid = v.gameid, addr = addr})
+                        sendSvrMsg(userid, "gameRoomReady", {roomid = tostring(roomid), gameid = v.gameid, addr = addr, gatewayUrl = gatewayUrl})
                     end
                 end
             else
