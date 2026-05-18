@@ -457,7 +457,7 @@ function Room:initLogic()
     local designCount = #mapConfig.MAP_DESIGN
     local selectedDesign = mapConfig.MAP_DESIGN[math.random(1, designCount)]
     -- 测试指定使用
-    --selectedDesign = mapConfig.MAP_DESIGN[4] 
+    selectedDesign = mapConfig.MAP_DESIGN[#mapConfig.MAP_DESIGN] 
     
     local ruleData = {
         playerCnt = self.roomInfo.nowPlayerNum,
