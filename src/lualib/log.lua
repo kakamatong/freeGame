@@ -9,8 +9,9 @@ local LOG_LEVEL = {
     ERROR   = 4, 
     FATAL   = 5
 }
+local LOG_DESC = skynet.getenv("loglevel") or "DEBUG"
 
-local OUT_PUT_LEVEL = LOG_LEVEL.DEBUG
+local OUT_PUT_LEVEL = LOG_LEVEL[LOG_DESC] or LOG_LEVEL.DEBUG
 
 local LOG_LEVEL_DESC = {
     [1] = " DEBUG ",

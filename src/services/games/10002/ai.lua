@@ -64,7 +64,7 @@ end
     @param seat: number 机器人座位号
 ]]
 function aiLogic.doEliminate(seat)
-    log.info("%s [AI] 座位%d尝试消除", getRoomLogTag(), seat)
+    log.debug("%s [AI] 座位%d尝试消除", getRoomLogTag(), seat)
     
     local data = aiLogic.data[seat]
     if not data then
