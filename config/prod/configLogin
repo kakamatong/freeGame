@@ -2,11 +2,6 @@ include "config.path"
 
 preload = root .."src/preload.lua"	-- run preload.lua before every lua service run
 thread = 8
--- 日志服务
-logger = "logger"
-logservice = "snlua"  -- 现在日志服务用 Lua 实现
-logpath    = "./log/" -- 日志输出目录
-loggroup   = "skynet"   -- 日志文件分组名
 
 --debugConsolePort = 8005
 harbor = 0
@@ -23,3 +18,9 @@ keyfile = "./cert/server-key.key"
 loginAddress = "0.0.0.0"
 loginPort = 8002
 protocol = "wss"
+
+-- 日志服务
+logger = "logger"
+logservice = "snlua"  -- 现在日志服务用 Lua 实现
+logpath    = "./log/" -- 日志输出目录
+loggroup   = clusterName   -- 日志文件分组名
