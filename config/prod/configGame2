@@ -27,3 +27,4 @@ logger = "logger"
 logservice = "snlua"  -- 现在日志服务用 Lua 实现
 logpath    = "./log/" -- 日志输出目录
 loggroup   = clusterName   -- 日志文件分组名
+loglevel   = "INFO"
