@@ -12,6 +12,7 @@ src/config/gameConfig.lua.prod
 /logLobby/*
 /logGame/*
 /gameSvr/*
+config/prod/
 /gameSvr.zip
 output.sh
 output2.sh
