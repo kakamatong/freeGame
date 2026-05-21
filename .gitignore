@@ -14,5 +14,6 @@ src/config/gameConfig.lua.prod
 /gameSvr/*
 /gameSvr.zip
 output.sh
+output2.sh
 /cert
 .deepseek/
