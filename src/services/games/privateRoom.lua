@@ -116,7 +116,8 @@ end
 -- 玩家加入私人房
 function PrivateRoom:joinPrivateRoom(userid)
     if self.roomInfo.roomStatus == self.config.ROOM_STATUS.START or 
-       self.roomInfo.roomStatus == self.config.ROOM_STATUS.END then
+       self.roomInfo.roomStatus == self.config.ROOM_STATUS.END or 
+       self.roomInfo.roomStatus == self.config.ROOM_STATUS.HALFTIME then
         return false, "游戏已开始"
     end
 
