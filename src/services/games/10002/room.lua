@@ -660,7 +660,8 @@ end
 -- 重写joinPrivateRoom方法（支持动态人数，最多6人）
 function Room:joinPrivateRoom(userid)
     if self.roomInfo.roomStatus == self.config.ROOM_STATUS.START or 
-       self.roomInfo.roomStatus == self.config.ROOM_STATUS.END then
+       self.roomInfo.roomStatus == self.config.ROOM_STATUS.END or 
+       self.roomInfo.roomStatus == self.config.ROOM_STATUS.HALFTIME then
         return false, "游戏已开始"
     end
 
