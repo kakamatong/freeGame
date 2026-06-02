@@ -41,7 +41,8 @@ function mapGenerator.generate(rows, cols, iconTypes, designMap)
         if designMap then
             map = mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
         else
-            map = mapGenerator._generateRandomMap(rows, cols, iconTypes)
+            log.error("%s [MapGenerator] 地图生成失败，designMap 为 null", getRoomLogTag())
+            return
         end
         
         -- 检查地图是否有解
@@ -70,8 +71,12 @@ function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
     local fillPositions = {}
     local obstacleCount = 0
     
+    -- 初始化地图为0，并记录可填充位置和障碍数量
+    local map = {}
     for row = 1, MAP_SIZE do
+        map[row] = {}
         for col = 1, MAP_SIZE do
+            map[row][col] = 0
             local val = designMap[row][col]
             if val == 1 then
                 table.insert(fillPositions, {row = row, col = col})
@@ -112,15 +117,6 @@ function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
         end
     end
     
-    -- 创建地图
-    local map = {}
-    for row = 1, MAP_SIZE do
-        map[row] = {}
-        for col = 1, MAP_SIZE do
-            map[row][col] = 0
-        end
-    end
-    
     -- 填充可消除方块
     for i, pos in ipairs(fillPositions) do
         map[pos.row][pos.col] = iconPool[i]
@@ -135,70 +131,6 @@ function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
                 map[row][col] = decorationValue + obstacleIdx
                 obstacleIdx = obstacleIdx + 1
             end
-        end
-    end
-    
-    return map
-end
-
---[[
-    生成随机地图（不保证可解）
-    @param rows: number 行数
-    @param cols: number 列数
-    @param iconTypes: number 图标种类数
-    @return table 随机地图
-]]
-function mapGenerator._generateRandomMap(rows, cols, iconTypes)
-    local map = {}
-    local totalTiles = rows * cols
-    
-    -- 平均分配图标（每种图标数量尽量接近，差值不超过1）
-    local baseCount = math.floor(totalTiles / iconTypes)
-    if baseCount % 2 ~= 0 then
-        baseCount = baseCount - 1
-    end
-    local remainder = totalTiles - (baseCount * iconTypes)
-    local typesWithExtra = remainder / 2
-    
-    local iconPool = {}
-    for iconType = 1, iconTypes do
-        local count = baseCount
-        if iconType <= typesWithExtra then
-            count = count + 2
-        end
-        for i = 1, count do
-            table.insert(iconPool, iconType)
-        end
-    end
-    
-    -- Fisher-Yates 洗牌算法（多轮打乱）
-    local shuffleRounds = 3
-    for round = 1, shuffleRounds do
-        for i = #iconPool, 2, -1 do
-            local j = math.random(1, i)
-            iconPool[i], iconPool[j] = iconPool[j], iconPool[i]
-        end
-    end
-    
-    -- 初始化10x10地图（最外圈为0）
-    local MAP_SIZE = 10
-    for row = 1, MAP_SIZE do
-        map[row] = {}
-        for col = 1, MAP_SIZE do
-            map[row][col] = 0
-        end
-    end
-    
-    -- 计算居中起始位置
-    local startRow = math.floor((MAP_SIZE - rows) / 2) + 1
-    local startCol = math.floor((MAP_SIZE - cols) / 2) + 1
-    
-    -- 填充可玩区域（居中）
-    local poolIndex = 1
-    for r = 1, rows do
-        for c = 1, cols do
-            map[startRow + r - 1][startCol + c - 1] = iconPool[poolIndex]
-            poolIndex = poolIndex + 1
         end
     end
     
