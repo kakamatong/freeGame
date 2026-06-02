@@ -1,249 +1,126 @@
-# AGENTS.md - 游戏服务器开发指南
+# AGENTS.md
 
-本文档包含在此基于Skynet的游戏服务器项目上工作的智能编程代理的重要信息。
+基于Skynet框架的Lua多玩家游戏服务器。集群架构，WebSocket通信，sproto协议。
 
-## 项目概述
+## 构建
 
-这是一个基于Skynet框架使用Lua构建的多玩家游戏服务器。它采用集群架构，为不同的游戏功能（登录、游戏、匹配、用户等）提供独立的服务，并支持与客户端的WebSocket通信。
-
-## 构建和开发命令
-
-### 构建命令
 ```bash
-# 构建Skynet（包括cjson库等自定义修改）
-cd skynet && make
+# 构建（必须先覆盖skynet的Makefile，build/Makefile增加了cjson和TLS支持）
+cp build/Makefile skynet/Makefile && cd skynet && make
 
-# 清理构建产物
-cd skynet && make clean
-
-# 完全清理包括依赖项
-cd skynet && make cleanall
+# 清理
+cd skynet && make clean          # 清理构建产物
+cd skynet && make cleanall       # 完全清理（含jemalloc/lua等依赖）
 ```
 
-### 运行命令
+## 运行
+
 ```bash
-# 启动所有游戏服务
-./run.sh
-
-# 停止所有服务
-./stop.sh
-
-# 构建生产部署包
-./output.sh
+./run.sh                          # 启动全部13个服务
+./stop.sh                         # 停止全部（killall skynet）
+./skynet/skynet config/configXXX  # 单独启动某服务（调试用）
+sh/runXXX.sh / sh/stopXXX.sh     # 部分服务的独立启停脚本
 ```
 
-### 测试命令
-```bash
-# 运行特定测试文件（示例）
-lua test_vote_disband.lua
+## 架构要点
 
-# 运行Skynet内置测试
-cd skynet && lua test/testtimer.lua
-cd skynet && lua test/testecho.lua
-```
+### 服务启动流程
+`main.lua` → `db/server`（数据库）→ `clusterManager/server`（集群管理）→ 各业务服务注册上线
 
-### 单独服务命令
-```bash
-# 启动单独的服务（用于调试）
-./skynet/skynet config/configLogin      # 登录服务
-./skynet/skynet config/configGame       # 游戏服务
-./skynet/skynet config/configGate       # 网关服务
-./skynet/skynet config/configMatch      # 匹配服务
-./skynet/skynet config/configUser       # 用户服务
-./skynet/skynet config/configDB         # 数据库服务
-```
+### 集群通信
+所有跨服务通信通过 `clusterManager`，在 `src/preload.lua` 中注册为全局函数：
+- `call(svr, cmd, ...)` — 同步调用
+- `send(svr, cmd, ...)` — 异步发送
+- `callTo(name, svr, cmd, ...)` / `sendTo(name, svr, cmd, ...)` — 指定节点
+- `svr` 参数来自 `CONFIG.SVR_NAME` 或 `CONFIG.CLUSTER_SVR_NAME`
 
-### 协议说明
-- **sproto协议**: 存放在 `proto/` 目录，无需编译，运行时自动加载
-- 修改 sproto 文件后重启服务即可生效，无需重新构建Skynet
+`clusterManager` 每2分钟从Redis拉取 `clusterConfig` 对比版本号，支持动态增减节点。
 
-## 代码风格指南
+### 全局环境（preload.lua）
+`src/preload.lua` 在每个Lua服务启动前执行，注册以下全局变量：
+- `_G.CONFIG` — 来自 `gameConfig.lua`（**注意：此文件在 .gitignore 中**，仓库内为示例，生产配置另存）
+- `_G.UTILS` — deepcopy, table_merge, string_split, tableToString
+- `_G.STAT` — timing_start/end, counter_inc（性能统计）
+- `_G.call/send/callTo/sendTo` — 集群通信
 
-### 文件结构和组织
-- **服务**: `src/services/` - 单独的Skynet服务
-- **游戏**: `src/services/games/` - 特定游戏逻辑（如10001/、10002/）
-- **配置**: `src/config/` - 配置文件
-- **库**: `src/lualib/` - 共享工具库
-- **协议**: `proto/` - 协议定义（sproto格式）
+### 玩家连接流程
+客户端 → `wsLogind` (DH密钥交换+加密token) → 认证 → `wsGate` (分配agent) → `agent.lua` 处理业务请求
 
-### 命名约定
-- **文件**: snake_case（如 `private_room.lua`, `game_config.lua`）
-- **变量**: 本地变量使用snake_case，常量使用UPPER_SNAKE_CASE
-- **函数**: 函数使用snake_case，类/对象构造函数使用PascalCase
-- **服务**: 使用描述性名称并以服务类型结尾（如 `match_server.lua`, `user_server.lua`）
-- **配置键**: UPPER_SNAKE_CASE（如 `USER_STATUS`, `SVR_NAME`）
+游戏内连接：
+客户端 → `wsGameGate` (认证+连接房间) → 游戏房间服务
 
-### Lua代码风格
+### WebSocket端口
+| 服务 | 端口 | 用途 |
+|------|------|------|
+| Login | 8002 | 登录认证 |
+| Gate | 9002 | 大厅网关 |
+| Gate2 | 9005 | 第二大厅网关 |
+| Game | 9003 | 游戏网关(nodeid=1) |
+| Game2 | 9006 | 游戏网关(nodeid=2, hide) |
+| Web | 9020 | HTTP管理 |
 
-#### 导入和Require
+## 数据库
+
+通过 `db/server.lua` 统一访问，使用全局通信：
 ```lua
--- 标准顺序：skynet模块优先，然后是第三方库，最后是本地模块
-local skynet = require "skynet"
-local cluster = require "skynet.cluster"
-local sprotoloader = require "sprotoloader"
-local log = require "log"
-local cjson = require "cjson"
-local gameConfig = require "gameConfig"
+call(svrDB, "dbRedis", "set", key, value, expire)
+call(svrDB, "dbRedis", "get", key)
+call(svrDB, "dbMySQL", "query", sql, ...)
 ```
 
-#### 函数和方法
+数据库服务在 `main.lua` 中第一个启动（其他服务依赖它）。
+
+## 配置
+
+`src/config/gameConfig.lua`（gitignored，仓库内为模板示例）定义：
+- MySQL/Redis 连接
+- `SVR_NAME`（本地服务名，前缀 `.`）
+- `CLUSTER_SVR_NAME`（集群名）
+- `USER_STATUS`（0离线~8进入游戏）
+- `ROOM_TYPE`（0匹配/1私人）
+- `RICH_TYPE`（货币/道具类型）
+- `TOKEN_EXPIRE`、`PRIVATE_ROOM_SHORTID_TIME` 等
+
+每个服务的配置文件在 `config/` 下，通过 `include "config.path"` 加载路径，再覆盖端口、clusterName、nodeid等。
+
+## 协议
+
+`sproto` 格式，位于 `proto/`。每类协议有 `c2s.sproto` 和 `s2c.sproto`：
+- `proto/lobby/` — 大厅协议
+- `proto/game10001/`、`proto/game10002/` — 各游戏协议
+
+修改 sproto 后仅需重启服务，无需重新构建Skynet。
+
+## 添加新游戏
+
+三处修改：
+1. `src/services/games/config.lua` — 在 `gameids` 表注册游戏ID
+2. `proto/game{gameid}/` — 添加 c2s.sproto 和 s2c.sproto
+3. `src/services/games/{gameid}/` — 添加 room.lua、logic.lua、config.lua 等
+
+## 代码约定
+
+### 响应格式（必须遵守）
 ```lua
--- 普通函数
-local function calculateScore(player_data)
-    return player_data.level * 100 + player_data.exp
-end
-
--- 对象方法
-function Player:updateScore(new_score)
-    self.score = new_score
-    self:saveToDatabase()
-end
-
--- 服务命令
-function CMD.getuserData(userid)
-    return call(svrUser, "userData", userid)
-end
+return {code = 1, msg = "Success", data = result}   -- 成功
+return {code = 0, msg = "Error description"}         -- 失败
 ```
 
-#### 表和对象
+### 服务模式
 ```lua
--- 配置表
-local config = {
-    GAME_STATUS = {
-        WAITING = 0,
-        START = 1,
-        END = 2
-    },
-    DEFAULT_TIMEOUT = 30
-}
-
--- 对象创建
-local Player = {}
-Player.__index = Player
-
-function Player:new(userid)
-    local obj = {
-        userid = userid,
-        score = 0,
-        status = "offline"
-    }
-    setmetatable(obj, self)
-    return obj
+local CMD = {}
+function CMD.someMethod(args)
+    -- 处理逻辑
+    return {code = 1, data = result}
 end
 ```
 
-### 错误处理
-```lua
--- 使用pcall进行安全操作
-local ok, result = pcall(some_function, arg1, arg2)
-if not ok then
-    log.error("Function failed: %s", result)
-    return {code = 0, msg = "Operation failed"}
-end
+### 关键约束
+- 使用 `skynet.timeout()` 做延迟，**禁止** `sleep()` 或阻塞操作
+- 始终用 `pcall` 包裹可能失败的外部调用
+- 文件命名 snake_case，构造函数 PascalCase，常量 UPPER_SNAKE_CASE
+- 服务内 `agent.lua` 中客户端请求处理函数放在 `REQUEST` 表下
 
--- 始终验证输入
-if not userid or userid <= 0 then
-    return {code = 0, msg = "Invalid userid"}
-end
+## 文档
 
--- 服务响应应遵循一致的格式
-return {code = 1, msg = "Success", data = result}
-return {code = 0, msg = "Error description"}
-```
-
-### 日志指南
-```lua
--- 使用适当的日志级别
-log.debug("Detailed debug info: %s", details)
-log.info("User %d joined game %d", userid, gameid)
-log.warn("Slow operation detected: %d ms", duration)
-log.error("Database connection failed: %s", error_msg)
-log.fatal("Critical system error, shutting down")
-
--- 在日志中包含上下文
-log.info("Room %d: Player %d performed action %s", roomid, userid, action)
-```
-
-### 服务通信模式
-```lua
--- 通过全局助手进行集群调用
-local result = call(svrUser, "getUserData", userid)
-call(svrGame, "updatePlayerState", userid, new_state)
-
--- 直接服务调用
-local db_service = skynet.localname(CONFIG.SVR_NAME.DB)
-local data = skynet.call(db_service, "lua", "query", sql)
-
--- 发后即忘的消息
-send(svrMatch, "playerDisconnected", userid)
-```
-
-### 配置管理
-- 所有配置都在`src/config/gameConfig.lua`中
-- 使用分组的配置表（如`mysql`、`redis`、`USER_STATUS`）
-- 环境特定配置应具有后缀（`.prod`、`.dev`）
-- 常量应具有描述性且自文档化
-
-### 协议处理
-```lua
--- 客户端请求处理（在agent.lua中）
-function REQUEST:getGameData(args)
-    -- 验证参数
-    if not args.gameid then
-        return {code = 0, msg = "Missing gameid"}
-    end
-    
-    -- 处理请求
-    local game_data = call(svrGame, "getGameData", args.gameid)
-    
-    return {code = 1, data = game_data}
-end
-
--- 注册客户端协议
-skynet.register_protocol {
-    name = "client",
-    id = skynet.PTYPE_CLIENT,
-    unpack = function(msg, sz)
-        local str = skynet.tostring(msg, sz)
-        return host:dispatch(str, sz)
-    end,
-    dispatch = function(fd, _, type, ...)
-        -- 处理客户端消息
-    end
-}
-```
-
-### 测试指南
-- 测试文件应该是独立且可执行的
-- 使用描述性的测试函数名
-- 包含断言来验证预期行为
-- 测试成功和错误场景
-- 示例测试结构可以在`test_vote_disband.lua`中找到
-
-### 性能考虑
-- 使用`STAT`工具进行性能监控
-- 为外部调用实现适当的超时处理
-- 为数据库操作使用连接池
-- 监控长时间运行服务的内存使用
-
-### 数据库模式
-```lua
--- 通过db服务进行Redis操作
-call(svrDB, "dbRedis", "set", key, value, expire_time)
-local result = call(svrDB, "dbRedis", "get", key)
-
--- MySQL操作
-local sql = "SELECT * FROM users WHERE userid = ?"
-local results = call(svrDB, "dbMySQL", "query", sql, userid)
-```
-
-### 重要注意事项
-- 所有服务都在Skynet actor模型中运行
-- 使用`skynet.timeout()`进行延迟操作，不使用`sleep()`
-- 从不在服务处理程序中使用阻塞操作
-- 始终优雅地处理断开连接
-- 使用全局助手（`call`、`send`、`callTo`、`sendTo`）进行集群通信
-- 配置文件使用环境特定的覆盖（prod/dev）
-
-### 语言要求
-- **回复语言**: 无论用户使用何种语言提问，始终使用中文回复用户
+`docs/games/` 目录有详细的架构、API、房间管理、部署、故障排除等文档（中文）。
