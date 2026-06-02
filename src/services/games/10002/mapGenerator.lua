@@ -21,9 +21,7 @@ local mapGenerator = {}
     @param designMap: table 可选的10x10模板地图（0=空白,1=可消除,9=障碍）
     @return table | nil 生成的地图（二维数组），失败返回nil
 ]]
-function mapGenerator.generate(rows, cols, iconTypes, designMap)
-    rows = rows or 10
-    cols = cols or 10
+function mapGenerator.generate(iconTypes, designMap)
     iconTypes = iconTypes or 10
     
     -- 确保图标类型在有效范围内
@@ -39,7 +37,7 @@ function mapGenerator.generate(rows, cols, iconTypes, designMap)
         -- 生成随机地图
         local map
         if designMap then
-            map = mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
+            map = mapGenerator._generateFromDesign(designMap, iconTypes)
         else
             log.error("%s [MapGenerator] 地图生成失败，designMap 为 null", getRoomLogTag())
             return
@@ -47,7 +45,7 @@ function mapGenerator.generate(rows, cols, iconTypes, designMap)
         
         -- 检查地图是否有解
         if map and mapGenerator._hasSolution(map) then
-            log.info("%s [MapGenerator] 地图生成成功，尝试次数: %d，尺寸: %dx%d，图标种类: %d", getRoomLogTag(), attempt, rows, cols, iconTypes)
+            log.info("%s [MapGenerator] 地图生成成功，尝试次数: %d，图标种类: %d", getRoomLogTag(), attempt, iconTypes)
             return map
         end
     end
@@ -58,24 +56,21 @@ end
 
 --[[
     根据设计模板生成地图
-    @param designMap: table 10x10模板地图（0=空白,1=可消除,9=障碍）
-    @param rows: number 实际行数
-    @param cols: number 实际列数
+    @param designMap: table 模板地图（0=空白,1=可消除,9=障碍），地图大小完全由此数组决定
     @param iconTypes: number 图标种类数
     @return table 生成的地图
 ]]
-function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
-    local MAP_SIZE = 10
+function mapGenerator._generateFromDesign(designMap, iconTypes)
+    local rows = #designMap
+    local cols = #designMap[1]
     
-    -- 统计需要填充的位置数量
     local fillPositions = {}
     local obstacleCount = 0
     
-    -- 初始化地图为0，并记录可填充位置和障碍数量
     local map = {}
-    for row = 1, MAP_SIZE do
+    for row = 1, rows do
         map[row] = {}
-        for col = 1, MAP_SIZE do
+        for col = 1, cols do
             map[row][col] = 0
             local val = designMap[row][col]
             if val == 1 then
@@ -125,8 +120,8 @@ function mapGenerator._generateFromDesign(designMap, rows, cols, iconTypes)
     -- 填充障碍物
     local decorationValue = 100
     local obstacleIdx = 1
-    for row = 1, MAP_SIZE do
-        for col = 1, MAP_SIZE do
+    for row = 1, rows do
+        for col = 1, cols do
             if designMap[row][col] == 9 then
                 map[row][col] = decorationValue + obstacleIdx
                 obstacleIdx = obstacleIdx + 1
@@ -146,62 +141,6 @@ function mapGenerator._hasSolution(map)
     local finder = pathFinder:new()
     finder:setMap(map)
     return finder:hasAnyValidPair()
-end
-
---[[
-    生成带装饰的地图（可选）
-    @param rows: number 行数
-    @param cols: number 列数
-    @param iconTypes: number 图标种类数
-    @param decorationPositions: table 装饰位置列表 {{row, col}, ...}
-    @param decorationValue: number 装饰值（>=100）
-    @return table | nil 生成的地图
-]]
-function mapGenerator.generateWithDecorations(rows, cols, iconTypes, decorationPositions, decorationValue)
-    decorationValue = decorationValue or 100
-    
-    -- 计算实际需要填充的区域大小
-    local decorationCount = decorationPositions and #decorationPositions or 0
-    local playableRows = rows
-    local playableCols = cols
-    
-    -- 生成基础地图
-    local map = mapGenerator.generate(playableRows, playableCols, iconTypes)
-    if not map then
-        return nil
-    end
-    
-    -- 如果有装饰位置，扩展地图并添加装饰
-    if decorationCount > 0 then
-        -- 创建更大的地图来容纳装饰
-        local newMap = {}
-        for row = 1, rows do
-            newMap[row] = {}
-            for col = 1, cols do
-                newMap[row][col] = 0
-            end
-        end
-        
-        -- 复制原地图到中心区域
-        local startRow = 1
-        local startCol = 1
-        for row = 1, playableRows do
-            for col = 1, playableCols do
-                newMap[startRow + row - 1][startCol + col - 1] = map[row][col]
-            end
-        end
-        
-        -- 添加装饰
-        for _, pos in ipairs(decorationPositions) do
-            if pos.row >= 1 and pos.row <= rows and pos.col >= 1 and pos.col <= cols then
-                newMap[pos.row][pos.col] = decorationValue
-            end
-        end
-        
-        map = newMap
-    end
-    
-    return map
 end
 
 --[[

@@ -25,8 +25,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,1,1,1,1,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 120, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -45,8 +45,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,1,1,1,1,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 90, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -85,8 +85,8 @@ mapConfig.MAP_DESIGN = {
             {0,0,0,0,0,0,0,0,0,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 6, -- 最大的行数
-        DEFAULT_COLS = 6, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -105,8 +105,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,1,0,0,1,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -125,8 +125,8 @@ mapConfig.MAP_DESIGN = {
             {0,0,0,0,0,0,0,0,0,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 6, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -145,8 +145,8 @@ mapConfig.MAP_DESIGN = {
             {0,0,0,1,1,1,1,0,0,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -165,8 +165,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,0,1,1,0,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 70, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -185,8 +185,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,1,1,1,1,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间
@@ -205,8 +205,8 @@ mapConfig.MAP_DESIGN = {
             {0,1,1,0,1,1,0,1,1,0},
             {0,0,0,0,0,0,0,0,0,0},
         },
-        DEFAULT_ROWS = 8, -- 最大的行数
-        DEFAULT_COLS = 8, -- 最大的列数
+        DEFAULT_ROWS = 10, -- 最大的行数
+        DEFAULT_COLS = 10, -- 最大的列数
         ICON_TYPES = 11, --11 类型
         TOTAL_TIME = 60, -- 总时间
         END_TIME = 10,  -- 有一个玩家完成后，剩余时间

@@ -307,7 +307,7 @@ function logic._generatePlayerMaps()
     log.info("%s [Logic] 生成玩家地图，尺寸: %dx%d，图标种类: %d，玩家数: %d", getRoomLogTag(), rows, cols, iconTypes, playerCnt)
     
     -- 生成一张公共地图，所有玩家使用相同的地图
-    local mapData = mapGenerator.generate(rows, cols, iconTypes, designMap)
+    local mapData = mapGenerator.generate(iconTypes, designMap)
     if not mapData then
         log.error("%s [Logic] 生成地图失败", getRoomLogTag())
         return
@@ -412,7 +412,7 @@ function logic._regeneratePlayerMap(seat)
     local cols = logic.rule.mapCols
     local iconTypes = logic.rule.iconTypes
     
-    local mapData = mapGenerator.generate(rows, cols, iconTypes)
+    local mapData = mapGenerator.generate(iconTypes)
     if not mapData then
         log.error("%s [Logic] 重新生成地图失败", getRoomLogTag())
         return
