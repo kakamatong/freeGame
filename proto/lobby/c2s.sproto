@@ -245,3 +245,16 @@ cancelRevokeAcc 18 {
         msg 1 : string
     }
 }
+
+# 本地游戏使用道具
+localGameUseProps 19 {
+    request {
+        richType 0 : integer
+        richNums 1 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+        remainNums 2 : integer
+    }
+}

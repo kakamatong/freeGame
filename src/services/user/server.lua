@@ -155,6 +155,20 @@ function CMD.cancelRevokeAcc(userid)
 	end
 end
 
+function CMD.useProps(userid, richType, richNums)
+    assert(userid)
+    assert(richType)
+    assert(richNums)
+    local success = skynet.call(dbSvr, "lua", "db", "reduceUserRiches2", userid, richType, richNums)
+    if success then
+        local remain = skynet.call(dbSvr, "lua", "db", "getUserRichesByType", userid, richType)
+        local remainNums = remain and remain.richNums or 0
+        return {code = 1, msg = "使用成功", remainNums = remainNums}
+    else
+        return {code = 0, msg = "道具不足"}
+    end
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])

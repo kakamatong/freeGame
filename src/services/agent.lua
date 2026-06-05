@@ -193,7 +193,12 @@ end
 
 -- 取消注销账号
 function REQUEST:cancelRevokeAcc(args)
-	return call(svrUser, "cancelRevokeAcc", userid)
+    return call(svrUser, "cancelRevokeAcc", userid)
+end
+
+-- 本地游戏使用道具
+function REQUEST:localGameUseProps(args)
+    return call(svrUser, "useProps", userid, args.richType, args.richNums)
 end
 
 
