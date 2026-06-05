@@ -51,7 +51,7 @@ function BaseRoom:_init()
         logicData = {},
         totalScores = {},           -- 玩家总积分 { [seat] = totalScore }
         gatewayUrl = "",
-        ruleObj = {}
+        ruleObj = {}                -- 规则数据结构
     }
 
     -- 玩家信息
@@ -89,9 +89,8 @@ function BaseRoom:init(data)
     self.roomInfo.createRoomTime = os.time()
     self.roomInfo.logicData = {}
     self.roomInfo.gatewayUrl = data.gatewayUrl
-
-    if data.rule and data.rule ~= "" then
-        self.roomInfo.ruleObj = cjson.decode(data.rule)
+    if data.gameData and data.gameData.rule and data.gameData.rule ~= "" then
+        self.roomInfo.ruleObj = cjson.decode(data.gameData.rule)
     else
         self.roomInfo.ruleObj = {}
     end

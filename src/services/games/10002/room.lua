@@ -367,17 +367,17 @@ end
 
 -- 初始化房间逻辑
 function Room:init(data)
-    log.info("%s game10002 Room:init %s", roomInstance:getRoomLogTag(), UTILS.tableToString(data))
-
     -- 调用父类初始化
     PrivateRoom.init(self, data)
+
+    log.info("%s game10002 Room:init %s", roomInstance:getRoomLogTag(), UTILS.tableToString(data))
 
     -- 初始化道具使用记录（{ [userid] = { [itemId] = count } }，每局清空）
     self.roomInfo.itemUsage = {}
 
     -- 道具使用开关（默认为开启，可通过 gameData.itemEnabled 传入）
-    if self.roomInfo.ruleObj.ruleObj and self.roomInfo.ruleObj.ruleObj.itemEnabled ~= nil then
-        self.roomInfo.itemEnabled = self.roomInfo.ruleObj.ruleObj.itemEnabled == 1
+    if self.roomInfo.ruleObj and self.roomInfo.ruleObj.itemEnabled ~= nil then
+        self.roomInfo.itemEnabled = self.roomInfo.ruleObj.itemEnabled == 1
     else
         self.roomInfo.itemEnabled = false
     end
