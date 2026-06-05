@@ -8,12 +8,12 @@ local matchConfig = {}
 
 -- 默认匹配配置
 matchConfig.default = {
-    mode = "fixed",           -- "fixed"(固定) | "dynamic"(动态)
-    maxPlayers = 2,           -- 最大人数
-    minPlayers = 2,           -- 最小人数
-    rateDiff = 500,           -- 战力差阈值
-    robotAfterFails = 1,      -- 失败多少次后匹配机器人
-    confirmTime = 5,          -- 确认等待时间（秒）
+    mode = "fixed",      -- "fixed"(固定) | "dynamic"(动态)
+    maxPlayers = 2,      -- 最大人数
+    minPlayers = 2,      -- 最小人数
+    rateDiff = 500,      -- 战力差阈值
+    robotAfterFails = 1, -- 失败多少次后匹配机器人
+    confirmTime = 5,     -- 确认等待时间（秒）
 }
 
 -- 游戏匹配配置
@@ -22,25 +22,31 @@ matchConfig.games = {
         queueNum = 4,
         -- 所有队列使用默认配置
     },
-    
+
     [10002] = {
         queueNum = 4,
-        
-        [1] = {                   -- 动态匹配（2-4人）
+
+        [1] = { -- 动态匹配（2-4人）
             mode = "dynamic",
             maxPlayers = 5,
             minPlayers = 2,
             rateDiff = 1000,
             robotAfterFails = 3,
+            rule = {
+                itemEnabled = 1
+            }
         },
-        
-        [2] = {                   -- 固定2人（严格匹配）
+
+        [2] = { -- 固定2人（严格匹配）
             mode = "dynamic",
             maxPlayers = 5,
             minPlayers = 2,
             rateDiff = 300,
+            rule = {
+                itemEnabled = 1
+            }
         },
-        
+
         -- queueid=3,4 使用默认配置
     },
 }
@@ -49,7 +55,7 @@ matchConfig.games = {
 matchConfig.robot = {
     enabled = true,
     minWaitTime = 30,
-    fillToMax = true,         -- 动态模式下是否补满到maxPlayers
+    fillToMax = true, -- 动态模式下是否补满到maxPlayers
 }
 
 -- 获取配置（供match.lua和matchOnSure.lua调用）
@@ -58,7 +64,7 @@ function matchConfig.get(gameid, queueid)
     if not gameCfg then
         return matchConfig.default
     end
-    
+
     local queueCfg = gameCfg[queueid]
     if queueCfg then
         local result = {}
@@ -70,7 +76,7 @@ function matchConfig.get(gameid, queueid)
         end
         return result
     end
-    
+
     return matchConfig.default
 end
 

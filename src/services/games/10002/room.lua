@@ -376,10 +376,10 @@ function Room:init(data)
     self.roomInfo.itemUsage = {}
 
     -- 道具使用开关（默认为开启，可通过 gameData.itemEnabled 传入）
-    if data.gameData and data.gameData.itemEnabled ~= nil then
-        self.roomInfo.itemEnabled = data.gameData.itemEnabled == 1
+    if self.roomInfo.ruleObj.ruleObj and self.roomInfo.ruleObj.ruleObj.itemEnabled ~= nil then
+        self.roomInfo.itemEnabled = self.roomInfo.ruleObj.ruleObj.itemEnabled == 1
     else
-        self.roomInfo.itemEnabled = true
+        self.roomInfo.itemEnabled = false
     end
 
     -- 区分匹配房间和私人房间配置

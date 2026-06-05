@@ -35,27 +35,28 @@ function BaseRoom:_init()
         gameid = 0,
         gameStartTime = 0,
         createRoomTime = 0,
-        playerNum = 0, -- 房间最大人数
-        nowPlayerNum = 0, -- 当前人数
-        roomStatus = 0, -- 房间状态 (NONE, WAITTING_CONNECT, START, END)
-        gameStatus = 0, -- 游戏状态 ()
-        canDestroy = false, -- 是否可以销毁
-        gameData = {}, -- 游戏数据
-        playerids = {}, -- 玩家id列表,index 表示座位
-        robotCnt = 0, -- 机器人数量
-        roomType = 0, -- 房间类型 (MATCH, PRIVATE)
+        playerNum = 0,              -- 房间最大人数
+        nowPlayerNum = 0,           -- 当前人数
+        roomStatus = 0,             -- 房间状态 (NONE, WAITTING_CONNECT, START, END)
+        gameStatus = 0,             -- 游戏状态 ()
+        canDestroy = false,         -- 是否可以销毁
+        gameData = {},              -- 游戏数据
+        playerids = {},             -- 玩家id列表,index 表示座位
+        robotCnt = 0,               -- 机器人数量
+        roomType = 0,               -- 房间类型 (MATCH, PRIVATE)
         roomWaitingConnectTime = 0, -- 等待连接时间
-        roomGameTime = 0, -- 游戏时间
+        roomGameTime = 0,           -- 游戏时间
         addr = "",
-        playedCnt = 0, -- 玩过的次数
+        playedCnt = 0,              -- 玩过的次数
         logicData = {},
-        totalScores = {}, -- 玩家总积分 { [seat] = totalScore }
+        totalScores = {},           -- 玩家总积分 { [seat] = totalScore }
         gatewayUrl = "",
+        ruleObj = {}
     }
-    
+
     -- 玩家信息
     self.players = {}
-    
+
     -- 服务相关
     self.host = nil
     self.svrGate = nil
@@ -65,11 +66,11 @@ function BaseRoom:_init()
     self.dTime = 100
     self.spc2s = nil
     self.sps2c = nil
-    
+
     -- 常量引用
     self.gConfig = CONFIG
     self.config = nil -- 由子类设置具体游戏配置
-    
+
     -- 服务名
     self.svrUser = CONFIG.CLUSTER_SVR_NAME.USER
     self.svrDB = nil
@@ -88,7 +89,12 @@ function BaseRoom:init(data)
     self.roomInfo.createRoomTime = os.time()
     self.roomInfo.logicData = {}
     self.roomInfo.gatewayUrl = data.gatewayUrl
-    
+
+    if data.rule and data.rule ~= "" then
+        self.roomInfo.ruleObj = cjson.decode(data.rule)
+    else
+        self.roomInfo.ruleObj = {}
+    end
     -- 初始化服务引用
     self.svrGate = skynet.localname(CONFIG.SVR_NAME.GAME_GATE)
     self.svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
@@ -102,7 +108,7 @@ function BaseRoom:loadSproto()
         log.error("%s BaseRoom:loadSproto config.SPROTO not found", self:getRoomLogTag())
         return
     end
-    
+
     local t = sharedata.query(self.config.SPROTO.C2S)
     self.spc2s = core.newproto(t.str)
     self.host = sproto.sharenew(self.spc2s):host "package"
@@ -116,14 +122,16 @@ end
 function BaseRoom:pushLog(logtype, userid, ext)
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(self.svrDB, "lua", "dbLog", "insertRoomLog", logtype, userid, self.roomInfo.gameid, self.roomInfo.roomid, timecn, ext)
+    skynet.send(self.svrDB, "lua", "dbLog", "insertRoomLog", logtype, userid, self.roomInfo.gameid, self.roomInfo.roomid,
+        timecn, ext)
 end
 
 -- 游戏结果日志
 function BaseRoom:pushLogResult(type, userid, result, score1, score2, score3, score4, score5, ext)
     local time = os.time()
     local timecn = os.date("%Y-%m-%d %H:%M:%S", time)
-    skynet.send(self.svrDB, "lua", "dbLog", "insertResultLog", type, userid, self.roomInfo.gameid, self.roomInfo.roomid, result, score1, score2, score3, score4, score5, timecn, ext)
+    skynet.send(self.svrDB, "lua", "dbLog", "insertResultLog", type, userid, self.roomInfo.gameid, self.roomInfo.roomid,
+        result, score1, score2, score3, score4, score5, timecn, ext)
 end
 
 -- 用户游戏记录
@@ -268,15 +276,15 @@ end
 function BaseRoom:sendToOneClient(userid, name, data)
     if not self.send_request then
         log.error("%s sendToOneClient error: send_request not started", self:getRoomLogTag())
-        return 
+        return
     end
-    
+
     local player = self.players[userid]
     if not player then
         log.error("%s sendToOneClient error: player %s not found", self:getRoomLogTag(), userid)
         return
     end
-    
+
     local client_fd = player.clientFd
     if client_fd then
         self.reportsessionid = self.reportsessionid + 1
@@ -294,7 +302,7 @@ end
 function BaseRoom:sendToAllClient(name, data)
     if not self.send_request then
         log.error("%s sendToAllClient error: send_request not started", self:getRoomLogTag())
-        return 
+        return
     end
 
     for i, userid in pairs(self.roomInfo.playerids) do
@@ -332,7 +340,7 @@ function BaseRoom:sendPlayerInfo(userid)
         data[player.seat].status = player.status
         data[player.seat].cp = player.cp or 0
     end
-    self:sendToOneClient(userid, "playerInfos", {infos = data})
+    self:sendToOneClient(userid, "playerInfos", { infos = data })
 end
 
 -- 发送玩家进入
@@ -357,7 +365,6 @@ function BaseRoom:sendPlayerOtherEnter(userid)
             self:sendToOneClient(userid, "playerEnter", data)
         end
     end
-    
 end
 
 -- 检查房间超时
@@ -389,24 +396,24 @@ function BaseRoom:destroy()
     if self.sps2c then
         core.deleteproto(self.sps2c)
     end
-    
+
     -- 清理玩家连接
     for _, v in pairs(self.players) do
         if not v.isRobot and v.clientFd then
             skynet.send(self.svrGate, "lua", "roomOver", v.clientFd)
         end
     end
-    
+
     -- 记录销毁日志
     self:pushLog(self.config.LOG_TYPE.DESTROY_ROOM, 0, "")
-    
+
     skynet.exit()
 end
 
 -- 连接游戏 (基础实现)
 function BaseRoom:connectGame(userid, client_fd)
     log.info("%s BaseRoom:connectGame userid = %d", self:getRoomLogTag(), userid)
-    
+
     for i, playerid in pairs(self.roomInfo.playerids) do
         if playerid == userid then
             if self.players[userid] then
@@ -435,7 +442,7 @@ end
 -- 客户端准备 (基础实现)
 function BaseRoom:clientReady(userid, args)
     log.info("%s BaseRoom:clientReady userid = %d", self:getRoomLogTag(), userid)
-    
+
     if self:isRoomStatusWaittingConnect() then
         self.players[userid].status = self.config.PLAYER_STATUS.READY
     elseif self:isRoomStatusStarting() then
@@ -477,14 +484,14 @@ function BaseRoom:handleClientMessage(fd, name, args, response)
         log.error("%s handleClientMessage fd %d not found userid", self:getRoomLogTag(), fd)
         return
     end
-    
+
     -- 检查方法是否存在
     local func = self[name]
     if not func then
         log.error("%s handleClientMessage method %s not found", self:getRoomLogTag(), name)
         return
     end
-    
+
     -- 调用对应方法
     local res = func(self, userid, args)
     if response and res then
