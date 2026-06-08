@@ -169,6 +169,62 @@ function CMD.useProps(userid, richType, richNums)
     end
 end
 
+function CMD.userEnergy(userid)
+    assert(userid)
+
+    local RT = CONFIG.RICH_TYPE
+    local now = os.time()
+    local rate = CONFIG.DEFAULT_RATE
+    local defaultEnergy = CONFIG.DEFAULT_ENERGY
+
+    local data = skynet.call(dbSvr, "lua", "db", "getUserRichesByTypes",
+        userid, RT.ENERGY_LEFT, RT.ENERGY_ADDITIONAL, RT.ENERGY_MAX, RT.ENERGY_UPDATE_TIME)
+
+    -- 初始化
+    if not data or not data[RT.ENERGY_LEFT] then
+        skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
+            [RT.ENERGY_LEFT]        = defaultEnergy,
+            [RT.ENERGY_ADDITIONAL]  = 0,
+            [RT.ENERGY_MAX]         = defaultEnergy,
+            [RT.ENERGY_UPDATE_TIME] = now,
+        })
+        return defaultEnergy, 0, defaultEnergy, now, rate
+    end
+
+    local left       = data[RT.ENERGY_LEFT].richNums
+    local add        = (data[RT.ENERGY_ADDITIONAL] and data[RT.ENERGY_ADDITIONAL].richNums) or 0
+    local max        = (data[RT.ENERGY_MAX] and data[RT.ENERGY_MAX].richNums) or defaultEnergy
+    local updateTime = (data[RT.ENERGY_UPDATE_TIME] and data[RT.ENERGY_UPDATE_TIME].richNums) or now
+
+    if left + add >= max then
+        if updateTime ~= now then
+            skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
+                [RT.ENERGY_UPDATE_TIME] = now,
+            })
+        end
+        updateTime = now
+    else
+        local elapsed   = now - updateTime
+        local recovered = math.floor(elapsed * rate / 3600)
+        if recovered > 0 then
+            local actualRecovered = math.min(recovered, max - left)
+            local newLeft         = left + actualRecovered
+            local timeConsumed    = math.floor(actualRecovered * 3600 / rate)
+            local newUpdateTime   = updateTime + timeConsumed
+
+            skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
+                [RT.ENERGY_LEFT]        = newLeft,
+                [RT.ENERGY_UPDATE_TIME] = newUpdateTime,
+            })
+
+            left = newLeft
+            updateTime = newUpdateTime
+        end
+    end
+
+    return left, add, max, updateTime, rate
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])

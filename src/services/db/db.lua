@@ -211,6 +211,36 @@ function db.reduceUserRiches2(mysql,...)
     return true
 end
 
+-- 根据多个类型批量获取用户财富
+function db.getUserRichesByTypes(mysql, userid, ...)
+    local types = {...}
+    local typeList = table.concat(types, ",")
+    local sql = string.format("SELECT * FROM userRiches WHERE userid = %d AND richType IN (%s);", userid, typeList)
+    local res = mysql:query(sql)
+    assert(sqlResult(res))
+    if #res == 0 then
+        return nil
+    end
+    local map = {}
+    for _, row in ipairs(res) do
+        map[row.richType] = row
+    end
+    return map
+end
+
+-- 批量设置用户财富（直接覆盖值）
+-- data: {[richType] = richNums, ...}
+function db.setUserRichesByTypes(mysql, userid, data)
+    local values = {}
+    for richType, richNums in pairs(data) do
+        table.insert(values, string.format("(%d, %d, %d)", userid, richType, richNums))
+    end
+    local sql = string.format("INSERT INTO userRiches (userid, richType, richNums) VALUES %s ON DUPLICATE KEY UPDATE richNums = VALUES(richNums);", table.concat(values, ","))
+    local res = mysql:query(sql)
+    assert(sqlResult(res))
+    return true
+end
+
 -- 设置用户状态（如在线、离线、在玩哪个游戏）
 function db.setUserStatus(mysql,...)
     local userid,status,gameid,roomid,addr,shortRoomid,gatewayUrl =...
