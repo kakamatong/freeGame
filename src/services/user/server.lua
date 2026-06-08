@@ -188,7 +188,7 @@ function CMD.userEnergy(userid)
             [RT.ENERGY_MAX]         = defaultEnergy,
             [RT.ENERGY_UPDATE_TIME] = now,
         })
-        return defaultEnergy, 0, defaultEnergy, now, rate
+        return {leftEnergy = defaultEnergy, extraEnergy = 0, maxEnergy = defaultEnergy, updateTime = now, rate = rate}
     end
 
     local left       = data[RT.ENERGY_LEFT].richNums
@@ -222,7 +222,7 @@ function CMD.userEnergy(userid)
         end
     end
 
-    return left, add, max, updateTime, rate
+    return {leftEnergy = left, extraEnergy = add, maxEnergy = max, updateTime = updateTime, rate = rate}
 end
 
 skynet.start(function()

@@ -201,6 +201,11 @@ function REQUEST:localGameUseProps(args)
     return call(svrUser, "useProps", userid, args.richType, args.richNums)
 end
 
+-- 获取用户能量
+function REQUEST:userEnergy(args)
+    return call(svrUser, "userEnergy", userid)
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)

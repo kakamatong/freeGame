@@ -258,3 +258,17 @@ localGameUseProps 19 {
         remainNums 2 : integer
     }
 }
+
+# 获取用户能量
+userEnergy 20 {
+    request {
+        
+    }
+    response {
+        leftEnergy 0 : integer
+        extraEnergy 1 : integer
+        maxEnergy 2 : integer
+        updateTime 3 : integer
+        rate 4 : integer
+    }
+}
