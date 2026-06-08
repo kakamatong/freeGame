@@ -169,6 +169,23 @@ function CMD.useProps(userid, richType, richNums)
     end
 end
 
+--[[
+    获取用户能量
+    能量系统由4个数据组成（存储在 userRiches 表中）：
+      leftEnergy (20001) — 当前剩余能量，随时间自动恢复
+      extraEnergy (20002) — 额外能量（任务奖励等外部来源叠加）
+      maxEnergy (20003) — 能量上限
+      updateTime (20004) — 上次能量刷新时间戳（秒）
+
+    计算逻辑：
+      1. 初始化：若 leftEnergy 不存在，写入默认值（leftEnergy=maxEnergy=DEFAULT_ENERGY，extraEnergy=0，updateTime=now）
+      2. 已满分支：若 leftEnergy + extraEnergy >= maxEnergy，仅更新 updateTime 为当前时间
+      3. 恢复分支：否则根据经过时间计算恢复量
+         — 恢复量 = floor(经过秒数 × rate / 3600)，rate 为每小时恢复量
+         — 实际恢复量不超过 (maxEnergy - leftEnergy)
+         — 小数点部分折算回时间：扣除实际恢复量对应的时间，剩余不足1能量的继续累积
+           newUpdateTime = updateTime + floor(实际恢复量 × 3600 / rate)
+]]
 function CMD.userEnergy(userid)
     assert(userid)
 
