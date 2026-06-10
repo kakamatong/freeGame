@@ -272,3 +272,19 @@ userEnergy 20 {
         rate 4 : integer
     }
 }
+
+# 增减用户能量
+userEnergyChange 21 {
+    request {
+        change 0 : integer
+    }
+    response {
+        code 0 : integer
+        msg 1 : string
+        leftEnergy 2 : integer
+        extraEnergy 3 : integer
+        maxEnergy 4 : integer
+        updateTime 5 : integer
+        rate 6 : integer
+    }
+}

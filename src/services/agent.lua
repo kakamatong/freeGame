@@ -206,6 +206,11 @@ function REQUEST:userEnergy(args)
     return call(svrUser, "userEnergy", userid)
 end
 
+-- 增减用户能量
+function REQUEST:userEnergyChange(args)
+    return call(svrUser, "userEnergyChange", userid, args.change)
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)

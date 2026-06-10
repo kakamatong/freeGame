@@ -170,25 +170,10 @@ function CMD.useProps(userid, richType, richNums)
 end
 
 --[[
-    获取用户能量
-    能量系统由4个数据组成（存储在 userRiches 表中）：
-      leftEnergy (20001) — 当前剩余能量，随时间自动恢复
-      extraEnergy (20002) — 额外能量（任务奖励等外部来源叠加）
-      maxEnergy (20003) — 能量上限
-      updateTime (20004) — 上次能量刷新时间戳（秒）
-
-    计算逻辑：
-      1. 初始化：若 leftEnergy 不存在，写入默认值（leftEnergy=maxEnergy=DEFAULT_ENERGY，extraEnergy=0，updateTime=now）
-      2. 已满分支：若 leftEnergy + extraEnergy >= maxEnergy，仅更新 updateTime 为当前时间
-      3. 恢复分支：否则根据经过时间计算恢复量
-         — 恢复量 = floor(经过秒数 × rate / 3600)，rate 为每小时恢复量
-         — 实际恢复量不超过 (maxEnergy - leftEnergy)
-         — 小数点部分折算回时间：扣除实际恢复量对应的时间，剩余不足1能量的继续累积
-           newUpdateTime = updateTime + floor(实际恢复量 × 3600 / rate)
+    能量重算（内部辅助函数）
+    从DB拉取能量数据 → 初始化/恢复计算 → 写入DB → 返回当前状态
 ]]
-function CMD.userEnergy(userid)
-    assert(userid)
-
+local function recalculateEnergy(userid)
     local RT = CONFIG.RICH_TYPE
     local now = os.time()
     local rate = CONFIG.DEFAULT_RATE
@@ -240,6 +225,80 @@ function CMD.userEnergy(userid)
     end
 
     return {leftEnergy = left, extraEnergy = add, maxEnergy = max, updateTime = updateTime, rate = rate}
+end
+
+--[[
+    获取用户能量
+    能量系统由4个数据组成（存储在 userRiches 表中）：
+      leftEnergy (20001) — 当前剩余能量，随时间自动恢复
+      extraEnergy (20002) — 额外能量（任务奖励等外部来源叠加）
+      maxEnergy (20003) — 能量上限
+      updateTime (20004) — 上次能量刷新时间戳（秒）
+
+    计算逻辑：
+      1. 初始化：若 leftEnergy 不存在，写入默认值（leftEnergy=maxEnergy=DEFAULT_ENERGY，extraEnergy=0，updateTime=now）
+      2. 已满分支：若 leftEnergy + extraEnergy >= maxEnergy，仅更新 updateTime 为当前时间
+      3. 恢复分支：否则根据经过时间计算恢复量
+         — 恢复量 = floor(经过秒数 × rate / 3600)，rate 为每小时恢复量
+         — 实际恢复量不超过 (maxEnergy - leftEnergy)
+         — 小数点部分折算回时间：扣除实际恢复量对应的时间，剩余不足1能量的继续累积
+           newUpdateTime = updateTime + floor(实际恢复量 × 3600 / rate)
+]]
+function CMD.userEnergy(userid)
+    assert(userid)
+    return recalculateEnergy(userid)
+end
+
+--[[
+    增减用户能量
+    change > 0 加能量，change < 0 扣能量
+    操作前先调用 recalculateEnergy 重算当前能量
+    加减规则：优先操作 extraEnergy（ENERGY_ADDITIONAL）
+      — 加法：直接加到 extraEnergy
+      — 减法：先扣 extraEnergy 到 0，剩余从 leftEnergy 扣
+      — 减法时若 total(extra + left) < needed，返回能量不足
+]]
+function CMD.userEnergyChange(userid, change)
+    assert(userid)
+    assert(change and change ~= 0)
+
+    local RT = CONFIG.RICH_TYPE
+
+    -- 先重算当前能量
+    local energy = recalculateEnergy(userid)
+    local left = energy.leftEnergy
+    local extra = energy.extraEnergy
+    local max = energy.maxEnergy
+
+    if change > 0 then
+        -- 加法：直接加到 extraEnergy
+        extra = extra + change
+        skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
+            [RT.ENERGY_ADDITIONAL] = extra,
+        })
+        return {code = 1, msg = "操作成功", leftEnergy = left, extraEnergy = extra, maxEnergy = max, updateTime = energy.updateTime, rate = energy.rate}
+    end
+
+    -- 减法分支
+    local needed = -change
+    if left + extra < needed then
+        return {code = 0, msg = "能量不足"}
+    end
+
+    if extra >= needed then
+        extra = extra - needed
+    else
+        needed = needed - extra
+        extra = 0
+        left = left - needed
+    end
+
+    skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
+        [RT.ENERGY_LEFT]       = left,
+        [RT.ENERGY_ADDITIONAL] = extra,
+    })
+
+    return {code = 1, msg = "操作成功", leftEnergy = left, extraEnergy = extra, maxEnergy = max, updateTime = energy.updateTime, rate = energy.rate}
 end
 
 skynet.start(function()
