@@ -564,5 +564,41 @@ function db.revokeAcc(mysql,...)
     return true
 end
 
+-- 插入/更新挑战关卡记录
+-- ON DUPLICATE KEY UPDATE: scoreMax取最大值，challengeCount累加，其余字段覆盖
+function db.insertChallengeChapter(mysql, ...)
+    local userid, chapter, level, isGet, stars, scoreMax, challengeCount, ext = ...
+    ext = ext or ""
+    local sql = string.format(
+        "INSERT INTO challengeChapter (userid, chapter, level, isGet, stars, scoreMax, challengeCount, ext) " ..
+        "VALUES (%d, %d, %d, %d, %d, %d, %d, '%s') " ..
+        "ON DUPLICATE KEY UPDATE isGet = VALUES(isGet), stars = VALUES(stars), " ..
+        "scoreMax = GREATEST(scoreMax, VALUES(scoreMax)), " ..
+        "challengeCount = challengeCount + VALUES(challengeCount), " ..
+        "ext = VALUES(ext);",
+        userid, chapter, level, isGet, stars, scoreMax, challengeCount, ext
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 根据userid和chapter获取该章节所有关卡记录
+function db.getChallengeChapter(mysql, ...)
+    local userid, chapter = ...
+    local sql = string.format(
+        "SELECT * FROM challengeChapter WHERE userid = %d AND chapter = %d;",
+        userid, chapter
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    if #res == 0 then
+        return nil
+    end
+    return res
+end
+
 -- 返回db表，供外部调用
 return db
