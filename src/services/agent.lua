@@ -211,6 +211,17 @@ function REQUEST:userEnergyChange(args)
     return call(svrUser, "userEnergyChange", userid, args.change)
 end
 
+-- 获取章节关卡数据
+function REQUEST:getChallengeChapterData(args)
+    local list = call(svrUser, "getChallengeChapterData", userid, args.chapter) or {}
+    return { list = list }
+end
+
+-- 更新关卡数据
+function REQUEST:updateChallengeLevelData(args)
+    return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars)
+end
+
 
 -- 客户端请求分发
 local function request(name, args, response)

@@ -288,3 +288,35 @@ userEnergyChange 21 {
         rate 6 : integer
     }
 }
+
+.ChallengeLevelData {
+    chapter 0 : integer
+    level 1 : integer
+    isGet 2 : integer
+    stars 3 : integer
+    scoreMax 4 : integer
+    challengeCount 5 : integer
+}
+
+# 获取章节关卡数据
+getChallengeChapterData 22 {
+    request {
+        chapter 0 : integer
+    }
+    response {
+        list 0 : *ChallengeLevelData
+    }
+}
+
+# 更新关卡数据
+updateChallengeLevelData 23 {
+    request {
+        chapter 0 : integer
+        level 1 : integer
+        score 2 : integer
+        stars 3 : integer
+    }
+    response {
+        code 0 : integer
+    }
+}

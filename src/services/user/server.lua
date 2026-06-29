@@ -301,6 +301,20 @@ function CMD.userEnergyChange(userid, change)
     return {code = 1, msg = "操作成功", leftEnergy = left, extraEnergy = extra, maxEnergy = max, updateTime = energy.updateTime, rate = energy.rate}
 end
 
+function CMD.getChallengeChapterData(userid, chapter)
+    assert(userid)
+    assert(chapter)
+    return skynet.call(dbSvr, "lua", "db", "getChallengeChapter", userid, chapter)
+end
+
+function CMD.updateChallengeLevelData(userid, chapter, level, score, stars)
+    assert(userid)
+    assert(chapter)
+    assert(level)
+    skynet.call(dbSvr, "lua", "db", "insertChallengeChapter", userid, chapter, level, 0, stars, score, 1, "")
+    return {code = 1}
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
