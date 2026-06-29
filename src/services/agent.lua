@@ -214,7 +214,7 @@ end
 -- 获取章节关卡数据
 function REQUEST:getChallengeChapterData(args)
     local list = call(svrUser, "getChallengeChapterData", userid, args.chapter) or {}
-    return { list = list }
+    return { list = list, chapter = args.chapter }
 end
 
 -- 更新关卡数据

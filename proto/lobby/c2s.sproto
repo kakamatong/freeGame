@@ -305,6 +305,7 @@ getChallengeChapterData 22 {
     }
     response {
         list 0 : *ChallengeLevelData
+        chapter 1 : integer
     }
 }
 
