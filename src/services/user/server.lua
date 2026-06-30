@@ -332,8 +332,14 @@ function CMD.getChallengeChapterData(userid, chapter)
     assert(userid)
     assert(chapter)
     local res = skynet.call(dbSvr, "lua", "db", "getChallengeChapter", userid, chapter)
+    return { list = res, chapter = chapter }
+end
+
+function CMD.getCurChallengeChapterData(userid)
+    assert(userid)
     local curData = getChallengeData(userid)
-    return { list = res, chapter = chapter, curChapter = curData.chapter, curLevel = curData.level }
+    local res = skynet.call(dbSvr, "lua", "db", "getChallengeChapter", userid, curData.chapter)
+    return { curChapter = curData.chapter, curLevel = curData.level, list = res }
 end
 
 function CMD.getChallengeData(userid)

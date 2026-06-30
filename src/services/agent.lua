@@ -239,7 +239,12 @@ end
 
 -- 获取章节关卡数据
 function REQUEST:getChallengeChapterData(args)
-	return call(svrUser, "getChallengeChapterData", userid, args.chapter)
+    return call(svrUser, "getChallengeChapterData", userid, args.chapter)
+end
+
+-- 获取当前章节关卡数据
+function REQUEST:getCurChallengeChapterData(args)
+    return call(svrUser, "getCurChallengeChapterData", userid)
 end
 
 -- 更新关卡数据

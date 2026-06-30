@@ -305,9 +305,7 @@ getChallengeChapterData 22 {
     }
     response {
         chapter 0 : integer
-        curChapter 1 : integer
-        curLevel 2 : integer
-        list 3 : *ChallengeLevelData
+        list 1 : *ChallengeLevelData
     }
 }
 
@@ -323,5 +321,16 @@ updateChallengeLevelData 23 {
     }
     response {
         code 0 : integer
+    }
+}
+
+# 获取当前章节关卡数据
+getCurChallengeChapterData 24 {
+    request {
+    }
+    response {
+        curChapter 0 : integer
+        curLevel 1 : integer
+        list 2 : *ChallengeLevelData
     }
 }
