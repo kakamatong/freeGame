@@ -244,7 +244,7 @@ end
 
 -- 更新关卡数据
 function REQUEST:updateChallengeLevelData(args)
-	return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars)
+    return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars, args.nextChapter, args.nextLevel)
 end
 
 -- 客户端请求分发

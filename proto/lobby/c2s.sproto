@@ -305,9 +305,9 @@ getChallengeChapterData 22 {
     }
     response {
         chapter 0 : integer
-        list 1 : *ChallengeLevelData
-        curChapter 2 : integer
-        curLevel 3 : integer
+        curChapter 1 : integer
+        curLevel 2 : integer
+        list 3 : *ChallengeLevelData
     }
 }
 
@@ -318,6 +318,8 @@ updateChallengeLevelData 23 {
         level 1 : integer
         score 2 : integer
         stars 3 : integer
+        nextChapter 4 : integer
+        nextLevel 5 : integer
     }
     response {
         code 0 : integer

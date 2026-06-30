@@ -340,11 +340,15 @@ function CMD.getChallengeData(userid)
     return getChallengeData(userid)
 end
 
-function CMD.updateChallengeLevelData(userid, chapter, level, score, stars)
+function CMD.updateChallengeLevelData(userid, chapter, level, score, stars, nextChapter, nextLevel)
     assert(userid)
     assert(chapter)
     assert(level)
     skynet.call(dbSvr, "lua", "db", "insertChallengeChapter", userid, chapter, level, 0, stars, score, 1, "")
+    local cur = getChallengeData(userid)
+    if cur.chapter == chapter and cur.level == level then
+        skynet.call(dbSvr, "lua", "db", "insertChallengeData", userid, nextChapter or chapter, nextLevel or level, "")
+    end
     return { code = 1 }
 end
 
