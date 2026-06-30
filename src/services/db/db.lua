@@ -600,5 +600,37 @@ function db.getChallengeChapter(mysql, ...)
     return res
 end
 
+-- 插入/更新用户关卡进度
+function db.insertChallengeData(mysql, ...)
+    local userid, chapter, level, ext = ...
+    ext = ext or ""
+    local sql = string.format(
+        "INSERT INTO challengeData (userid, chapter, level, ext) " ..
+        "VALUES (%d, %d, %d, '%s') " ..
+        "ON DUPLICATE KEY UPDATE chapter = VALUES(chapter), level = VALUES(level), ext = VALUES(ext);",
+        userid, chapter, level, ext
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    return true
+end
+
+-- 查询用户关卡进度
+function db.getChallengeData(mysql, ...)
+    local userid = ...
+    local sql = string.format(
+        "SELECT * FROM challengeData WHERE userid = %d;",
+        userid
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    if #res == 0 then
+        return nil
+    end
+    return res[1]
+end
+
 -- 返回db表，供外部调用
 return db
