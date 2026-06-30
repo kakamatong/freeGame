@@ -37,10 +37,9 @@ local function userStatus(userid)
 			status.status = CONFIG.USER_STATUS.ONLINE
 
 			send(svrUser, "setUserStatus", userid, status.status, status.gameid, status.roomid, "", status.shortRoomid)
-
 		end
 	end
-	
+
 	status.roomid = tostring(status.roomid)
 	return status
 end
@@ -69,10 +68,19 @@ end
 -- 匹配加入
 function REQUEST:matchJoin(args)
 	local status = userStatus(userid)
-    if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl }
-    end
-	
+	if status and status.gameid > 0 and status.roomid ~= "" then
+		return {
+			code = 0,
+			msg = "已经在游戏中",
+			gameid = status.gameid,
+			roomid = status.roomid,
+			shortRoomid = status
+				.shortRoomid,
+			addr = status.addr,
+			gatewayUrl = status.gatewayUrl
+		}
+	end
+
 	return call(svrMatch, "matchJoin", userid, args.gameid, args.queueid)
 end
 
@@ -118,21 +126,31 @@ end
 -- 更新用户昵称和头像
 function REQUEST:updateUserNameAndHeadurl(args)
 	call(svrUser, "updateUserNameAndHeadurl", userid, args.nickname, args.headurl)
-	return {code = 1}
+	return { code = 1 }
 end
 
 -- 创建房间
 function REQUEST:createPrivateRoom(args)
 	local status = userStatus(userid)
-    if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl}
-    end
+	if status and status.gameid > 0 and status.roomid ~= "" then
+		return {
+			code = 0,
+			msg = "已经在游戏中",
+			gameid = status.gameid,
+			roomid = status.roomid,
+			shortRoomid = status
+				.shortRoomid,
+			addr = status.addr,
+			gatewayUrl = status.gatewayUrl
+		}
+	end
 
 	log.info("createPrivateRoom %s", args.rule)
-	local roomid,addr,shortRoomid,gatewayUrl = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid, args.rule)
+	local roomid, addr, shortRoomid, gatewayUrl = call(svrPrivateRoom, "createPrivateRoom", userid, args.gameid,
+		args.rule)
 
 	if not roomid then
-		return {code=0,msg="创建失败"}
+		return { code = 0, msg = "创建失败" }
 	end
 	return {
 		roomid = tostring(roomid),
@@ -144,28 +162,36 @@ function REQUEST:createPrivateRoom(args)
 		code = 1,
 		msg = "创建成功"
 	}
-
 end
 
 -- 加入房间
 
 function REQUEST:joinPrivateRoom(args)
 	local status = userStatus(userid)
-    if status and status.gameid > 0 and status.roomid ~= "" then
-        return {code = 0, msg = "已经在游戏中", gameid = status.gameid, roomid = status.roomid, shortRoomid = status.shortRoomid, addr = status.addr, gatewayUrl = status.gatewayUrl}
-    end
+	if status and status.gameid > 0 and status.roomid ~= "" then
+		return {
+			code = 0,
+			msg = "已经在游戏中",
+			gameid = status.gameid,
+			roomid = status.roomid,
+			shortRoomid = status
+				.shortRoomid,
+			addr = status.addr,
+			gatewayUrl = status.gatewayUrl
+		}
+	end
 
 	local info = call(svrPrivateRoom, "joinPrivateRoom", userid, args.shortRoomid)
 	if not info then
-		return {code = 0,msg = "房间不存在"}
+		return { code = 0, msg = "房间不存在" }
 	else
 		log.info("joinPrivateRoom %s", UTILS.tableToString(info))
 		if info.gameid == 0 or info.addr == "" or info.roomid == 0 then
-			return {code = 0,msg = "房间不存在"}
+			return { code = 0, msg = "房间不存在" }
 		end
-		local b,msg = callTo(info.addr, "game1", "joinPrivateRoom", info.gameid, info.roomid, userid)
+		local b, msg = callTo(info.addr, "game1", "joinPrivateRoom", info.gameid, info.roomid, userid)
 		if not b then
-			return {code = 0,msg = msg}
+			return { code = 0, msg = msg }
 		else
 			return {
 				code = 1,
@@ -193,35 +219,33 @@ end
 
 -- 取消注销账号
 function REQUEST:cancelRevokeAcc(args)
-    return call(svrUser, "cancelRevokeAcc", userid)
+	return call(svrUser, "cancelRevokeAcc", userid)
 end
 
 -- 本地游戏使用道具
 function REQUEST:localGameUseProps(args)
-    return call(svrUser, "useProps", userid, args.richType, args.richNums)
+	return call(svrUser, "useProps", userid, args.richType, args.richNums)
 end
 
 -- 获取用户能量
 function REQUEST:userEnergy(args)
-    return call(svrUser, "userEnergy", userid)
+	return call(svrUser, "userEnergy", userid)
 end
 
 -- 增减用户能量
 function REQUEST:userEnergyChange(args)
-    return call(svrUser, "userEnergyChange", userid, args.change)
+	return call(svrUser, "userEnergyChange", userid, args.change)
 end
 
 -- 获取章节关卡数据
 function REQUEST:getChallengeChapterData(args)
-    local list = call(svrUser, "getChallengeChapterData", userid, args.chapter) or {}
-    return { list = list, chapter = args.chapter }
+	return call(svrUser, "getChallengeChapterData", userid, args.chapter)
 end
 
 -- 更新关卡数据
 function REQUEST:updateChallengeLevelData(args)
-    return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars)
+	return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars)
 end
-
 
 -- 客户端请求分发
 local function request(name, args, response)
@@ -236,17 +260,17 @@ end
 skynet.register_protocol {
 	name = "client",
 	id = skynet.PTYPE_CLIENT,
-	unpack = function (msg, sz)
+	unpack = function(msg, sz)
 		--log.info("agent unpack msg %s, sz %d", type(msg), sz)
 		local str = skynet.tostring(msg, sz)
 		return host:dispatch(str, sz)
 	end,
-	dispatch = function (fd, _, type, ...)
+	dispatch = function(fd, _, type, ...)
 		--log.info("agent dispatch fd %d, type %s", fd, type)
 		assert(fd == client_fd) -- 只能处理自己的fd
 		skynet.ignoreret() -- session是fd，不需要返回
 		if type == "REQUEST" then
-			local ok, result  = pcall(request, ...)
+			local ok, result = pcall(request, ...)
 			if ok then
 				if result then
 					send_package(result)
@@ -271,7 +295,7 @@ function CMD.start(conf)
 	gate = conf.gate
 	WATCHDOG = conf.watchdog
 	client_fd = fd
-	userid =conf.userid
+	userid = conf.userid
 	-- slot 1,2 set at main.lua
 	host = sprotoloader.load(1):host "package"
 
@@ -280,10 +304,10 @@ function CMD.start(conf)
 	local svrDB = skynet.localname(CONFIG.SVR_NAME.DB)
 	local redisKey = string.format(CONFIG.KEY_REDIS.GATE_AGENT, userid)
 	skynet.send(svrDB, "lua", "dbRedis", "set", redisKey, name, 86400 * 3)
-	
+
 
 	local send_request = host:attach(sprotoloader.load(2))
-	send_package(send_request("agentReady", {time= os.time()}, 1))
+	send_package(send_request("agentReady", { time = os.time() }, 1))
 
 	-- 可以重构
 	-- local status = call(svrUser, "userStatus", userid)
@@ -295,11 +319,12 @@ function CMD.disconnect()
 	log.info("agent disconnect")
 	skynet.exit()
 end
+
 ------------------------------------------------------------------------------------------------------------
 
 -- 启动服务，分发命令
 skynet.start(function()
-	skynet.dispatch("lua", function(_,_, command, ...)
+	skynet.dispatch("lua", function(_, _, command, ...)
 		local f = CMD[command]
 		if f then
 			skynet.ret(skynet.pack(f(...)))
