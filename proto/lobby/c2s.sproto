@@ -277,6 +277,8 @@ userEnergy 20 {
 userEnergyChange 21 {
     request {
         change 0 : integer
+        type 1 : integer
+        strData 2 : string
     }
     response {
         code 0 : integer

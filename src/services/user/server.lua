@@ -1,8 +1,15 @@
 local skynet = require "skynet"
 local log = require "log"
+local cjson = require "cjson"
 local CMD = {}
 local dbSvr = nil
 require "skynet.manager"
+
+-- 能量消耗类型枚举
+local CHALLENGE_COST_TYPE = {
+    TEST = 0,      -- 测试
+    CHALLENGE = 1, -- 闯关
+}
 -- 返回结果
 -- 获取数据库服务句柄
 
@@ -249,6 +256,40 @@ function CMD.userEnergy(userid)
     return recalculateEnergy(userid)
 end
 
+-- 获取用户闯关进度（内部辅助函数）
+local function getChallengeData(userid)
+    assert(userid)
+    local res = skynet.call(dbSvr, "lua", "db", "getChallengeData", userid)
+    if not res then
+        return { chapter = 0, level = 0 }
+    end
+    return { chapter = res.chapter, level = res.level }
+end
+
+--[[
+    校验闯关能量消耗
+    入参: userid, strData（JSON: {chapter, level}）
+    校验: 请求的章节/关卡是否 <= 用户当前进度
+    返回: 校验失败返回 {code=0, msg}；通过返回 nil
+]]
+local function validateChallengeCost(userid, strData)
+    if not strData or strData == "" then
+        return { code = 0, msg = "参数错误" }
+    end
+    local ok, data = pcall(cjson.decode, strData)
+    if not ok or not data then
+        return { code = 0, msg = "参数解析失败" }
+    end
+    local curData = getChallengeData(userid)
+    if data.chapter and curData.chapter then
+        local valid = data.chapter < curData.chapter
+            or (data.chapter == curData.chapter and data.level <= curData.level)
+        if not valid then
+            return { code = 0, msg = "关卡未解锁" }
+        end
+    end
+end
+
 --[[
     增减用户能量
     change > 0 加能量，change < 0 扣能量
@@ -258,9 +299,17 @@ end
       — 减法：先扣 extraEnergy 到 0，剩余从 leftEnergy 扣
       — 减法时若 total(extra + left) < needed，返回能量不足
 ]]
-function CMD.userEnergyChange(userid, change)
+function CMD.userEnergyChange(userid, change, costType, strData)
     assert(userid)
     assert(change and change ~= 0)
+    costType = costType or CHALLENGE_COST_TYPE.TEST
+
+    if costType == CHALLENGE_COST_TYPE.CHALLENGE then
+        local ret = validateChallengeCost(userid, strData)
+        if ret then
+            return ret
+        end
+    end
 
     local RT = CONFIG.RICH_TYPE
 
@@ -319,15 +368,11 @@ function CMD.userEnergyChange(userid, change)
     }
 end
 
-local function getChallengeData(userid)
-    assert(userid)
-    local res = skynet.call(dbSvr, "lua", "db", "getChallengeData", userid)
-    if not res then
-        return { chapter = 0, level = 0 }
-    end
-    return { chapter = res.chapter, level = res.level }
-end
-
+--[[
+    获取指定章节的关卡数据
+    入参: userid, chapter
+    返回: { list = 关卡记录数组, chapter = 请求的章节 }
+]]
 function CMD.getChallengeChapterData(userid, chapter)
     assert(userid)
     assert(chapter)
@@ -335,6 +380,11 @@ function CMD.getChallengeChapterData(userid, chapter)
     return { list = res, chapter = chapter }
 end
 
+--[[
+    获取用户当前章节的关卡数据
+    入参: userid
+    返回: { curChapter, curLevel, list = 当前章节关卡记录数组 }
+]]
 function CMD.getCurChallengeChapterData(userid)
     assert(userid)
     local curData = getChallengeData(userid)
@@ -342,10 +392,16 @@ function CMD.getCurChallengeChapterData(userid)
     return { curChapter = curData.chapter, curLevel = curData.level, list = res }
 end
 
+-- 获取用户当前闯关进度（chapter, level）
 function CMD.getChallengeData(userid)
     return getChallengeData(userid)
 end
 
+--[[
+    更新关卡数据
+    入参: userid, chapter, level, score, stars, nextChapter, nextLevel
+    逻辑: 写入/更新关卡记录；若完成的是当前最新关卡则推进进度到 nextChapter/nextLevel
+]]
 function CMD.updateChallengeLevelData(userid, chapter, level, score, stars, nextChapter, nextLevel)
     assert(userid)
     assert(chapter)

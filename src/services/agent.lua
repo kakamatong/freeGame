@@ -234,7 +234,7 @@ end
 
 -- 增减用户能量
 function REQUEST:userEnergyChange(args)
-	return call(svrUser, "userEnergyChange", userid, args.change)
+    return call(svrUser, "userEnergyChange", userid, args.change, args.type, args.strData)
 end
 
 -- 获取章节关卡数据
