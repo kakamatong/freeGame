@@ -6,7 +6,7 @@ local dbSvr = nil
 require "skynet.manager"
 
 -- 能量消耗类型枚举
-local CHALLENGE_COST_TYPE = {
+local ENERGY_COST_TYPE = {
     TEST = 0,      -- 测试
     CHALLENGE = 1, -- 闯关
 }
@@ -302,9 +302,9 @@ end
 function CMD.userEnergyChange(userid, change, costType, strData)
     assert(userid)
     assert(change and change ~= 0)
-    costType = costType or CHALLENGE_COST_TYPE.TEST
+    costType = costType or ENERGY_COST_TYPE.TEST
 
-    if costType == CHALLENGE_COST_TYPE.CHALLENGE then
+    if costType == ENERGY_COST_TYPE.CHALLENGE then
         local ret = validateChallengeCost(userid, strData)
         if ret then
             return ret
