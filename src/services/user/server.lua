@@ -350,8 +350,12 @@ function CMD.updateChallengeLevelData(userid, chapter, level, score, stars, next
     assert(userid)
     assert(chapter)
     assert(level)
+
+    --更新/插入数据
     skynet.call(dbSvr, "lua", "db", "insertChallengeChapter", userid, chapter, level, 0, stars, score, 1, "")
     local cur = getChallengeData(userid)
+
+    --更新最新关卡
     if cur.chapter == chapter and cur.level == level then
         skynet.call(dbSvr, "lua", "db", "insertChallengeData", userid, nextChapter or chapter, nextLevel or level, "")
     end
