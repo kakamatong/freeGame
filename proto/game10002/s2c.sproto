@@ -239,6 +239,8 @@ tilesRemoved 34 {
         eliminated 4 : integer   # 已消除数量
         remaining 5 : integer    # 剩余方块数
         seat 6 : integer         # 执行消除的玩家座位号
+        score 7 : integer        # 本次消除加分分数（闯关模式携带,服务暂时没用）
+        totalScore 8 : integer   # 当前对局玩家总分数（闯关模式携带,服务暂时没用）
     }
 }
 
