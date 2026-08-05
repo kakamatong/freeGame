@@ -219,7 +219,8 @@ local function recalculateEnergy(userid)
             local actualRecovered = math.min(recovered, max - left)
             local newLeft         = left + actualRecovered
             local timeConsumed    = math.floor(actualRecovered * 3600 / rate)
-            local newUpdateTime   = updateTime + timeConsumed
+            -- 恢复封顶（能量已满）时，满能量期间的多余时间必须丢弃，否则扣能量后会按过期时间重复恢复
+            local newUpdateTime   = (newLeft + add >= max) and now or (updateTime + timeConsumed)
 
             skynet.call(dbSvr, "lua", "db", "setUserRichesByTypes", userid, {
                 [RT.ENERGY_LEFT]        = newLeft,
@@ -248,8 +249,10 @@ end
       3. 恢复分支：否则根据经过时间计算恢复量
          — 恢复量 = floor(经过秒数 × rate / 3600)，rate 为每小时恢复量
          — 实际恢复量不超过 (maxEnergy - leftEnergy)
-         — 小数点部分折算回时间：扣除实际恢复量对应的时间，剩余不足1能量的继续累积
+         — 未恢复满：小数点部分折算回时间，剩余不足1能量的继续累积
            newUpdateTime = updateTime + floor(实际恢复量 × 3600 / rate)
+         — 恢复封顶（能量已满）：满能量期间的多余时间直接丢弃，newUpdateTime = now，
+           防止扣能量后按过期的 updateTime 重复恢复
 ]]
 function CMD.userEnergy(userid)
     assert(userid)
