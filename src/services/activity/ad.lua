@@ -6,11 +6,11 @@ local tools = require "activity.tools"
 local adConfigs = {
     -- 默认配置
     [1] = {
-        maxDailyRewardCount = 5,  -- 每天最大领取次数
+        maxDailyRewardCount = 5, -- 每天最大领取次数
         rewards = {
             {
-                richTypes = {CONFIG.RICH_TYPE.SILVER_COIN},
-                richNums = {10}
+                richTypes = { CONFIG.RICH_TYPE.SILVER_COIN },
+                richNums = { 10 }
             }
         }
     },
@@ -19,8 +19,17 @@ local adConfigs = {
         maxDailyRewardCount = 5,
         rewards = {
             {
-                richTypes = {CONFIG.RICH_TYPE.AUTO_REMOVE},
-                richNums = {5}
+                richTypes = { CONFIG.RICH_TYPE.AUTO_REMOVE },
+                richNums = { 5 }
+            }
+        }
+    },
+    [3] = {
+        maxDailyRewardCount = 5,
+        rewards = {
+            {
+                richTypes = { CONFIG.RICH_TYPE.ENERGY_ADDITIONAL },
+                richNums = { 10 }
             }
         }
     }
@@ -59,7 +68,7 @@ end
 local function checkAndResetDailyCount(data)
     local now = os.time()
     local todayDate = tonumber(os.date("%Y%m%d", now))
-    
+
     if data.rewardDate < todayDate then
         data.dailyRewardCount = 0
         data.rewardDate = todayDate
@@ -72,16 +81,17 @@ function ad.getAdInfo(userid, args)
     local cfg = getAdCfg(cfgId)
     local resp = {}
     local userData = getUserAdData(userid)
-    
+
     checkAndResetDailyCount(userData)
-    
+
+    resp.cfgId = cfgId
     resp.maxDailyRewardCount = cfg.maxDailyRewardCount
     resp.currentRewardCount = userData.dailyRewardCount
     resp.rewards = cfg.rewards
     resp.canReward = userData.dailyRewardCount < cfg.maxDailyRewardCount
-    
+
     setUserAdData(userid, userData)
-    
+
     return tools.result(resp)
 end
 
@@ -91,61 +101,62 @@ function ad.getAdReward(userid, args)
     local cfg = getAdCfg(cfgId)
     local resp = {}
     local userData = getUserAdData(userid)
-    
+
     checkAndResetDailyCount(userData)
-    
+
     if userData.dailyRewardCount >= cfg.maxDailyRewardCount then
-        return tools.result({error = "今日奖励已领完"})
+        return tools.result({ error = "今日奖励已领完", cfgId = cfgId })
     end
-    
+
     -- Redis锁（区分cfgId）
     local lockKey = string.format("adLock:%d:%d", cfgId, userid)
     local lockValue = os.time()
     local lockExpire = 2000
     local lock = tools.callRedis("lock", lockKey, lockValue, lockExpire)
     if not lock then
-        return tools.result({error = "操作频繁，请稍后再试"})
+        return tools.result({ error = "操作频繁，请稍后再试", cfgId = cfgId })
     end
-    
+
     -- 双重检查
     userData = getUserAdData(userid)
     checkAndResetDailyCount(userData)
     if userData.dailyRewardCount >= cfg.maxDailyRewardCount then
         tools.callRedis("unlock", lockKey)
-        return tools.result({error = "今日奖励已领完"})
+        return tools.result({ error = "今日奖励已领完", cfgId = cfgId })
     end
-    
+
     userData.dailyRewardCount = userData.dailyRewardCount + 1
     userData.lastRewardTime = os.time()
     local todayDate = tonumber(os.date("%Y%m%d", os.time()))
     userData.rewardDate = todayDate
-    
+
     setUserAdData(userid, userData, 86400)
-    
+
     local rewardData = cfg.rewards[1]
     local richTypes = rewardData.richTypes
     local richNums = rewardData.richNums
-    
+
     for i = 1, #richTypes do
         local res = tools.callMysql("addUserRiches", userid, richTypes[i], richNums[i])
         if not res then
             tools.callRedis("unlock", lockKey)
-            return tools.result({error = "发奖失败"})
+            return tools.result({ error = "发奖失败", cfgId = cfgId })
         end
     end
-    
+
     tools.callRedis("unlock", lockKey)
-    
+
     local strData = cjson.encode(rewardData)
     local id = call(CONFIG.CLUSTER_SVR_NAME.USER, "awardNotice", userid, strData)
-    
+
     local res = {
+        cfgId = cfgId,
         noticeid = id,
         reward = rewardData,
         currentRewardCount = userData.dailyRewardCount,
         maxDailyRewardCount = cfg.maxDailyRewardCount
     }
-    
+
     return tools.result(res)
 end
 
