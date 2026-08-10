@@ -472,6 +472,8 @@ function Room:initLogic()
         maxTime = selectedDesign.TOTAL_TIME,
         endTime = selectedDesign.END_TIME,
         designMap = selectedDesign.MAP,
+        shiftDir = selectedDesign.SHIFT_DIR or 0,
+        edge = selectedDesign.EDGE or 2,
     }
 
     self.logicHandler.init(ruleData, roomHandler, self.roomInfo.gameid, self.roomInfo.roomid)

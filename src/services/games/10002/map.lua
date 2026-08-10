@@ -11,6 +11,7 @@
 
 local tileUtils = require "games.10002.tileUtils"
 local pathFinder = require "games.10002.pathFinder"
+local mapConfig = require "games.10002.mapConfig"
 local log = require "log"
 local _gameid, _roomid = 0, 0
 local function getRoomLogTag()
@@ -279,6 +280,111 @@ function Map:isDecoration(row, col)
         return false
     end
     return tileUtils.isDecoration(self._map[row][col])
+end
+
+--[[
+    消除后将剩余方块向指定方向移动（压缩靠边）
+    规则：
+    1. 移动范围限制在 edge..rows-edge+1 行、edge..cols-edge+1 列（外圈留空供连线走位），方块最多贴到第 edge 行/列
+    2. 装饰物(>=100)固定不动，方块不能穿过装饰物（同一行/列内装饰物两侧各自压缩）
+    3. 只修改本地地图数据，不发送任何网络通知（客户端有相同逻辑自行移动）
+    @param dir: number 方向 (mapConfig.SHIFT_DIR: 2=上 3=下 4=左 5=右)
+    @param edge: number 最边边位置（默认2，如2=左移靠第2列/上移靠第2行）
+]]
+function Map:shiftBlocks(dir, edge)
+    if not dir or dir <= mapConfig.SHIFT_DIR.RANDOM then
+        return
+    end
+
+    local rows = self._rows
+    local cols = self._cols
+
+    edge = edge or 2
+    if edge < 1 then
+        edge = 1
+    end
+    -- 边缘过大时没有可移动区域，直接返回（edge..rows-edge+1 或 edge..cols-edge+1 为空）
+    if edge * 2 > rows + 1 or edge * 2 > cols + 1 then
+        return
+    end
+
+    if dir == mapConfig.SHIFT_DIR.LEFT then
+        -- 向左靠：每行方块从第 edge 列起向左压缩，中间被消除的空位由右侧方块补上
+        for row = edge, rows - edge + 1 do
+            local w = edge
+            for col = edge, cols - edge + 1 do
+                local value = self._map[row][col]
+                if tileUtils.isBlock(value) then
+                    if col ~= w then
+                        self._map[row][w] = value
+                        self._map[row][col] = 0
+                    end
+                    w = w + 1
+                elseif tileUtils.isDecoration(value) then
+                    -- 装饰物固定不动，后续方块不能越过它，压缩在装饰物右侧重新开始
+                    w = col + 1
+                end
+            end
+        end
+    elseif dir == mapConfig.SHIFT_DIR.RIGHT then
+        -- 向右靠：每行方块从倒数第 edge 列起向右压缩
+        for row = edge, rows - edge + 1 do
+            local w = cols - edge + 1
+            for col = cols - edge + 1, edge, -1 do
+                local value = self._map[row][col]
+                if tileUtils.isBlock(value) then
+                    if col ~= w then
+                        self._map[row][w] = value
+                        self._map[row][col] = 0
+                    end
+                    w = w - 1
+                elseif tileUtils.isDecoration(value) then
+                    w = col - 1
+                end
+            end
+        end
+    elseif dir == mapConfig.SHIFT_DIR.UP then
+        -- 向上靠：每列方块从第 edge 行起向上压缩
+        for col = edge, cols - edge + 1 do
+            local w = edge
+            for row = edge, rows - edge + 1 do
+                local value = self._map[row][col]
+                if tileUtils.isBlock(value) then
+                    if row ~= w then
+                        self._map[w][col] = value
+                        self._map[row][col] = 0
+                    end
+                    w = w + 1
+                elseif tileUtils.isDecoration(value) then
+                    w = row + 1
+                end
+            end
+        end
+    elseif dir == mapConfig.SHIFT_DIR.DOWN then
+        -- 向下靠：每列方块从倒数第 edge 行起向下压缩
+        for col = edge, cols - edge + 1 do
+            local w = rows - edge + 1
+            for row = rows - edge + 1, edge, -1 do
+                local value = self._map[row][col]
+                if tileUtils.isBlock(value) then
+                    if row ~= w then
+                        self._map[w][col] = value
+                        self._map[row][col] = 0
+                    end
+                    w = w - 1
+                elseif tileUtils.isDecoration(value) then
+                    w = row - 1
+                end
+            end
+        end
+    else
+        return
+    end
+
+    -- 移动完成后更新寻路器
+    if self._pathFinder then
+        self._pathFinder:setMap(self._map)
+    end
 end
 
 --[[

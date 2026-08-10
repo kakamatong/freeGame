@@ -14,6 +14,7 @@
 ]]
 
 local config = require("games.10002.configLogic")
+local mapConfig = require("games.10002.mapConfig")
 local gameConfig = require "gameConfig"
 local log = require "log"
 local cjson = require "cjson"
@@ -31,6 +32,8 @@ logic.playerMaps = {}           -- 玩家地图 { [seat] = Map实例 }
 logic.playerProgress = {}       -- 玩家进度 { [seat] = { eliminated, startTime, finishTime, rank } }
 logic.roomHandler = nil         -- Room 提供的回调接口
 logic.rule = {}                 -- 游戏规则
+logic.shiftDir = 0              -- 本局消除后方块移动方向（0=关 2=上 3=下 4=左 5=右）
+logic.shiftEdge = 2             -- 移动模式下最边边位置（方块最多贴到的行/列）
 logic.binit = false             -- 是否初始化
 logic.startTime = 0             -- 游戏开始时间
 logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
@@ -281,16 +284,27 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.rule.maxTime = logic.rule.maxTime or 120  -- 默认10分钟超时
     logic.rule.designMap = logic.rule.designMap or nil
     
+    -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右），随机时每局随机一个方向（通过logicInfo.ext下发，客户端同步使用）
+    logic.rule.shiftDir = logic.rule.shiftDir or mapConfig.SHIFT_DIR.OFF
+    if logic.rule.shiftDir == mapConfig.SHIFT_DIR.RANDOM then
+        logic.shiftDir = math.random(mapConfig.SHIFT_DIR.UP, mapConfig.SHIFT_DIR.RIGHT)
+    else
+        logic.shiftDir = logic.rule.shiftDir
+    end
+    -- 移动模式下最边边位置（方块最多贴到的行/列，如2=靠第2列/行）
+    logic.rule.edge = logic.rule.edge or 2
+    logic.shiftEdge = logic.rule.edge
+    
     -- 更新PLAYING阶段时间
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
     
     log.info("%s [Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒", getRoomLogTag(), logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
     
-    -- 发送游戏逻辑信息给所有玩家
+    -- 发送游戏逻辑信息给所有玩家（ext 携带本局方块移动方向与边缘位置，客户端同步使用）
     logic.roomHandler.sendToAll("logicInfo", {
         playerCnt = logic.rule.playerCnt,
         playingStepTime = logic.rule.maxTime,
-        ext = "",
+        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge}),
     })
 end
 
@@ -651,6 +665,12 @@ function logicHandler.clickTiles(seat, args)
     end
     
     progress.eliminated = progress.eliminated + 2
+
+    -- 消除后剩余方块向指定方向移动（客户端有相同逻辑自行移动，无需下发通知）
+    if logic.shiftDir ~= mapConfig.SHIFT_DIR.OFF then
+        playerMap:shiftBlocks(logic.shiftDir, logic.shiftEdge)
+    end
+
     local remaining = playerMap:getRemainingBlockCount()
     
     log.info("%s [Logic] 座位%d消除成功，剩余方块: %d", getRoomLogTag(), seat, remaining)
@@ -961,11 +981,11 @@ function logicHandler.relink(seat)
         startTime = logic.startTime,
     })
     
-    -- 重连时第一条协议：发送游戏逻辑信息
+    -- 重连时第一条协议：发送游戏逻辑信息（ext 携带本局方块移动方向与边缘位置，客户端同步使用）
     logic.roomHandler.sendToSeat(seat, "logicInfo", {
         playerCnt = logic.rule.playerCnt,
         playingStepTime = logic.rule.maxTime,
-        ext = "",
+        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge}),
     })
     
     logic.roomHandler.sendToSeat(seat, "stepId", {
