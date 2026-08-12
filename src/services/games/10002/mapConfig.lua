@@ -42,7 +42,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 4,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 120,  -- 总时间
@@ -66,7 +66,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 5,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 90,   -- 总时间
@@ -114,7 +114,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 2,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 3,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
@@ -138,7 +138,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
@@ -162,7 +162,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
@@ -186,7 +186,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
@@ -210,7 +210,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 70,   -- 总时间
@@ -234,7 +234,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
@@ -258,7 +258,7 @@ mapConfig.MAP_DESIGN = {
         },
         DEFAULT_ROWS = 12, -- 最大的行数
         DEFAULT_COLS = 10, -- 最大的列数
-        ICON_TYPES = 11,   --11 类型
+        ICON_TYPES = 16,   --11 类型
         SHIFT_DIR = 0,     -- 消除后方块移动方向（0=关 1=随机 2=上 3=下 4=左 5=右）
         EDGE = 2,          -- 移动模式下最边边位置（如2=左移靠第2列/上移靠第2行，3=靠第3列/行）
         TOTAL_TIME = 60,   -- 总时间
