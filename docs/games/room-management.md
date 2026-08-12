@@ -364,7 +364,7 @@ end
 ```lua
 -- src/services/games/config.lua
 local config = {
-    gameids = {10001, 10002}  -- 支持的游戏ID列表
+    gameids = {10001, 10002, 10003}  -- 支持的游戏ID列表
 }
 ```
 

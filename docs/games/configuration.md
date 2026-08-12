@@ -60,7 +60,7 @@ CONFIG = {
 ```lua
 local config = {
     -- 支持的游戏ID列表
-    gameids = {10001, 10002}
+    gameids = {10001, 10002, 10003}
 }
 
 return config

@@ -1,0 +1,262 @@
+.package {
+    type 0 : integer
+    session 1 : integer
+}
+
+# ============================================
+# 基础通用协议 (1-30)
+# ============================================
+
+# 服务器消息
+svrMsg 1 {
+    request {
+        type 0 : string
+        data 1 : string
+    }
+}
+
+# 房间信息
+roomInfo 2 {
+    request {
+        gameid 0 : integer
+        roomid 1 : integer
+        playerids 2 : *integer
+        gameData 3 : string
+        shortRoomid 4 : integer
+        owner 5 : integer
+    }
+}
+
+# 房间结束
+roomEnd 3 {
+    request {
+        code 0 : integer
+    }
+}
+
+# 玩家信息结构
+.PlayerInfo {
+    userid 0 : integer
+    nickname 1 : string
+    headurl 2 : string
+    sex 3 : integer
+    province 4 : string
+    city 5 : string
+    ip 6 : string
+    status 7 : integer
+    cp 8 : integer
+    ext 9 : string
+}
+
+# 玩家信息列表
+playerInfos 4 {
+    request {
+        infos 0 : *PlayerInfo
+    }
+}
+
+# 玩家加入
+playerEnter 5 {
+    request {
+        userid 0 : integer
+        seat 1 : integer
+    }
+}
+
+# 玩家状态更新
+playerStatusUpdate 6 {
+    request {
+        userid 0 : integer
+        status 1 : integer
+    }
+}
+
+# 玩家离开
+playerLeave 7 {
+    request {
+        userid 0 : integer
+        seat 1 : integer
+    }
+}
+
+# 投票信息结构
+.VoteInfo {
+    userid 0 : integer
+    vote 1 : integer     # 1:同意, 0:拒绝, -1:未投票
+}
+
+# 投票解散开始
+voteDisbandStart 8 {
+    request {
+        voteId 0 : integer
+        initiator 1 : integer
+        reason 2 : string
+        timeLeft 3 : integer
+        playerCount 4 : integer
+        needAgreeCount 5 : integer
+    }
+}
+
+# 投票状态更新
+voteDisbandUpdate 9 {
+    request {
+        voteId 0 : integer
+        votes 1 : *VoteInfo
+        agreeCount 2 : integer
+        refuseCount 3 : integer
+        timeLeft 4 : integer
+    }
+}
+
+# 投票解散结果
+voteDisbandResult 10 {
+    request {
+        voteId 0 : integer
+        result 1 : integer
+        reason 2 : string
+        agreeCount 3 : integer
+        refuseCount 4 : integer
+        votes 5 : *VoteInfo
+    }
+}
+
+# 游戏时钟
+gameClock 11 {
+    request {
+        time 0 : integer
+        seat 1 : integer
+    }
+}
+
+# 私人房信息
+privateInfo 12 {
+    request {
+        nowCnt 0 : integer
+        maxCnt 1 : integer
+        ext 2 : string
+    }
+}
+
+# 私人房对战记录
+.Record {
+    index 0 : integer
+    startTime 1 : integer
+    endTime 2 : integer
+    round 3 : integer
+    ext 4 : string
+}
+
+gameRecord 13 {
+    request {
+        record 0 : *Record
+    }
+}
+
+# 总结算信息
+.TotalResultInfo {
+    seat 0 : integer
+    userid 1 : integer
+    score 2 : integer
+    win 3 : integer
+    lose 4 : integer
+    draw 5 : integer
+    rank 6 : integer
+    ext 7 : string
+}
+
+# 私人房总结算
+totalResult 14 {
+    request {
+        startTime 0 : integer
+        endTime 1 : integer
+        shortRoomid 2 : integer
+        roomid 3 : integer
+        owner 4 : integer
+        rule 5 : string
+        playCnt 6 : integer
+        maxCnt 7 : integer
+        totalResultInfo 8 : *TotalResultInfo
+    }
+}
+
+# 消息转发
+forwardMessage 15 {
+    request {
+        type 0 : integer
+        from 1 : integer
+        msg 2 : string
+    }
+}
+
+# ============================================
+# 算24点游戏协议 (31-50)
+# ============================================
+
+# 游戏开始
+gameStart 31 {
+    request {
+        roundNum 0 : integer
+        startTime 1 : integer
+        brelink 2 : integer
+    }
+}
+
+# 游戏阶段ID
+stepId 32 {
+    request {
+        step 0 : integer         # 1=START, 2=PLAYING, 3=END
+    }
+}
+
+# 发牌：本局4个数字
+dealCards 33 {
+    request {
+        roundNum 0 : integer
+        numbers 1 : *integer     # 4个数字
+        timeLimit 2 : integer    # 答题时限(秒)
+        startTime 3 : integer
+    }
+}
+
+# 提交结果广播（正确/错误都广播给所有玩家）
+answerResult 34 {
+    request {
+        seat 0 : integer         # 提交的玩家座位
+        expression 1 : string    # 提交的算式
+        correct 2 : integer      # 1:正确, 0:错误
+        rank 3 : integer         # 排名（答对时为1，其余0）
+    }
+}
+
+# 排名信息
+.RankingInfo {
+    seat 0 : integer
+    expression 1 : string        # 答对算式
+    usedTime 2 : integer         # 用时(毫秒)，未答对为-1
+    rank 3 : integer             # 排名（1开始，未答对则为0）
+}
+
+# 分数信息
+.ScoreInfo {
+    seat 0 : integer
+    newScore 1 : integer
+    delta 2 : integer
+}
+
+# 游戏结束
+gameEnd 35 {
+    request {
+        roundNum 0 : integer
+        endTime 1 : integer
+        endType 2 : integer      # 1=有人答对, 2=超时无人答对, 4=解散
+        rankings 3 : *RankingInfo
+        scores 4 : *ScoreInfo
+    }
+}
+
+# 游戏重连恢复
+gameRelink 36 {
+    request {
+        startTime 0 : integer
+    }
+}

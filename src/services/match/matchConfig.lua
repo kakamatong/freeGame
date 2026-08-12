@@ -49,6 +49,28 @@ matchConfig.games = {
 
         -- queueid=3,4 使用默认配置
     },
+
+    [10003] = { -- 算24点（2-6人）
+        queueNum = 4,
+
+        [1] = { -- 动态匹配（2-6人）
+            mode = "dynamic",
+            maxPlayers = 6,
+            minPlayers = 2,
+            rateDiff = 500,
+            robotAfterFails = 3,
+        },
+
+        [2] = { -- 动态匹配（2-4人）
+            mode = "dynamic",
+            maxPlayers = 4,
+            minPlayers = 2,
+            rateDiff = 800,
+            robotAfterFails = 3,
+        },
+
+        -- queueid=3,4 使用默认配置
+    },
 }
 
 -- 机器人配置

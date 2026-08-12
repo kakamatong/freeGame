@@ -13,6 +13,7 @@ docs/games/
 ├── api.md                      # API接口文档
 ├── room-management.md          # 房间管理文档
 ├── game-logic.md               # 游戏逻辑文档
+├── game10003.md                # 游戏10003（算24点）文档
 ├── configuration.md            # 配置说明文档
 ├── deployment.md               # 部署指南
 └── troubleshooting.md          # 故障排除指南
@@ -27,7 +28,7 @@ docs/games/
 - 房间状态监控
 
 ### 2. 游戏逻辑
-- 支持多种游戏类型（当前支持游戏ID: 10001）
+- 支持多种游戏类型（当前支持游戏ID: 10001/10002/10003）
 - 游戏状态管理
 - 玩家行为处理
 - AI机器人集成
@@ -62,12 +63,14 @@ Room (具体游戏实现)
 | 基础房间类 | `src/services/games/baseRoom.lua` | 房间基础功能和状态管理 |
 | 私人房间类 | `src/services/games/privateRoom.lua` | 私人房间特有功能 |
 | 游戏配置 | `src/services/games/config.lua` | 支持的游戏ID配置 |
-| 具体游戏实现 | `src/services/games/10001/` | 游戏10001的具体实现 |
+| 具体游戏实现 | `src/services/games/10001/` `10002/` `10003/` | 各游戏的具体实现 |
 
 ## 支持的游戏类型
 
 当前支持的游戏：
-- **游戏ID 10001**: 基础对战游戏，支持2人对战，包含AI机器人
+- **游戏ID 10001**: 石头剪刀布对战，支持2人对战，包含AI机器人
+- **游戏ID 10002**: 连连看对战，支持2-6人，包含道具系统和AI机器人
+- **游戏ID 10003**: 算24点，支持2-6人，多人抢答对战，包含AI机器人（详见 [game10003.md](./game10003.md)）
 
 ## 房间类型
 
