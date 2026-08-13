@@ -34,6 +34,7 @@ logic.dealStartTimeMs = 0       -- 发牌时间(毫秒)，用于计算答对用�
 logic.playerProgress = {}       -- 玩家进度 { [seat] = { finished, submitTime, expression, rank, usedTime } }
 logic.roomHandler = nil         -- Room 提供的回调接口
 logic.rule = {}                 -- 游戏规则
+logic.seatMap = {}              -- 逻辑座位 -> 房间座位（由Room建立绑定后传入）
 logic.binit = false             -- 是否初始化
 logic.stepId = config.GAME_STEP.NONE  -- 当前阶段ID
 logic.stepBeginTime = 0         -- 阶段开始时间
@@ -41,6 +42,11 @@ logic.roundNum = 0              -- 当前局数
 logic.endType = config.END_TYPE.NONE  -- 本局结束类型
 logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 logic.startTime = 0             -- 本局开始时间
+
+-- 逻辑座位 -> 房间座位（无映射时回退为自身，保证逻辑可独立使用）
+local function toRoomSeat(seat)
+    return logic.seatMap[seat] or seat
+end
 
 -- 暴露给 Room 的接口
 local logicHandler = {}
@@ -219,6 +225,7 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.endType = config.END_TYPE.NONE
 
     logic.rule = rule or {}
+    logic.seatMap = logic.rule.seatMap or {}
     logic.roomHandler = roomHandler
     logic.binit = true
 
@@ -326,7 +333,7 @@ function logicHandler.submitAnswer(seat, args)
         log.info("%s [Logic] 座位%d提交错误: %s", getRoomLogTag(), seat, err)
         -- 广播错误提交（分发给其他玩家）
         logic.roomHandler.sendToAll("answerResult", {
-            seat = seat,
+            seat = toRoomSeat(seat),
             expression = exprStr,
             correct = 0,
             rank = 0,
@@ -348,7 +355,7 @@ function logicHandler.submitAnswer(seat, args)
 
     -- 广播正确提交
     logic.roomHandler.sendToAll("answerResult", {
-        seat = seat,
+        seat = toRoomSeat(seat),
         expression = exprStr,
         correct = 1,
         rank = 1,
@@ -382,14 +389,14 @@ function logicHandler.endGame()
     for seat, progress in pairs(logic.playerProgress) do
         if progress.finished then
             table.insert(rankings, {
-                seat = seat,
+                seat = toRoomSeat(seat),
                 expression = progress.expression,
                 usedTime = progress.usedTime,
                 rank = progress.rank,
             })
         else
             table.insert(rankings, {
-                seat = seat,
+                seat = toRoomSeat(seat),
                 expression = "",
                 usedTime = -1,
                 rank = 0,
@@ -453,7 +460,7 @@ function logicHandler.relink(seat)
     for targetSeat, p in pairs(logic.playerProgress) do
         if p.finished then
             logic.roomHandler.sendToSeat(seat, "answerResult", {
-                seat = targetSeat,
+                seat = toRoomSeat(targetSeat),
                 expression = p.expression,
                 correct = 1,
                 rank = p.rank,

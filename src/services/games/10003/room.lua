@@ -62,22 +62,25 @@ local roomHandlerAi = {}
 
 --[[
     发送消息给指定座位
-    @param seat: number 座位号
+    @param seat: number 逻辑座位
     @param name: string 消息名
     @param data: table 消息数据
 ]]
 function roomHandler.sendToSeat(seat, name, data)
     if not roomInstance then return end
 
+    -- 逻辑座位 -> 房间座位
+    local roomSeat = (roomInstance.logic2room and roomInstance.logic2room[seat]) or seat
+
     -- 检查是否是机器人，如果是则发送给AI处理
-    if roomInstance:isRobotBySeat(seat) then
+    if roomInstance:isRobotBySeat(roomSeat) then
         if aiHandler.onMsg then
-            aiHandler.onMsg(seat, name, data)
+            aiHandler.onMsg(roomSeat, name, data)
         end
         return
     end
 
-    local userid = roomInstance.roomInfo.playerids[seat]
+    local userid = roomInstance.roomInfo.playerids[roomSeat]
     if userid then
         roomInstance:sendToOneClient(userid, name, data)
     end
@@ -91,16 +94,10 @@ end
 function roomHandler.sendToAll(name, data)
     if not roomInstance then return end
 
-    -- 发送给机器人（所有座位都要检查）
-    for seat = 1, roomInstance.roomInfo.playerNum do
-        if roomInstance:isRobotBySeat(seat) then
-            if aiHandler.onMsg then
-                aiHandler.onMsg(seat, name, data)
-            end
-        end
+    -- 按逻辑座位逐个发送，统一走 sendToSeat 完成逻辑->房间座位转换与机器人分发
+    for logicSeat = 1, roomInstance.roomInfo.nowPlayerNum do
+        roomHandler.sendToSeat(logicSeat, name, data)
     end
-
-    roomInstance:sendToAllClient(name, data)
 end
 
 --[[
@@ -111,7 +108,8 @@ end
 ]]
 function roomHandler.onPlayerFinish(seat, usedTime, rank)
     if not roomInstance then return end
-    log.info("%s [Room] 玩家座位%d答对，用时: %dms，排名: %d", roomInstance:getRoomLogTag(), seat, usedTime, rank)
+    local roomSeat = (roomInstance.logic2room and roomInstance.logic2room[seat]) or seat
+    log.info("%s [Room] 玩家座位%d答对，用时: %dms，排名: %d", roomInstance:getRoomLogTag(), roomSeat, usedTime, rank)
 end
 
 --[[
@@ -268,9 +266,11 @@ end
 function roomHandlerAi.onAiMsg(seat, name, data)
     log.info("%s [RoomHandlerAi] 座位%d AI消息: %s", roomInstance:getRoomLogTag(), seat, name)
     if roomInstance and roomInstance.logicHandler then
+        -- 房间座位 -> 逻辑座位
+        local logicSeat = (roomInstance.room2logic and roomInstance.room2logic[seat]) or seat
         local func = roomInstance.logicHandler[name]
         if func then
-            local result = func(seat, data)
+            local result = func(logicSeat, data)
             log.info("%s [RoomHandlerAi] 座位%d AI消息处理结果: %s", roomInstance:getRoomLogTag(), seat,
                 UTILS.tableToString(result or {}))
         else
@@ -398,11 +398,26 @@ end
 
 -- 初始化游戏逻辑
 function Room:initLogic()
+    -- 建立 逻辑座位 <-> 房间座位 一对一绑定（按房间座位升序分配逻辑座位，保证逻辑层座位连续）
+    local roomSeats = {}
+    for seat in pairs(self.roomInfo.playerids) do
+        table.insert(roomSeats, seat)
+    end
+    table.sort(roomSeats)
+    local logic2room, room2logic = {}, {}
+    for i, rs in ipairs(roomSeats) do
+        logic2room[i] = rs
+        room2logic[rs] = i
+    end
+    self.logic2room = logic2room
+    self.room2logic = room2logic
+
     local ruleData = {
         playerCnt = self.roomInfo.nowPlayerNum,
         maxTime = config.ROUND_TIME,
         numberMin = config.NUMBER_RANGE.MIN,
         numberMax = config.NUMBER_RANGE.MAX,
+        seatMap = logic2room,
     }
 
     self.logicHandler.init(ruleData, roomHandler, self.roomInfo.gameid, self.roomInfo.roomid)
@@ -496,9 +511,16 @@ function Room:relink(userid)
         return
     end
 
+    -- 房间座位 -> 逻辑座位
+    local logicSeat = (self.room2logic and self.room2logic[seat])
+    if not logicSeat then
+        log.warn("%s game10003 Room:relink 座位%d无逻辑座位映射", roomInstance:getRoomLogTag(), seat)
+        return
+    end
+
     -- 转发给逻辑模块处理
     if self.logicHandler then
-        self.logicHandler.relink(seat)
+        self.logicHandler.relink(logicSeat)
     end
 end
 
@@ -511,7 +533,7 @@ function Room:sendTotalResult()
     local userInfo = {}
 
     -- 直接使用总积分，不需要遍历每局数据
-    for seat, userid in ipairs(self.roomInfo.playerids) do
+    for seat, userid in pairs(self.roomInfo.playerids) do
         table.insert(userInfo, {
             userid = userid,
             seat = seat,
@@ -762,9 +784,15 @@ function REQUEST:submitAnswer(userid, args)
         return { code = 0, msg = "玩家不在房间中" }
     end
 
+    -- 房间座位 -> 逻辑座位
+    local logicSeat = (roomInstance.room2logic and roomInstance.room2logic[seat])
+    if not logicSeat then
+        return { code = 0, msg = "玩家不在本局游戏中" }
+    end
+
     -- 转发给逻辑模块处理
     if roomInstance.logicHandler then
-        return roomInstance.logicHandler.submitAnswer(seat, args)
+        return roomInstance.logicHandler.submitAnswer(logicSeat, args)
     end
 
     return { code = 0, msg = "逻辑模块未初始化" }
