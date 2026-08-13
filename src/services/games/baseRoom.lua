@@ -320,10 +320,18 @@ end
 
 -- 发送房间信息
 function BaseRoom:sendRoomInfo(userid)
+    local playerids = {}
+    for seat = 1, self.roomInfo.playerNum do
+        local pid = self.roomInfo.playerids[seat]
+        if pid then
+            table.insert(playerids, pid)
+        end
+    end
+
     local info = {
         gameid = self.roomInfo.gameid,
         roomid = self.roomInfo.roomid,
-        playerids = self.roomInfo.playerids,
+        playerids = playerids,
         gameData = cjson.encode(self.roomInfo.gameData),
         shortRoomid = self.roomInfo.shortRoomid or 0,
         owner = self.roomInfo.owner or 0
@@ -333,13 +341,18 @@ end
 
 -- 发送玩家信息
 function BaseRoom:sendPlayerInfo(userid)
-    local data = {}
-    for _, player in pairs(self.players) do
-        data[player.seat] = player.info
-        data[player.seat].status = player.status
-        data[player.seat].cp = player.cp or 0
+    local infos = {}
+    for seat = 1, self.roomInfo.playerNum do
+        local pid = self.roomInfo.playerids[seat]
+        if pid and self.players[pid] then
+            local player = self.players[pid]
+            local info = UTILS.deepcopy(player.info)
+            info.status = player.status
+            info.cp = player.cp or 0
+            table.insert(infos, info)
+        end
     end
-    self:sendToOneClient(userid, "playerInfos", { infos = data })
+    self:sendToOneClient(userid, "playerInfos", { infos = infos })
 end
 
 -- 发送玩家进入

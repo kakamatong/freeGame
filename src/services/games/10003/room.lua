@@ -185,10 +185,11 @@ function roomHandler.gameResult(endType, rankings)
 
                 addCombatPower(userid, newScore - result.oldScore)
 
-                roundScores[seat] = {
+                table.insert(roundScores, {
+                    seat = seat,
                     newScore = result.newScore,
                     delta = result.delta,
-                }
+                })
 
                 log.info("%s [Room] 匹配模式计分: 座位%d 用户%d cp %d->%d (delta:%d)",
                     roomInstance:getRoomLogTag(), seat, userid, result.oldScore, result.newScore, result.delta)
@@ -221,10 +222,11 @@ function roomHandler.gameResult(endType, rankings)
             local newTotal = currentTotal + result.score
             roomInstance.roomInfo.totalScores[seat] = newTotal
 
-            roundScores[seat] = {
+            table.insert(roundScores, {
+                seat = seat,
                 newScore = newTotal,
                 delta = result.score,
-            }
+            })
             log.info("%s [Room] 私人房计分: 座位%d 得分%d 排名%d 总积分%d",
                 roomInstance:getRoomLogTag(), seat, result.score, result.rank, newTotal)
         end
@@ -730,7 +732,7 @@ function REQUEST:ownerStartGame(userid, args)
 
     -- 检查是否有玩家未准备
     local notReadyUserids = {}
-    for seat, pid in ipairs(roomInstance.roomInfo.playerids) do
+    for seat, pid in pairs(roomInstance.roomInfo.playerids) do
         local player = roomInstance.players[pid]
         if player and player.status ~= config.PLAYER_STATUS.READY then
             -- 房主不需要检查
