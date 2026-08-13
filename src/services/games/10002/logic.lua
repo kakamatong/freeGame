@@ -32,9 +32,15 @@ logic.playerMaps = {}           -- 玩家地图 { [seat] = Map实例 }
 logic.playerProgress = {}       -- 玩家进度 { [seat] = { eliminated, startTime, finishTime, rank } }
 logic.roomHandler = nil         -- Room 提供的回调接口
 logic.rule = {}                 -- 游戏规则
+logic.seatMap = {}              -- 逻辑座位 -> 房间座位（由Room建立绑定后传入）
 logic.shiftDir = 0              -- 本局消除后方块移动方向（0=关 2=上 3=下 4=左 5=右）
 logic.shiftEdge = 2             -- 移动模式下最边边位置（方块最多贴到的行/列）
 logic.binit = false             -- 是否初始化
+
+-- 逻辑座位 -> 房间座位（无映射时回退为自身，保证逻辑可独立使用）
+local function toRoomSeat(seat)
+    return logic.seatMap[seat] or seat
+end
 logic.startTime = 0             -- 游戏开始时间
 logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 
@@ -155,7 +161,7 @@ function logic.startStepStart()
         logic.roomHandler.sendToAll("mapData", {
             mapData = cjson.encode(playerMap:getMap()),
             totalBlocks = totalBlocks,
-            seat = seat,
+            seat = toRoomSeat(seat),
             col = logic.rule.mapCols,
             row = logic.rule.mapRows,
         })
@@ -165,7 +171,7 @@ function logic.startStepStart()
     for seat, playerMap in pairs(logic.playerMaps) do
         local totalBlocks = playerMap:getRemainingBlockCount()
         logic.roomHandler.sendToSeat(seat, "progressUpdate", {
-            seat = seat,
+            seat = toRoomSeat(seat),
             eliminated = 0,
             remaining = totalBlocks,
             percentage = 0,
@@ -272,6 +278,7 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.roundNum = 0
     
     logic.rule = rule or {}
+    logic.seatMap = logic.rule.seatMap or {}
     logic.roomHandler = roomHandler
     logic.binit = true
     logic.finishOrder = 0  -- 重置完成顺序计数器
@@ -559,7 +566,7 @@ end
 ]]
 function logic._broadcastMapShuffled(seat, reason)
     logic.roomHandler.sendToAll("mapShuffled", {
-        seat = seat,
+        seat = toRoomSeat(seat),
         reason = reason,
     })
 end
@@ -579,7 +586,7 @@ function logic._broadcastMapData(seat)
     logic.roomHandler.sendToAll("mapData", {
         mapData = cjson.encode(playerMap:getMap()),
         totalBlocks = totalBlocks,
-        seat = seat,
+        seat = toRoomSeat(seat),
         col = logic.rule.mapCols,
         row = logic.rule.mapRows,
     })
@@ -690,7 +697,7 @@ function logicHandler.clickTiles(seat, args)
     
     -- 发送连击成功协议
     logic.roomHandler.sendToAll("comboSuccess", {
-        seat = seat,
+        seat = toRoomSeat(seat),
         comboCount = progress.comboCount,
         comboTime = currentTime,
         comboDuration = comboTimeWindow,
@@ -755,13 +762,13 @@ function logicHandler.clickTiles(seat, args)
         lines = formattedLines,
         eliminated = progress.eliminated,
         remaining = remaining,
-        seat = seat,  -- 标识是哪个玩家的消除操作
+        seat = toRoomSeat(seat),  -- 标识是哪个玩家的消除操作
     })
     
     local totalBlocks = logic.rule.mapRows * logic.rule.mapCols
     local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
     logic.roomHandler.sendToAll("progressUpdate", {
-        seat = seat,
+        seat = toRoomSeat(seat),
         eliminated = progress.eliminated,
         remaining = remaining,
         percentage = percentage,
@@ -824,7 +831,7 @@ function logic._onPlayerFinish(seat)
     logic.roomHandler.onPlayerFinish(seat, progress.usedTime, logic.finishOrder)
     
     logic.roomHandler.sendToAll("playerFinished", {
-        seat = seat,
+        seat = toRoomSeat(seat),
         usedTime = progress.usedTime,
         rank = logic.finishOrder,
     })
@@ -906,7 +913,7 @@ function logicHandler.endGame()
     for seat, progress in pairs(logic.playerProgress) do
         if progress.finished then
             table.insert(rankings, {
-                seat = seat,
+                seat = toRoomSeat(seat),
                 usedTime = progress.usedTime,
                 eliminated = progress.eliminated,
                 rank = progress.rank,
@@ -915,7 +922,7 @@ function logicHandler.endGame()
         else
             -- 未完成，用时为-1，排名为0
             table.insert(rankings, {
-                seat = seat,
+                seat = toRoomSeat(seat),
                 usedTime = -1,
                 eliminated = progress.eliminated,
                 rank = 0,
@@ -943,7 +950,7 @@ function logicHandler.endGame()
         end
         local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
         logic.roomHandler.sendToAll("progressUpdate", {
-            seat = seat,
+            seat = toRoomSeat(seat),
             eliminated = progress.eliminated,
             remaining = remaining,
             percentage = percentage,
@@ -1017,7 +1024,7 @@ function logicHandler.relink(seat)
             logic.roomHandler.sendToSeat(seat, "mapData", {
                 mapData = cjson.encode(targetMap:getMap()),
                 totalBlocks = totalBlocks,
-                seat = targetSeat,
+                seat = toRoomSeat(targetSeat),
                 col = logic.rule.mapCols,
                 row = logic.rule.mapRows,
             })
@@ -1025,7 +1032,7 @@ function logicHandler.relink(seat)
         
         local percentage = math.floor((progress.eliminated / totalBlocks) * 100)
         logic.roomHandler.sendToSeat(seat, "progressUpdate", {
-            seat = seat,
+            seat = toRoomSeat(seat),
             eliminated = progress.eliminated,
             remaining = playerMap:getRemainingBlockCount(),
             percentage = percentage,
@@ -1037,7 +1044,7 @@ function logicHandler.relink(seat)
         for targetSeat, targetProgress in pairs(logic.playerProgress) do
             if targetProgress.finished then
                 logic.roomHandler.sendToSeat(seat, "playerFinished", {
-                    seat = targetSeat,
+                    seat = toRoomSeat(targetSeat),
                     usedTime = targetProgress.usedTime,
                     rank = targetProgress.rank,
                 })
