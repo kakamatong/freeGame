@@ -347,7 +347,7 @@ end
 -- 发送总成绩
 function PrivateRoom:sendTotalResult()
     local userInfo = {}
-    for seat, userid in ipairs(self.roomInfo.playerids) do
+    for seat, userid in pairs(self.roomInfo.playerids) do
         local win = 0
         local lose = 0
         local draw = 0
