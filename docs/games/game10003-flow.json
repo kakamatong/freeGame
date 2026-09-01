@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "游戏 10003 · 算24点对局流程",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/games/game10003-flow.html"
+  },
+  "lanes": [
+    { "id": "client", "label": "玩家/客户端" },
+    { "id": "room", "label": "房间 (PrivateRoom→BaseRoom)" },
+    { "id": "logic", "label": "游戏逻辑 (logic.lua)" },
+    { "id": "score", "label": "计分/归档", "variant": "exception" }
+  ],
+  "mainPath": ["join", "waitConnect", "ready", "start", "dealCards", "answering", "submitAnswer", "checkResult", "allEnd"],
+  "nodes": [
+    { "id": "join", "lane": "client", "col": 0, "type": "external", "label": "进房间", "sublabel": "创建/加入(私人房/匹配)", "width": 140 },
+    { "id": "waitConnect", "lane": "room", "col": 0, "type": "messagebus", "label": "等待连接", "sublabel": "WAITTING_CONNECT 8秒", "width": 140 },
+    { "id": "ready", "lane": "room", "col": 1, "type": "messagebus", "label": "玩家准备", "sublabel": "READY/房主开始", "width": 140 },
+    { "id": "start", "lane": "room", "col": 2, "type": "backend", "label": "开局", "sublabel": "startGame → START阶段", "width": 140 },
+    { "id": "dealCards", "lane": "logic", "col": 2, "type": "backend", "label": "发牌", "sublabel": "1-9 四个数字", "width": 140 },
+    { "id": "answering", "lane": "logic", "col": 3, "type": "backend", "label": "答题中", "sublabel": "PLAYING 30秒倒计时", "width": 140 },
+    { "id": "submitAnswer", "lane": "logic", "col": 4, "type": "backend", "label": "提交算式", "sublabel": "solver 校验是否=24", "width": 140 },
+    { "id": "checkResult", "lane": "logic", "col": 5, "type": "backend", "label": "判定排名", "sublabel": "答对rank>0/超时无胜者", "width": 140 },
+    { "id": "allEnd", "lane": "score", "col": 5, "type": "database", "label": "计分归档", "sublabel": "多局循环→计分→销毁", "width": 140 }
+  ],
+  "edges": [
+    { "id": "join-wait", "from": "join", "to": "waitConnect" },
+    { "id": "wait-ready", "from": "waitConnect", "to": "ready" },
+    { "id": "ready-start", "from": "ready", "to": "start", "variant": "emphasis" },
+    { "id": "start-deal", "from": "start", "to": "dealCards" },
+    { "id": "deal-answer", "from": "dealCards", "to": "answering" },
+    { "id": "answer-submit", "from": "answering", "to": "submitAnswer", "variant": "emphasis" },
+    { "id": "submit-check", "from": "submitAnswer", "to": "checkResult" },
+    { "id": "check-allend", "from": "checkResult", "to": "allEnd", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "进房与开局",
+      "items": [
+        "匹配/私人房最多 6 人，等待连接 8 秒",
+        "开局发 4 个 1-9 的数字牌"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "答题判定",
+      "items": [
+        "玩家提交算式，solver 枚举括号组合校验是否等于 24",
+        "30 秒超时无人答对则本局无胜者"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "计分归档",
+      "items": [
+        "私人房按 3/5/7 局循环，答对者按排名计分",
+        "匹配 ELO 计分，战力和每日积分落库"
+      ]
+    }
+  ]
+}
