@@ -1,0 +1,257 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "freeGame 游戏服务端 · 服务全景",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/games/freegame-services.html"
+  },
+  "lanes": [
+    {
+      "id": "entry",
+      "label": "接入层 (wsLogin / wsGate / wsGameGate)"
+    },
+    {
+      "id": "biz",
+      "label": "业务服务 (auth / user / match / privateRoom / activity)"
+    },
+    {
+      "id": "cluster",
+      "label": "集群与游戏 (clusterManager / games / robot / web)"
+    },
+    {
+      "id": "data",
+      "label": "数据与基础 (db / lualib / protoloader)",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "wsLogin",
+    "wsGate",
+    "user",
+    "match",
+    "clusterManager",
+    "games"
+  ],
+  "nodes": [
+    {
+      "id": "wsLogin",
+      "lane": "entry",
+      "col": 0,
+      "type": "security",
+      "label": "wsLogin",
+      "sublabel": "登录认证",
+      "width": 132
+    },
+    {
+      "id": "wsGate",
+      "lane": "entry",
+      "col": 1,
+      "type": "messagebus",
+      "label": "wsGate",
+      "sublabel": "大厅网关",
+      "width": 132
+    },
+    {
+      "id": "wsGameGate",
+      "lane": "entry",
+      "col": 4,
+      "type": "messagebus",
+      "label": "wsGameGate",
+      "sublabel": "游戏网关",
+      "width": 132
+    },
+    {
+      "id": "wsWatchdog",
+      "lane": "entry",
+      "col": 3,
+      "type": "messagebus",
+      "label": "wsWatchdog",
+      "sublabel": "连接看门狗",
+      "width": 132
+    },
+    {
+      "id": "auth",
+      "lane": "biz",
+      "col": 0,
+      "type": "security",
+      "label": "auth",
+      "sublabel": "认证",
+      "width": 110
+    },
+    {
+      "id": "user",
+      "lane": "biz",
+      "col": 2,
+      "type": "backend",
+      "label": "user",
+      "sublabel": "用户/大厅",
+      "width": 110
+    },
+    {
+      "id": "match",
+      "lane": "biz",
+      "col": 3,
+      "type": "backend",
+      "label": "match",
+      "sublabel": "匹配",
+      "width": 110
+    },
+    {
+      "id": "privateRoom",
+      "lane": "biz",
+      "col": 4,
+      "type": "backend",
+      "label": "privateRoom",
+      "sublabel": "私人房",
+      "width": 110
+    },
+    {
+      "id": "activity",
+      "lane": "biz",
+      "col": 5,
+      "type": "backend",
+      "label": "activity",
+      "sublabel": "活动",
+      "width": 110
+    },
+    {
+      "id": "clusterManager",
+      "lane": "cluster",
+      "col": 4,
+      "type": "cloud",
+      "label": "clusterManager",
+      "sublabel": "集群路由/动态节点",
+      "width": 150
+    },
+    {
+      "id": "games",
+      "lane": "cluster",
+      "col": 5,
+      "type": "cloud",
+      "label": "games 服务",
+      "sublabel": "游戏房间 10001/02/03",
+      "width": 150
+    },
+    {
+      "id": "robot",
+      "lane": "cluster",
+      "col": 2,
+      "type": "backend",
+      "label": "robot",
+      "sublabel": "AI 机器人",
+      "width": 110
+    },
+    {
+      "id": "web",
+      "lane": "cluster",
+      "col": 3,
+      "type": "backend",
+      "label": "web",
+      "sublabel": "HTTP 管理",
+      "width": 110
+    },
+    {
+      "id": "db",
+      "lane": "data",
+      "col": 0,
+      "type": "database",
+      "label": "db",
+      "sublabel": "db + dbRedis + dbLog",
+      "width": 150
+    },
+    {
+      "id": "lualib",
+      "lane": "data",
+      "col": 2,
+      "type": "backend",
+      "label": "lualib",
+      "sublabel": "snowflake/websocket/log",
+      "width": 150
+    },
+    {
+      "id": "protoloader",
+      "lane": "data",
+      "col": 4,
+      "type": "backend",
+      "label": "protoloader",
+      "sublabel": "sproto 协议",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "wslogin-wsgate",
+      "from": "wsLogin",
+      "to": "wsGate",
+      "label": "进大厅"
+    },
+    {
+      "id": "wslogin-auth",
+      "from": "wsLogin",
+      "to": "auth",
+      "label": "token",
+      "variant": "security"
+    },
+    {
+      "id": "wsgate-user",
+      "from": "wsGate",
+      "to": "user",
+      "label": "agent 绑定"
+    },
+    {
+      "id": "user-match",
+      "from": "user",
+      "to": "match",
+      "label": "匹配"
+    },
+    {
+      "id": "match-cluster",
+      "from": "match",
+      "to": "clusterManager",
+      "label": "路由",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cluster-games",
+      "from": "clusterManager",
+      "to": "games",
+      "label": "call/send",
+      "variant": "emphasis"
+    },
+    {
+      "id": "games-db",
+      "from": "games",
+      "to": "db",
+      "label": "落库",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "接入与业务",
+      "items": [
+        "wsLogin 登录认证 → wsGate 大厅/wsGameGate 游戏",
+        "auth/user/match/privateRoom/activity 业务矩阵"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "集群与游戏",
+      "items": [
+        "clusterManager 每 2 分钟从 Redis 拉集群配置",
+        "games 服务承载 10001/10002/10003 各游戏"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "数据与基础",
+      "items": [
+        "db 服务含 db/dbRedis/dbLog 三类存储",
+        "lualib 提供 snowflake/websocket/log 工具"
+      ]
+    }
+  ]
+}
