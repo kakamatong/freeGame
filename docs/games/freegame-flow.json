@@ -1,0 +1,214 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "freeGame 游戏框架 · 流程",
+    "locale": "zh-CN",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "output": "docs/games/freegame-workflow.html"
+  },
+  "lanes": [
+    {
+      "id": "client",
+      "label": "客户端"
+    },
+    {
+      "id": "entry",
+      "label": "接入层 (wsLogin / wsGate)"
+    },
+    {
+      "id": "service",
+      "label": "服务端 (user / match / games)"
+    },
+    {
+      "id": "data",
+      "label": "数据 (db / Redis)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "auth",
+      "label": "登录认证",
+      "fromCol": 0,
+      "toCol": 0,
+      "variant": "emphasis"
+    },
+    {
+      "id": "lobby",
+      "label": "大厅",
+      "fromCol": 1,
+      "toCol": 1,
+      "variant": "default"
+    },
+    {
+      "id": "match",
+      "label": "匹配",
+      "fromCol": 3,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "play",
+      "label": "对局",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "client_login",
+    "login_auth",
+    "gate_agent",
+    "lobby_user",
+    "match_room",
+    "create_room",
+    "game_room",
+    "game_logic",
+    "db_persist"
+  ],
+  "nodes": [
+    {
+      "id": "client_login",
+      "lane": "client",
+      "col": 0,
+      "type": "frontend",
+      "label": "客户端",
+      "sublabel": "WebSocket 连接",
+      "width": 132
+    },
+    {
+      "id": "login_auth",
+      "lane": "entry",
+      "col": 0,
+      "type": "security",
+      "label": "wsLogin",
+      "sublabel": "DH密钥+token",
+      "width": 132
+    },
+    {
+      "id": "gate_agent",
+      "lane": "entry",
+      "col": 1,
+      "type": "messagebus",
+      "label": "wsGate / wsGameGate",
+      "sublabel": "分配agent/房间",
+      "width": 132
+    },
+    {
+      "id": "lobby_user",
+      "lane": "service",
+      "col": 1,
+      "type": "backend",
+      "label": "user 服务",
+      "sublabel": "大厅状态管理",
+      "width": 132
+    },
+    {
+      "id": "match_room",
+      "lane": "service",
+      "col": 2,
+      "type": "backend",
+      "label": "match 服务",
+      "sublabel": "匹配与建房",
+      "width": 132
+    },
+    {
+      "id": "create_room",
+      "lane": "service",
+      "col": 3,
+      "type": "backend",
+      "label": "clusterManager",
+      "sublabel": "集群路由 call/send",
+      "width": 132
+    },
+    {
+      "id": "game_room",
+      "lane": "service",
+      "col": 4,
+      "type": "cloud",
+      "label": "games 服务",
+      "sublabel": "继承式房间",
+      "width": 132
+    },
+    {
+      "id": "game_logic",
+      "lane": "service",
+      "col": 5,
+      "type": "backend",
+      "label": "Logic / AI",
+      "sublabel": "规则+机器人",
+      "width": 132
+    },
+    {
+      "id": "db_persist",
+      "lane": "data",
+      "col": 5,
+      "type": "database",
+      "label": "db / Redis",
+      "sublabel": "状态与集群配置",
+      "width": 132
+    }
+  ],
+  "edges": [
+    {
+      "id": "login-connect",
+      "from": "client_login",
+      "to": "login_auth",
+      "label": "连接",
+      "variant": "default"
+    },
+    {
+      "id": "auth-token",
+      "from": "login_auth",
+      "to": "gate_agent",
+      "label": "认证后进大厅",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gate-user",
+      "from": "gate_agent",
+      "to": "lobby_user",
+      "label": "agent 绑定用户",
+      "variant": "default"
+    },
+    {
+      "id": "user-match",
+      "from": "lobby_user",
+      "to": "match_room",
+      "label": "发起匹配",
+      "variant": "default"
+    },
+    {
+      "id": "match-cluster",
+      "from": "match_room",
+      "to": "create_room",
+      "label": "路由到游戏节点",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cluster-room",
+      "from": "create_room",
+      "to": "game_room",
+      "label": "创建房间",
+      "variant": "default",
+      "role": "main"
+    },
+    {
+      "id": "room-logic",
+      "from": "game_room",
+      "to": "game_logic",
+      "label": "协议分发",
+      "variant": "default",
+      "role": "main"
+    },
+    {
+      "id": "logic-persist",
+      "from": "game_logic",
+      "to": "db_persist",
+      "label": "结果落库",
+      "variant": "dashed",
+      "role": "return"
+    }
+  ]
+}
