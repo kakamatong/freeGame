@@ -1,0 +1,228 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "游戏 10002 · 连连看对局流程",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/games/game10002-flow.html"
+  },
+  "lanes": [
+    {
+      "id": "client",
+      "label": "玩家/客户端"
+    },
+    {
+      "id": "room",
+      "label": "房间 (PrivateRoom→BaseRoom)"
+    },
+    {
+      "id": "logic",
+      "label": "游戏逻辑 (logic.lua)"
+    },
+    {
+      "id": "score",
+      "label": "计分/归档",
+      "variant": "exception"
+    }
+  ],
+  "mainPath": [
+    "join",
+    "waitConnect",
+    "ready",
+    "start",
+    "genMap",
+    "playing",
+    "tileEliminate",
+    "finishOrder",
+    "allEnd"
+  ],
+  "nodes": [
+    {
+      "id": "join",
+      "lane": "client",
+      "col": 0,
+      "type": "external",
+      "label": "进房间",
+      "sublabel": "创建/加入(私人房/匹配)",
+      "width": 140
+    },
+    {
+      "id": "waitConnect",
+      "lane": "room",
+      "col": 0,
+      "type": "messagebus",
+      "label": "等待连接",
+      "sublabel": "WAITTING_CONNECT 8秒",
+      "width": 140
+    },
+    {
+      "id": "ready",
+      "lane": "room",
+      "col": 1,
+      "type": "messagebus",
+      "label": "玩家准备",
+      "sublabel": "READY/房主开始",
+      "width": 140
+    },
+    {
+      "id": "start",
+      "lane": "room",
+      "col": 2,
+      "type": "backend",
+      "label": "开局",
+      "sublabel": "startGame → initLogic",
+      "width": 140
+    },
+    {
+      "id": "genMap",
+      "lane": "logic",
+      "col": 2,
+      "type": "backend",
+      "label": "生成地图",
+      "sublabel": "mapGenerator 10x10",
+      "width": 140
+    },
+    {
+      "id": "playing",
+      "lane": "logic",
+      "col": 3,
+      "type": "backend",
+      "label": "对局中",
+      "sublabel": "PLAYING 阶段",
+      "width": 140
+    },
+    {
+      "id": "tileEliminate",
+      "lane": "logic",
+      "col": 4,
+      "type": "backend",
+      "label": "点牌消除",
+      "sublabel": "clickTiles 判断连通",
+      "width": 140
+    },
+    {
+      "id": "finishOrder",
+      "lane": "logic",
+      "col": 5,
+      "type": "backend",
+      "label": "完成排名",
+      "sublabel": "首个完成触发10秒倒计时",
+      "width": 140
+    },
+    {
+      "id": "roundEnd",
+      "lane": "room",
+      "col": 4,
+      "type": "messagebus",
+      "label": "单局结束",
+      "sublabel": "checkGameEnd/onGameEnd",
+      "width": 140
+    },
+    {
+      "id": "loopNext",
+      "lane": "room",
+      "col": 5,
+      "type": "messagebus",
+      "label": "多局循环",
+      "sublabel": "私人房 HALFTIME 续局",
+      "width": 140
+    },
+    {
+      "id": "allEnd",
+      "lane": "score",
+      "col": 5,
+      "type": "database",
+      "label": "全部结束",
+      "sublabel": "roomEnd→计分→总成绩→销毁",
+      "width": 140
+    }
+  ],
+  "edges": [
+    {
+      "id": "join-wait",
+      "from": "join",
+      "to": "waitConnect"
+    },
+    {
+      "id": "wait-ready",
+      "from": "waitConnect",
+      "to": "ready"
+    },
+    {
+      "id": "ready-start",
+      "from": "ready",
+      "to": "start",
+      "variant": "emphasis"
+    },
+    {
+      "id": "start-gen",
+      "from": "start",
+      "to": "genMap"
+    },
+    {
+      "id": "gen-play",
+      "from": "genMap",
+      "to": "playing"
+    },
+    {
+      "id": "play-tile",
+      "from": "playing",
+      "to": "tileEliminate",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tile-finishorder",
+      "from": "tileEliminate",
+      "to": "finishOrder"
+    },
+    {
+      "id": "finish-roundend",
+      "from": "finishOrder",
+      "to": "roundEnd"
+    },
+    {
+      "id": "roundend-loop",
+      "from": "roundEnd",
+      "to": "loopNext",
+      "variant": "dashed"
+    },
+    {
+      "id": "loop-allend",
+      "from": "loopNext",
+      "to": "allEnd"
+    },
+    {
+      "id": "finish-allend",
+      "from": "finishOrder",
+      "to": "allEnd",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "进房与开局",
+      "items": [
+        "进房后可作匹配或私人房，最多 6 人",
+        "等待连接 8 秒，超时销毁房间"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "对局核心",
+      "items": [
+        "连连看：两张同花色牌能连通即可消除",
+        "首个完成的玩家触发 10 秒结束倒计时"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "计分与归档",
+      "items": [
+        "按完成顺序排名计分",
+        "匹配 ELO / 私人房按排名，战力和每日积分落库"
+      ]
+    }
+  ]
+}
