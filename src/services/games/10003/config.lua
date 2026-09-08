@@ -84,7 +84,7 @@ config.NUMBER_RANGE = {
 }
 
 -- 每局答题时间(秒)，超时无人答对则本局无胜者
-config.ROUND_TIME = 30
+config.ROUND_TIME = 60
 
 -- 私人房局数配置（创建时通过 privateRule.playNum 传入，不在白名单则取默认3）
 config.PRIVATE_ROOM_MODE = {
@@ -115,6 +115,7 @@ config.SCORING = {
 config.AI = {
     ACTION_PROBABILITY = 60,                 -- AI提交概率（百分比）
     SUBMIT_DELAY = { MIN = 2, MAX = 8 },     -- 提交延迟区间（秒），避免AI秒答碾压真人
+    ACT_START_DELAY = 50,                    -- 机器人开始解题的延迟（秒）：对局开始50秒后才执行解决逻辑，给真人先手空间
 }
 
 -- 消息转发类型
