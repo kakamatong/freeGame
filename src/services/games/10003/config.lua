@@ -86,6 +86,10 @@ config.NUMBER_RANGE = {
 -- 每局答题时间(秒)，超时无人答对则本局无胜者
 config.ROUND_TIME = 60
 
+-- 第一个玩家答对后的剩余时间封顶值(秒)：
+-- 若当时剩余时间超过该值则压缩到该值，给其余玩家（含AI）最后抢答机会（参考10002的 END_TIME）
+config.ROUND_END_COUNTDOWN = 10
+
 -- 私人房局数配置（创建时通过 privateRule.playNum 传入，不在白名单则取默认3）
 config.PRIVATE_ROOM_MODE = {
     [3] = { name = "3局", maxCnt = 3 },

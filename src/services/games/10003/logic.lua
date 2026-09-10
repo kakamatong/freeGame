@@ -6,8 +6,10 @@
 
     游戏阶段：
     1. START (1秒): 发牌，下发4个数字（求解器保证有解）
-    2. PLAYING (可配，默认30秒): 玩家提交算式，第一个答对者直接结束本局
-    3. END (0秒): 结算排名与分数
+    2. PLAYING (可配，默认60秒): 玩家提交算式。第一个答对者不再立即结束本局，
+       而是把剩余时间压缩到最多10秒（参考10002），给其余玩家（含AI）最后抢答机会；
+       所有人答对或倒计时归零后进入结算
+    3. END (0秒): 结算排名与分数（含每位答对者的算式与用时）
 
     校验规则：
     1. 表达式结果必须等于24（分数精确运算，支持 8/(3-8/3) 这类分数中间结果）
@@ -42,6 +44,7 @@ logic.roundNum = 0              -- 当前局数
 logic.endType = config.END_TYPE.NONE  -- 本局结束类型
 logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
 logic.startTime = 0             -- 本局开始时间
+logic.finishOrder = 0           -- 本局答对顺序计数器（排名依据，第一个答对者为1）
 
 -- 逻辑座位 -> 房间座位（无映射时回退为自身，保证逻辑可独立使用）
 local function toRoomSeat(seat)
@@ -175,10 +178,16 @@ function logic.stopStepPlaying()
     logic.startStep(config.GAME_STEP.END)
 end
 
--- PLAYING阶段超时处理：无人答对，本局无胜者
+-- PLAYING阶段超时处理（参考10002 onStepPlayingTimeout）：
+-- 无人答对 -> 本局无胜者(TIMEOUT)；已有人答对（第一个答对者把剩余时间压缩到10秒后到点）-> 正常结算(WIN)
 function logic.onStepPlayingTimeout()
-    log.info("%s [Logic] PLAYING阶段超时，强制结束本局", getRoomLogTag())
-    logic.endType = config.END_TYPE.TIMEOUT
+    if logic._checkAllUnfinished() then
+        log.info("%s [Logic] PLAYING阶段超时，无人答对，本局无胜者", getRoomLogTag())
+        logic.endType = config.END_TYPE.TIMEOUT
+    else
+        log.info("%s [Logic] PLAYING阶段超时，已有玩家答对，正常结算", getRoomLogTag())
+        logic.endType = config.END_TYPE.WIN
+    end
     logic.stopStep(config.GAME_STEP.PLAYING)
 end
 
@@ -223,6 +232,7 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.stepBeginTime = 0
     logic.roundNum = 0
     logic.endType = config.END_TYPE.NONE
+    logic.finishOrder = 0
 
     logic.rule = rule or {}
     logic.seatMap = logic.rule.seatMap or {}
@@ -234,6 +244,7 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.rule.maxTime = logic.rule.maxTime or 30
     logic.rule.numberMin = logic.rule.numberMin or 1
     logic.rule.numberMax = logic.rule.numberMax or 9
+    logic.rule.endTime = logic.rule.endTime or 10   -- 第一个答对者触发的剩余时间封顶值(秒)
 
     -- 更新PLAYING阶段时间（本局答题时限）
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
@@ -259,6 +270,42 @@ function logic._initPlayerProgress()
             usedTime = 0,       -- 用时(ms)
         }
     end
+end
+
+--[[
+    统计本局答对情况（参考10002 logic._checkAllFinished）
+    @return allFinished: boolean 是否所有人都已答对
+            finishedPlayers: number 已答对人数
+            totalPlayers: number 本局玩家总数
+]]
+function logic._checkAllFinished()
+    local allFinished = true
+    local finishedPlayers = 0
+    local totalPlayers = 0
+
+    for _, progress in pairs(logic.playerProgress) do
+        totalPlayers = totalPlayers + 1
+        if progress.finished then
+            finishedPlayers = finishedPlayers + 1
+        else
+            allFinished = false
+        end
+    end
+
+    return allFinished, finishedPlayers, totalPlayers
+end
+
+--[[
+    检查是否所有玩家都还未答对（参考10002 logic._checkAllUnfinished）
+    @return boolean 是否无人答对
+]]
+function logic._checkAllUnfinished()
+    for _, progress in pairs(logic.playerProgress) do
+        if progress.finished then
+            return false
+        end
+    end
+    return true
 end
 
 --[[
@@ -341,31 +388,59 @@ function logicHandler.submitAnswer(seat, args)
         return {code = 0, msg = err or "算式错误"}
     end
 
-    -- 答对：锁定玩家，第一个答对者直接结束本局
+    -- 答对：锁定玩家，按答对先后顺序排名（不再立即结束本局）
     local nowMs = math.floor(skynet.time() * 1000)
     progress.finished = true
     progress.submitTime = nowMs
     progress.expression = exprStr
-    progress.rank = 1
+    logic.finishOrder = logic.finishOrder + 1
+    progress.rank = logic.finishOrder
     progress.usedTime = math.max(0, nowMs - logic.dealStartTimeMs)
 
     logic.endType = config.END_TYPE.WIN
 
-    log.info("%s [Logic] 座位%d答对，用时%dms，本局结束", getRoomLogTag(), seat, progress.usedTime)
+    log.info("%s [Logic] 座位%d答对，答案[%s]，用时%dms，排名%d",
+        getRoomLogTag(), seat, exprStr, progress.usedTime, progress.rank)
 
-    -- 广播正确提交
+    -- 广播正确提交（携带算式与排名，供客户端即时展示）
     logic.roomHandler.sendToAll("answerResult", {
         seat = toRoomSeat(seat),
         expression = exprStr,
         correct = 1,
-        rank = 1,
+        rank = progress.rank,
     })
 
-    logic.roomHandler.onPlayerFinish(seat, progress.usedTime, 1)
+    logic.roomHandler.onPlayerFinish(seat, progress.usedTime, progress.rank)
 
-    -- 第一人答对，直接结束本局
-    logic.stopStep(config.GAME_STEP.PLAYING)
-    return {code = 1, msg = "回答正确", rank = 1}
+    -- 参考10002 logic._onPlayerFinish：第一个答对者触发"剩余时间封顶"。
+    -- 若本阶段剩余时间超过 endCountdown(默认10秒)，则把剩余时间压缩为 endCountdown 秒，
+    -- 让其余玩家（含AI）还有最后抢答机会；剩余时间不足10秒则保持不变。
+    -- 与10002做法一致：直接改写 config.STEP_TIME_LEN[PLAYING]，update() 依此判定超时。
+    if progress.rank == 1 then
+        local endCountdown = logic.rule.endTime or 10
+        local elapsed = os.time() - logic.stepBeginTime
+        local remaining = config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] - elapsed
+
+        if remaining > endCountdown then
+            config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = elapsed + endCountdown
+            logic.roomHandler.sendToAll("gameClock", {
+                time = endCountdown,
+                seat = 0,
+            })
+            log.info("%s [Logic] 第一个玩家答对，剩余时间压缩为%d秒", getRoomLogTag(), endCountdown)
+        else
+            log.info("%s [Logic] 第一个玩家答对，剩余时间%d秒不超过%d秒，不压缩", getRoomLogTag(), remaining, endCountdown)
+        end
+    end
+
+    -- 若所有人都已答对，本局立即结束；否则继续等待其余玩家答题（由倒计时归零或全员答对结束）
+    local allFinished, finishedPlayers, totalPlayers = logic._checkAllFinished()
+    if allFinished and totalPlayers > 0 then
+        log.info("%s [Logic] 全部玩家已答对(%d/%d)，本局结束", getRoomLogTag(), finishedPlayers, totalPlayers)
+        logic.stopStep(config.GAME_STEP.PLAYING)
+    end
+
+    return {code = 1, msg = "回答正确", rank = progress.rank}
 end
 
 --[[
@@ -384,7 +459,8 @@ function logicHandler.endGame()
     logic.gameStatus = config.GAME_STATUS.END
     local endTime = os.time()
 
-    -- 组装本局排名：答对者rank>0，未答对rank=0
+    -- 组装本局排名：答对者rank>0（携带算式与用时，用于结算下发），未答对者rank=0
+    -- 协议 gameEnd.rankings(RankingInfo) 已含 expression/usedTime/rank 字段，无需新增协议
     local rankings = {}
     for seat, progress in pairs(logic.playerProgress) do
         if progress.finished then
@@ -403,6 +479,16 @@ function logicHandler.endGame()
             })
         end
     end
+
+    -- 稳定排序：答对者按排名升序在前，未答对者(rank=0)在后，同档按座位升序，保证结算列表顺序确定
+    table.sort(rankings, function(a, b)
+        if a.rank ~= b.rank then
+            if a.rank == 0 then return false end
+            if b.rank == 0 then return true end
+            return a.rank < b.rank
+        end
+        return a.seat < b.seat
+    end)
 
     -- 调用room计分接口获取分数
     local scores = logic.roomHandler.gameResult(logic.endType, rankings)

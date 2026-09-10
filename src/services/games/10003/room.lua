@@ -417,6 +417,7 @@ function Room:initLogic()
     local ruleData = {
         playerCnt = self.roomInfo.nowPlayerNum,
         maxTime = config.ROUND_TIME,
+        endTime = config.ROUND_END_COUNTDOWN,   -- 第一个答对者触发：剩余时间封顶值(秒)
         numberMin = config.NUMBER_RANGE.MIN,
         numberMax = config.NUMBER_RANGE.MAX,
         seatMap = logic2room,
