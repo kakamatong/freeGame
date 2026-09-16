@@ -62,7 +62,7 @@ config.MAP_GENERATION = {
     -- 确保地图有解的最大尝试次数
     MAX_GENERATE_ATTEMPTS = 100,
     
-    -- 图标类型范围（1-99，100以上为装饰）
+    -- 图标类型范围（1-99，100以上为障碍物）
     MIN_ICON_TYPE = 1,
     MAX_ICON_TYPE = 20,
 }

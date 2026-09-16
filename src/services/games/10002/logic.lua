@@ -20,6 +20,7 @@ local log = require "log"
 local cjson = require "cjson"
 local Map = require "games.10002.map"
 local mapGenerator = require "games.10002.mapGenerator"
+local tileUtils = require "games.10002.tileUtils"
 local skynet = require "skynet"
 
 local logic = {gameid = 0, roomid = 0}
@@ -376,7 +377,7 @@ function logic._shuffleMap(seat)
     for row = 1, rows do
         for col = 1, cols do
             local value = mapData[row][col]
-            if value >= 100 then
+            if tileUtils.isDecoration(value) then
                 -- 装饰物，记录位置
                 table.insert(decorations, {row = row, col = col})
             elseif value > 0 then
@@ -397,7 +398,7 @@ function logic._shuffleMap(seat)
     for row = 1, rows do
         for col = 1, cols do
             local value = mapData[row][col]
-            if value >= 100 then
+            if tileUtils.isDecoration(value) then
                 -- 装饰物位置保持不变
             elseif value > 0 then
                 -- 填充打乱后的方块

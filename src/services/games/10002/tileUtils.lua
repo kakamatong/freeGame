@@ -6,6 +6,9 @@
 
 local tileUtils = {}
 
+-- 障碍物判定基准值：配置值大于100的格子为障碍物，且值本身对应客户端资源编号
+tileUtils.OBSTACLE_VALUE_BASE = 100
+
 -- 方向枚举 (对应 DIRECTION)
 tileUtils.DIRECTION = {
     UP = 0,
@@ -29,16 +32,16 @@ tileUtils.DIRECTION_DELTAS = {
     @return boolean
 ]]
 function tileUtils.isBlock(value)
-    return value and value > 0 and value < 100
+    return value and value > 0 and value < tileUtils.OBSTACLE_VALUE_BASE
 end
 
 --[[
-    判断是否为装饰方块（值大于等于100）
+    判断是否为障碍物（值大于100）
     @param value: number 方块值
     @return boolean
 ]]
 function tileUtils.isDecoration(value)
-    return value and value >= 100
+    return value and value > tileUtils.OBSTACLE_VALUE_BASE
 end
 
 --[[

@@ -38,7 +38,7 @@ end
 
 --[[
     初始化地图
-    @param map: table 二维数组地图，值小于100表示可消除方块，大于等于100表示装饰，0表示空
+    @param map: table 二维数组地图，值小于100表示可消除方块，大于100表示障碍物，0表示空
 ]]
 function Map:initMap(map)
     if not map or #map == 0 or not map[1] or #map[1] == 0 then
@@ -286,7 +286,7 @@ end
     消除后将剩余方块向指定方向移动（压缩靠边）
     规则：
     1. 移动范围限制在 edge..rows-edge+1 行、edge..cols-edge+1 列（外圈留空供连线走位），方块最多贴到第 edge 行/列
-    2. 装饰物(>=100)固定不动，方块不能穿过装饰物（同一行/列内装饰物两侧各自压缩）
+    2. 障碍物(>100)固定不动，方块不能穿过装饰物（同一行/列内装饰物两侧各自压缩）
     3. 只修改本地地图数据，不发送任何网络通知（客户端有相同逻辑自行移动）
     @param dir: number 方向 (mapConfig.SHIFT_DIR: 2=上 3=下 4=左 5=右)
     @param edge: number 最边边位置（默认2，如2=左移靠第2列/上移靠第2行）
@@ -298,90 +298,138 @@ function Map:shiftBlocks(dir, edge)
 
     local rows = self._rows
     local cols = self._cols
-
     edge = edge or 2
     if edge < 1 then
         edge = 1
     end
-    -- 边缘过大时没有可移动区域，直接返回（edge..rows-edge+1 或 edge..cols-edge+1 为空）
     if edge * 2 > rows + 1 or edge * 2 > cols + 1 then
         return
     end
 
-    if dir == mapConfig.SHIFT_DIR.LEFT then
-        -- 向左靠：每行方块从第 edge 列起向左压缩，中间被消除的空位由右侧方块补上
-        for row = edge, rows - edge + 1 do
-            local w = edge
-            for col = edge, cols - edge + 1 do
+    -- 与客户端 TileMapData.shiftMap 保持一致：先按障碍物切段收集方块，再在各段内压缩。
+    -- 障碍物自身固定不动，且不会被方块覆盖；外圈 edge-1 行/列继续留作连线通道。
+    if dir == mapConfig.SHIFT_DIR.LEFT or dir == mapConfig.SHIFT_DIR.RIGHT then
+        for row = 1, rows do
+            local segments = {}
+            local current = {}
+            local w = dir == mapConfig.SHIFT_DIR.LEFT and edge or cols - edge + 1
+
+            for col = 1, cols do
                 local value = self._map[row][col]
                 if tileUtils.isBlock(value) then
-                    if col ~= w then
-                        self._map[row][w] = value
-                        self._map[row][col] = 0
-                    end
-                    w = w + 1
+                    table.insert(current, value)
+                    self._map[row][col] = 0
                 elseif tileUtils.isDecoration(value) then
-                    -- 装饰物固定不动，后续方块不能越过它，压缩在装饰物右侧重新开始
-                    w = col + 1
+                    if dir == mapConfig.SHIFT_DIR.RIGHT then
+                        w = col - 1
+                    end
+                    table.insert(segments, { w = w, blocks = current })
+                    current = {}
+                    if dir == mapConfig.SHIFT_DIR.LEFT then
+                        w = col + 1
+                    end
+                end
+            end
+
+            if dir == mapConfig.SHIFT_DIR.RIGHT then
+                w = cols - edge + 1
+            end
+            table.insert(segments, { w = w, blocks = current })
+
+            for _, segment in ipairs(segments) do
+                if #segment.blocks > 0 then
+                    if dir == mapConfig.SHIFT_DIR.LEFT then
+                        local index = 1
+                        for col = segment.w, cols do
+                            if tileUtils.isDecoration(self._map[row][col]) then
+                                break
+                            end
+                            if index <= #segment.blocks then
+                                self._map[row][col] = segment.blocks[index]
+                                index = index + 1
+                            else
+                                self._map[row][col] = 0
+                            end
+                        end
+                    else
+                        local index = #segment.blocks
+                        for col = segment.w, 1, -1 do
+                            if tileUtils.isDecoration(self._map[row][col]) then
+                                break
+                            end
+                            if index >= 1 then
+                                self._map[row][col] = segment.blocks[index]
+                                index = index - 1
+                            else
+                                self._map[row][col] = 0
+                            end
+                        end
+                    end
                 end
             end
         end
-    elseif dir == mapConfig.SHIFT_DIR.RIGHT then
-        -- 向右靠：每行方块从倒数第 edge 列起向右压缩
-        for row = edge, rows - edge + 1 do
-            local w = cols - edge + 1
-            for col = cols - edge + 1, edge, -1 do
+    elseif dir == mapConfig.SHIFT_DIR.UP or dir == mapConfig.SHIFT_DIR.DOWN then
+        for col = 1, cols do
+            local segments = {}
+            local current = {}
+            local w = dir == mapConfig.SHIFT_DIR.UP and edge or rows - edge + 1
+
+            for row = 1, rows do
                 local value = self._map[row][col]
                 if tileUtils.isBlock(value) then
-                    if col ~= w then
-                        self._map[row][w] = value
-                        self._map[row][col] = 0
-                    end
-                    w = w - 1
+                    table.insert(current, value)
+                    self._map[row][col] = 0
                 elseif tileUtils.isDecoration(value) then
-                    w = col - 1
+                    if dir == mapConfig.SHIFT_DIR.DOWN then
+                        w = row - 1
+                    end
+                    table.insert(segments, { w = w, blocks = current })
+                    current = {}
+                    if dir == mapConfig.SHIFT_DIR.UP then
+                        w = row + 1
+                    end
+                end
+            end
+
+            if dir == mapConfig.SHIFT_DIR.DOWN then
+                w = rows - edge + 1
+            end
+            table.insert(segments, { w = w, blocks = current })
+
+            for _, segment in ipairs(segments) do
+                if #segment.blocks > 0 then
+                    if dir == mapConfig.SHIFT_DIR.UP then
+                        local index = 1
+                        for row = segment.w, rows do
+                            if tileUtils.isDecoration(self._map[row][col]) then
+                                break
+                            end
+                            if index <= #segment.blocks then
+                                self._map[row][col] = segment.blocks[index]
+                                index = index + 1
+                            else
+                                self._map[row][col] = 0
+                            end
+                        end
+                    else
+                        local index = #segment.blocks
+                        for row = segment.w, 1, -1 do
+                            if tileUtils.isDecoration(self._map[row][col]) then
+                                break
+                            end
+                            if index >= 1 then
+                                self._map[row][col] = segment.blocks[index]
+                                index = index - 1
+                            else
+                                self._map[row][col] = 0
+                            end
+                        end
+                    end
                 end
             end
         end
-    elseif dir == mapConfig.SHIFT_DIR.UP then
-        -- 向上靠：每列方块从第 edge 行起向上压缩
-        for col = edge, cols - edge + 1 do
-            local w = edge
-            for row = edge, rows - edge + 1 do
-                local value = self._map[row][col]
-                if tileUtils.isBlock(value) then
-                    if row ~= w then
-                        self._map[w][col] = value
-                        self._map[row][col] = 0
-                    end
-                    w = w + 1
-                elseif tileUtils.isDecoration(value) then
-                    w = row + 1
-                end
-            end
-        end
-    elseif dir == mapConfig.SHIFT_DIR.DOWN then
-        -- 向下靠：每列方块从倒数第 edge 行起向下压缩
-        for col = edge, cols - edge + 1 do
-            local w = rows - edge + 1
-            for row = rows - edge + 1, edge, -1 do
-                local value = self._map[row][col]
-                if tileUtils.isBlock(value) then
-                    if row ~= w then
-                        self._map[w][col] = value
-                        self._map[row][col] = 0
-                    end
-                    w = w - 1
-                elseif tileUtils.isDecoration(value) then
-                    w = row - 1
-                end
-            end
-        end
-    else
-        return
     end
 
-    -- 移动完成后更新寻路器
     if self._pathFinder then
         self._pathFinder:setMap(self._map)
     end

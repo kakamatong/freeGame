@@ -12,13 +12,14 @@ local function getRoomLogTag()
 end
 
 local mapGenerator = {}
+local OBSTACLE_VALUE_BASE = tileUtils.OBSTACLE_VALUE_BASE
 
 --[[
     生成可解的连连看地图
     @param rows: number 行数
     @param cols: number 列数
     @param iconTypes: number 图标种类数（1-99）
-    @param designMap: table 可选的10x10模板地图（0=空白,1=可消除,9=障碍）
+    @param designMap: table 可选的10x10模板地图（0=空白,1=可消除,>100=障碍）
     @return table | nil 生成的地图（二维数组），失败返回nil
 ]]
 function mapGenerator.generate(iconTypes, designMap)
@@ -56,7 +57,7 @@ end
 
 --[[
     根据设计模板生成地图
-    @param designMap: table 模板地图（0=空白,1=可消除,9=障碍），地图大小完全由此数组决定
+    @param designMap: table 模板地图（0=空白,1=可消除,>100=障碍），地图大小完全由此数组决定
     @param iconTypes: number 图标种类数
     @return table 生成的地图
 ]]
@@ -66,6 +67,7 @@ function mapGenerator._generateFromDesign(designMap, iconTypes)
     
     local fillPositions = {}
     local obstacleCount = 0
+    local unknownCount = 0
     
     local map = {}
     for row = 1, rows do
@@ -75,14 +77,21 @@ function mapGenerator._generateFromDesign(designMap, iconTypes)
             local val = designMap[row][col]
             if val == 1 then
                 table.insert(fillPositions, {row = row, col = col})
-            elseif val == 9 then
+            elseif val > OBSTACLE_VALUE_BASE then
                 obstacleCount = obstacleCount + 1
+                map[row][col] = val
+            elseif val ~= 0 then
+                -- 旧版9标记不再转换，避免客户端和服务端对同一格产生不同含义
+                unknownCount = unknownCount + 1
             end
         end
     end
     
+    if unknownCount > 0 then
+        log.warn("%s [MapGenerator] 设计地图存在%d个无法识别标记，已按空处理；障碍物请直接配置大于%d的值", getRoomLogTag(), unknownCount, OBSTACLE_VALUE_BASE)
+    end
+
     local totalBlocks = #fillPositions
-    local totalTiles = totalBlocks + obstacleCount
     
     -- 平均分配图标（每种图标数量尽量接近，差值不超过1）
     local baseCount = math.floor(totalBlocks / iconTypes)
@@ -117,18 +126,7 @@ function mapGenerator._generateFromDesign(designMap, iconTypes)
         map[pos.row][pos.col] = iconPool[i]
     end
     
-    -- 填充障碍物
-    local decorationValue = 100
-    local obstacleIdx = 1
-    for row = 1, rows do
-        for col = 1, cols do
-            if designMap[row][col] == 9 then
-                map[row][col] = decorationValue + obstacleIdx
-                obstacleIdx = obstacleIdx + 1
-            end
-        end
-    end
-    
+
     return map
 end
 
