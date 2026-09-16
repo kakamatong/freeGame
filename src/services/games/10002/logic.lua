@@ -302,17 +302,37 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     -- 移动模式下最边边位置（方块最多贴到的行/列，如2=靠第2列/行）
     logic.rule.edge = logic.rule.edge or 2
     logic.shiftEdge = logic.rule.edge
+
+    -- 本局是否含障碍物：设计地图中大于 tileUtils.OBSTACLE_VALUE_BASE 的值即障碍物
+    -- 通过 logicInfo.ext 下发给客户端，客户端据此标记“有障碍物对局”
+    logic.hasObstacle = 0
+    if logic.rule.designMap then
+        for row = 1, #logic.rule.designMap do
+            local rowData = logic.rule.designMap[row]
+            if rowData then
+                for col = 1, #rowData do
+                    if tileUtils.isDecoration(rowData[col]) then
+                        logic.hasObstacle = 1
+                        break
+                    end
+                end
+            end
+            if logic.hasObstacle == 1 then
+                break
+            end
+        end
+    end
     
     -- 更新PLAYING阶段时间
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
     
     log.info("%s [Logic] 单局初始化完成，玩家数: %d，地图: %dx%d，限时: %d秒", getRoomLogTag(), logic.rule.playerCnt, logic.rule.mapRows, logic.rule.mapCols, logic.rule.maxTime)
     
-    -- 发送游戏逻辑信息给所有玩家（ext 携带本局方块移动方向与边缘位置，客户端同步使用）
+    -- 发送游戏逻辑信息给所有玩家（ext 携带本局方块移动方向、边缘位置与是否含障碍物，客户端同步使用）
     logic.roomHandler.sendToAll("logicInfo", {
         playerCnt = logic.rule.playerCnt,
         playingStepTime = logic.rule.maxTime,
-        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge}),
+        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge, hasObstacle = logic.hasObstacle}),
     })
 end
 
@@ -989,11 +1009,11 @@ function logicHandler.relink(seat)
         startTime = logic.startTime,
     })
     
-    -- 重连时第一条协议：发送游戏逻辑信息（ext 携带本局方块移动方向与边缘位置，客户端同步使用）
+    -- 重连时第一条协议：发送游戏逻辑信息（ext 携带本局方块移动方向、边缘位置与是否含障碍物，客户端同步使用）
     logic.roomHandler.sendToSeat(seat, "logicInfo", {
         playerCnt = logic.rule.playerCnt,
         playingStepTime = logic.rule.maxTime,
-        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge}),
+        ext = cjson.encode({shiftDir = logic.shiftDir, edge = logic.shiftEdge, hasObstacle = logic.hasObstacle}),
     })
     
     logic.roomHandler.sendToSeat(seat, "stepId", {
