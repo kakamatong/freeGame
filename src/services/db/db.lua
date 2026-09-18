@@ -565,14 +565,14 @@ function db.revokeAcc(mysql,...)
 end
 
 -- 插入/更新挑战关卡记录
--- ON DUPLICATE KEY UPDATE: scoreMax取最大值，challengeCount累加，其余字段覆盖
+-- ON DUPLICATE KEY UPDATE: stars/scoreMax取最大值（只增不减，避免重打低星覆盖历史高星），challengeCount累加，其余字段覆盖
 function db.insertChallengeChapter(mysql, ...)
     local userid, chapter, level, isGet, stars, scoreMax, challengeCount, ext = ...
     ext = ext or ""
     local sql = string.format(
         "INSERT INTO challengeChapter (userid, chapter, level, isGet, stars, scoreMax, challengeCount, ext) " ..
         "VALUES (%d, %d, %d, %d, %d, %d, %d, '%s') " ..
-        "ON DUPLICATE KEY UPDATE isGet = VALUES(isGet), stars = VALUES(stars), " ..
+        "ON DUPLICATE KEY UPDATE isGet = VALUES(isGet), stars = GREATEST(stars, VALUES(stars)), " ..
         "scoreMax = GREATEST(scoreMax, VALUES(scoreMax)), " ..
         "challengeCount = challengeCount + VALUES(challengeCount), " ..
         "ext = VALUES(ext);",
