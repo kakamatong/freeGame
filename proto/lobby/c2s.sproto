@@ -300,6 +300,12 @@ userEnergyChange 21 {
     challengeCount 5 : integer
 }
 
+.ChapterStar {
+    chapter 0 : integer
+    stars 1 : integer
+    clearedCount 2 : integer
+}
+
 # 获取章节关卡数据
 getChallengeChapterData 22 {
     request {
@@ -334,5 +340,15 @@ getCurChallengeChapterData 24 {
         curChapter 0 : integer
         curLevel 1 : integer
         list 2 : *ChallengeLevelData
+    }
+}
+
+# 获取总星星数与各章节星星数
+getUserStars 25 {
+    request {
+    }
+    response {
+        totalStars 0 : integer
+        list 1 : *ChapterStar
     }
 }

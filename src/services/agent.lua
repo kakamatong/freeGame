@@ -252,6 +252,11 @@ function REQUEST:updateChallengeLevelData(args)
     return call(svrUser, "updateChallengeLevelData", userid, args.chapter, args.level, args.score, args.stars, args.nextChapter, args.nextLevel)
 end
 
+-- 获取总星星数与各章节星星数
+function REQUEST:getUserStars(args)
+    return call(svrUser, "getUserStars", userid)
+end
+
 -- 客户端请求分发
 local function request(name, args, response)
 	assert(REQUEST[name])

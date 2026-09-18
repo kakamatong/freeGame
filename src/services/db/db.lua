@@ -632,5 +632,24 @@ function db.getChallengeData(mysql, ...)
     return res[1]
 end
 
+-- 统计用户总星星数与各章节星星数
+-- 依赖挑战表索引 (userid, chapter, stars) 做覆盖索引扫描，避免回表
+-- 返回: { {chapter=章节ID, chapterStars=本章星星数, clearedCount=本章已通关关卡数}, ... }
+function db.getUserChapterStars(mysql, ...)
+    local userid = ...
+    local sql = string.format(
+        "SELECT chapter, SUM(stars) AS chapterStars, COUNT(*) AS clearedCount " ..
+        "FROM challengeChapter WHERE userid = %d GROUP BY chapter;",
+        userid
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    if #res == 0 then
+        return {}
+    end
+    return res
+end
+
 -- 返回db表，供外部调用
 return db

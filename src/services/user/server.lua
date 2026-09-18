@@ -421,6 +421,29 @@ function CMD.updateChallengeLevelData(userid, chapter, level, score, stars, next
     return { code = 1 }
 end
 
+--[[
+    获取用户总星星数与各章节星星数
+    入参: userid
+    返回: { totalStars = 总星星数, list = { {chapter, stars, clearedCount}, ... } }
+]]
+function CMD.getUserStars(userid)
+    assert(userid)
+    local rows = skynet.call(dbSvr, "lua", "db", "getUserChapterStars", userid)
+    local list = {}
+    local totalStars = 0
+    for _, row in ipairs(rows or {}) do
+        local stars = row.chapterStars or 0
+        totalStars = totalStars + stars
+        list[#list + 1] = {
+            chapter = row.chapter or 0,
+            stars = stars,
+            clearedCount = row.clearedCount or 0,
+        }
+    end
+    log.info("getUserStars userid %d totalStars %d chapters %d", userid, totalStars, #list)
+    return { totalStars = totalStars, list = list }
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = assert(CMD[cmd])
