@@ -29,6 +29,10 @@ function dbRedis.expire(redis, key, expire)
     return redis:expire(key, expire)
 end
 
+function dbRedis.ttl(redis, key)
+    return redis:ttl(key)
+end
+
 function dbRedis.set(redis, key, value, expire)
     if expire then
         return redis:set(key, value, "EX", expire)

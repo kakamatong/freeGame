@@ -651,5 +651,22 @@ function db.getUserChapterStars(mysql, ...)
     return res
 end
 
+-- 统计用户星星总数（星星周榜用）
+-- 依赖挑战表索引 (userid, chapter, stars) 做覆盖索引扫描，避免回表
+function db.getUserTotalStars(mysql, ...)
+    local userid = ...
+    local sql = string.format(
+        "SELECT COALESCE(SUM(stars), 0) AS totalStars FROM challengeChapter WHERE userid = %d;",
+        userid
+    )
+    local res = mysql:query(sql)
+    log.info(UTILS.tableToString(res))
+    assert(sqlResult(res))
+    if #res == 0 then
+        return 0
+    end
+    return res[1].totalStars or 0
+end
+
 -- 返回db表，供外部调用
 return db

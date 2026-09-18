@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local log = require "log"
 local cjson = require "cjson"
+local weekRank = require "weekRank"
 local CMD = {}
 local dbSvr = nil
 require "skynet.manager"
@@ -10,6 +11,9 @@ local ENERGY_COST_TYPE = {
     TEST = 0,      -- 测试
     CHALLENGE = 1, -- 闯关
 }
+
+-- 星星周榜所属游戏ID
+local STAR_RANK_GAME_ID = 10002
 -- 返回结果
 -- 获取数据库服务句柄
 
@@ -418,6 +422,27 @@ function CMD.updateChallengeLevelData(userid, chapter, level, score, stars, next
     if cur.chapter == chapter and cur.level == level then
         skynet.call(dbSvr, "lua", "db", "insertChallengeData", userid, nextChapter or chapter, nextLevel or level, "")
     end
+
+    -- 星星周榜：本周来更新过关卡数据的玩家按星星总量上榜（新/旧关卡都可以，星星无变化也上榜）
+    -- 排行是附加功能，写入失败不能影响关卡数据保存，因此用 pcall 兜底
+    local ok, err = pcall(function()
+        local totalStars = skynet.call(dbSvr, "lua", "db", "getUserTotalStars", userid)
+        -- 总星为 0 不上榜
+        if not totalStars or totalStars <= 0 then
+            return
+        end
+        local rankKey = weekRank.key(STAR_RANK_GAME_ID, os.time())
+        skynet.call(dbSvr, "lua", "dbRedis", "zadd", rankKey, totalStars, userid)
+        -- 只在 key 还没有过期时间时设置，避免每次写入都续期
+        local ttl = skynet.call(dbSvr, "lua", "dbRedis", "ttl", rankKey)
+        if ttl and ttl < 0 then
+            skynet.call(dbSvr, "lua", "dbRedis", "expire", rankKey, weekRank.KEEP_SECONDS)
+        end
+    end)
+    if not ok then
+        log.warn("updateChallengeLevelData 星星周榜写入失败 userid=%d err=%s", userid, tostring(err))
+    end
+
     return { code = 1 }
 end
 
