@@ -543,13 +543,25 @@ function logicHandler.relink(seat)
         return
     end
 
-    -- 补发基本状态
+    -- 补发基本状态（阶段始终下发，客户端据此恢复UI与阶段判断）
     logic.roomHandler.sendToSeat(seat, "gameRelink", {
         startTime = logic.startTime,
     })
     logic.roomHandler.sendToSeat(seat, "stepId", {
         step = logic.stepId,
     })
+
+    -- 仅在本局仍在进行中时才补发题目与答题数据
+    -- 本局已结束（超时/结算/房间结束）时不再下发任何本局数据：
+    -- 否则重连的客户端会重新铺牌、看起来可以继续答题，但阶段其实已结束
+    local bInRound = logic.gameStatus == config.GAME_STATUS.PLAYING
+        and (logic.stepId == config.GAME_STEP.START or logic.stepId == config.GAME_STEP.PLAYING)
+    if not bInRound then
+        log.info("%s [Logic] 座位%d重连：本局已结束(stepId=%d status=%s)，不补发本局数据",
+            getRoomLogTag(), seat, logic.stepId, tostring(logic.gameStatus))
+        return
+    end
+
     logic.roomHandler.sendToSeat(seat, "gameStart", {
         roundNum = logic.roundNum,
         startTime = logic.startTime,
