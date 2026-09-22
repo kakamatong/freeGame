@@ -163,6 +163,7 @@ local function createSvr()
             activity = "activity/server",
             auth = "auth/server",
             privateRoom = "privateRoom/server",
+            questionBank = "questionBank/server",
             -- 可以根据需要添加更多服务类型的路径映射
         }
         

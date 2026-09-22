@@ -1,0 +1,66 @@
+{
+  "gameid": 10003,
+  "ruleVersion": 1,
+  "rule": "四张数字牌，目标值24，四则运算(+ - * /)与括号，每张牌恰好使用一次",
+  "target": 24,
+  "dealCount": 4,
+  "numberRange": {
+    "min": 1,
+    "max": 20
+  },
+  "source": "24point-puzzle-bank-1-20-20260922（五档结构分档，未经玩家数据校准）",
+  "generatedAt": "2026-09-22 15:14:19",
+  "total": 5706,
+  "difficulties": [
+    {
+      "id": 1,
+      "name": "入门·直接凑数",
+      "file": "1.json",
+      "count": 180,
+      "features": {
+        "fractionRequired": false,
+        "fractionalDivisorRequired": false
+      }
+    },
+    {
+      "id": 2,
+      "name": "基础·整数组合",
+      "file": "2.json",
+      "count": 3910,
+      "features": {
+        "fractionRequired": false,
+        "fractionalDivisorRequired": false
+      }
+    },
+    {
+      "id": 3,
+      "name": "进阶·整数技巧",
+      "file": "3.json",
+      "count": 1537,
+      "features": {
+        "fractionRequired": false,
+        "fractionalDivisorRequired": false
+      }
+    },
+    {
+      "id": 4,
+      "name": "高难·分数回收",
+      "file": "4.json",
+      "count": 48,
+      "features": {
+        "fractionRequired": true,
+        "fractionalDivisorRequired": false
+      }
+    },
+    {
+      "id": 5,
+      "name": "挑战·分数作除数",
+      "file": "5.json",
+      "count": 31,
+      "features": {
+        "fractionRequired": true,
+        "fractionalDivisorRequired": true
+      }
+    }
+  ]
+}

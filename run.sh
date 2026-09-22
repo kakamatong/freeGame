@@ -11,3 +11,4 @@
 ./skynet/skynet config/configMatch
 ./skynet/skynet config/configWeb
 ./skynet/skynet config/configPrivateRoom
+./skynet/skynet config/configQuestionBank
