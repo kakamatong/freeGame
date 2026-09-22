@@ -158,6 +158,8 @@ function roomHandler.onGameEnd(endType, rankings)
             for _, player in pairs(roomInstance.players) do
                 roomInstance:changePlayerStatus(player.userid, config.PLAYER_STATUS.ONLINE)
             end
+            -- 局间重新下发私人房信息（第几局/共几局），客户端据此刷新「准备」按钮与局数文案
+            roomInstance:sendAllPrivateInfo()
             return
         end
     end
