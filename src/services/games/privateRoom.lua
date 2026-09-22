@@ -295,12 +295,15 @@ function PrivateRoom:clientReady(userid, args)
     end
     
     self:sendRoomInfo(userid)
-    self:sendPlayerInfo(userid)
-    self:sendPlayerEnter(userid)
-    self:sendPlayerOtherEnter(userid)
+    -- 私人房信息（第几局/共几局）紧跟房间信息下发：
+    -- 客户端靠「是否已开过局」判断局间只显示准备按钮，而 playerInfos/playerEnter 等
+    -- 推送也会触发按钮刷新；放在此处可保证局数先到（socket 有序，不依赖后续重刷）
     if self:isPrivateRoom() then
         self:sendPrivateInfo(userid)
     end
+    self:sendPlayerInfo(userid)
+    self:sendPlayerEnter(userid)
+    self:sendPlayerOtherEnter(userid)
     
     if self:isRoomStatusStarting() then
         if self.voteDisbandInfo.inProgress then
