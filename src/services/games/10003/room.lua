@@ -13,6 +13,15 @@ local PrivateRoom = require "games.privateRoom"
 local logicHandler = require "games.10003.logic"
 local aiHandler = require "games.10003.ai"
 local ScoringSystem = require "games.10003.scoring"
+local difficulty = require "games.10003.difficulty"
+local configLogic = require "games.10003.configLogic"
+
+-- 题库服务类型名（集群配置中登记的服务类型）
+local QUESTION_BANK_SVR = "questionBank"
+-- 本游戏id（题库服务按 gameid 分发）
+local GAME_ID = 10003
+-- 单房间记录最近题号的上限，用于向题库请求时去重
+local RECENT_QUESTION_LIMIT = 30
 
 local Room = {}
 setmetatable(Room, { __index = PrivateRoom })
@@ -98,6 +107,16 @@ function roomHandler.sendToAll(name, data)
     for logicSeat = 1, roomInstance.roomInfo.nowPlayerNum do
         roomHandler.sendToSeat(logicSeat, name, data)
     end
+end
+
+--[[
+    Logic -> Room：取本局题目数字（题库优先）
+    取不到时返回 nil，由 logic 回退到本地随机生成
+    @return table|nil 4个数字
+]]
+function roomHandler.getDealNumbersFromBank()
+    if not roomInstance then return nil end
+    return roomInstance:getDealNumbersFromBank()
 end
 
 --[[
@@ -315,6 +334,9 @@ function Room:_initRoom()
 
     -- 定时器间隔
     self.dTime = 100
+
+    -- 最近向题库取过的题号（去重用，仅本房间内有效）
+    self._recentQuestionIds = {}
 end
 
 -- 初始化房间逻辑
@@ -433,6 +455,51 @@ function Room:initLogic()
             self.aiHandler.addRobot(seat)
         end
     end
+end
+
+--[[
+    向题库服务取本局题目数字
+    说明：题库只是优先来源，任何失败（服务未部署/未登记、返回异常、字段不合法）
+    都返回 nil，由 logic 回退到本地随机生成，保证对局一定能开局。
+    @return table|nil 4个数字
+    @return number|nil 难度id（取到题目时有值）
+]]
+function Room:getDealNumbersFromBank()
+    self._recentQuestionIds = self._recentQuestionIds or {}
+
+    local gameid = self.roomInfo.gameid or GAME_ID
+    local difficultyId = difficulty.roll()
+    local opts = { excludeIds = self._recentQuestionIds }
+
+    -- 题库服务未登记时 clusterManager 直接返回 nil；服务异常用 pcall 兜住，统一走回退
+    local ok, resp = pcall(_G.call, QUESTION_BANK_SVR, "getQuestion", gameid, difficultyId, opts)
+    if not ok then
+        log.error("%s [Room] 题库服务调用异常(难度%d): %s", self:getRoomLogTag(), difficultyId, tostring(resp))
+        return nil
+    end
+    if type(resp) ~= "table" or resp.code ~= 1 or type(resp.data) ~= "table" then
+        log.error("%s [Room] 题库返回异常(难度%d): %s", self:getRoomLogTag(), difficultyId, UTILS.tableToString(resp))
+        return nil
+    end
+
+    local data = resp.data
+    local numbers = data.numbers
+    if type(numbers) ~= "table" or #numbers ~= configLogic.DEAL_COUNT then
+        log.error("%s [Room] 题库题目字段异常(难度%d): %s", self:getRoomLogTag(), difficultyId, UTILS.tableToString(data))
+        return nil
+    end
+
+    -- 记录题号，避免同一房间短期内重复出题
+    if type(data.id) == "string" and data.id ~= "" then
+        table.insert(self._recentQuestionIds, data.id)
+        if #self._recentQuestionIds > RECENT_QUESTION_LIMIT then
+            table.remove(self._recentQuestionIds, 1)
+        end
+    end
+
+    log.info("%s [Room] 题库取题成功 难度%d 题号%s 数字%s", self:getRoomLogTag(), difficultyId,
+        tostring(data.id), table.concat(numbers, ","))
+    return numbers, difficultyId
 end
 
 -- 启动定时任务

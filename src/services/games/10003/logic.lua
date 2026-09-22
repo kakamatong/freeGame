@@ -253,10 +253,29 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
         getRoomLogTag(), logic.rule.playerCnt, logic.rule.maxTime, logic.rule.numberMin, logic.rule.numberMax)
 end
 
--- 发牌：生成一组有解的4个数字
+--[[
+    发牌：优先向题库服务取题（由 Room 提供接口），取不到则保留原有本地随机生成逻辑
+    说明：题库只决定题目内容，不影响“本局一定能发到牌”——任何失败都回退到 solver.deal（保证有解）
+]]
 function logic._deal()
+    local bankNumbers = nil
+    if logic.roomHandler and logic.roomHandler.getDealNumbersFromBank then
+        local ok, numbers = pcall(logic.roomHandler.getDealNumbersFromBank)
+        if not ok then
+            log.error("%s [Logic] 题库取题异常，回退本地随机: %s", getRoomLogTag(), tostring(numbers))
+        elseif type(numbers) == "table" and #numbers == config.DEAL_COUNT then
+            bankNumbers = numbers
+        end
+    end
+
+    if bankNumbers then
+        logic.dealNumbers = bankNumbers
+        log.info("%s [Logic] 第%d局发牌(题库): %s", getRoomLogTag(), logic.roundNum, table.concat(bankNumbers, ","))
+        return
+    end
+
     logic.dealNumbers = solver.deal(logic.rule.numberMin, logic.rule.numberMax)
-    log.info("%s [Logic] 第%d局发牌: %s", getRoomLogTag(), logic.roundNum, table.concat(logic.dealNumbers, ","))
+    log.info("%s [Logic] 第%d局发牌(本地随机): %s", getRoomLogTag(), logic.roundNum, table.concat(logic.dealNumbers, ","))
 end
 
 -- 初始化玩家进度
