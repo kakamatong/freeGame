@@ -14,6 +14,7 @@ local logicHandler = require "games.10003.logic"
 local aiHandler = require "games.10003.ai"
 local ScoringSystem = require "games.10003.scoring"
 local difficulty = require "games.10003.difficulty"
+local questionSource = require "games.10003.questionSource"
 local configLogic = require "games.10003.configLogic"
 
 -- 题库服务类型名（集群配置中登记的服务类型）
@@ -337,6 +338,9 @@ function Room:_initRoom()
 
     -- 最近向题库取过的题号（去重用，仅本房间内有效）
     self._recentQuestionIds = {}
+
+    -- 私人房难度等级（0随机/1简单/2中等/3困难），匹配房不使用
+    self._privateDifficulty = questionSource.PRIVATE_RANDOM
 end
 
 -- 初始化房间逻辑
@@ -360,6 +364,8 @@ function Room:init(data)
         if not config.PRIVATE_ROOM_MODE[playNum] then
             playNum = 3
         end
+        -- 难度等级：创建时通过 privateRule.difficulty 传入（0随机/1简单/2中等/3困难），非法值按随机
+        self._privateDifficulty = questionSource.normalizePrivateDifficulty(self.roomInfo.privateRule.difficulty)
         -- 设置房间最大人数（dispatchSeat需要用到）
         self.roomInfo.playerNum = config.PRIVATE_ROOM.MAX_PLAYERS
         self.roomInfo.nowPlayerNum = #self.roomInfo.playerids
@@ -464,11 +470,27 @@ end
     @return table|nil 4个数字
     @return number|nil 难度id（取到题目时有值）
 ]]
+--[[
+    向题库服务取本局题目数字
+    出题来源由 questionSource 按房间类型与私人房难度等级决定：
+    - 匹配房：10% 走题库（难度按权重 30/30/20/15/5）
+    - 私人房：随机 50%、简单 0%、中等/困难 100%（难度区间见 questionSource）
+    未命中概率时返回 nil（由 logic 走本地随机）。命中后任何失败（服务未部署/未登记、
+    返回异常、字段不合法）也返回 nil，保证对局一定能开局。
+    @return table|nil 4个数字
+    @return number|nil 难度id（取到题目时有值）
+]]
 function Room:getDealNumbersFromBank()
     self._recentQuestionIds = self._recentQuestionIds or {}
 
+    -- 先按出题来源策略掷一次：未命中则本局走本地随机
+    local plan = questionSource.plan(self:isMatchRoom(), self._privateDifficulty)
+    local useBank, difficultyId = questionSource.roll(plan)
+    if not useBank then
+        return nil
+    end
+
     local gameid = self.roomInfo.gameid or GAME_ID
-    local difficultyId = difficulty.roll()
     local opts = { excludeIds = self._recentQuestionIds }
 
     -- 题库服务未登记时 clusterManager 直接返回 nil；服务异常用 pcall 兜住，统一走回退

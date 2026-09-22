@@ -91,10 +91,12 @@ config.ROUND_TIME = 60
 config.ROUND_END_COUNTDOWN = 10
 
 -- 私人房局数配置（创建时通过 privateRule.playNum 传入，不在白名单则取默认3）
+-- 与客户端建房页选项保持一致：3局/5局/10局/无限对局（page id 分别为 3/5/10/999）
 config.PRIVATE_ROOM_MODE = {
     [3] = { name = "3局", maxCnt = 3 },
     [5] = { name = "5局", maxCnt = 5 },
-    [7] = { name = "7局", maxCnt = 7 },
+    [10] = { name = "10局", maxCnt = 10 },
+    [999] = { name = "无限对局", maxCnt = 999 },   -- 封顶999局，正常游玩等同无限
 }
 
 -- 计分配置（参考10002）

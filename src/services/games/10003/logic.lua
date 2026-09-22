@@ -25,10 +25,6 @@ local expression = require "games.10003.expression"
 local solver = require "games.10003.solver"
 local skynet = require "skynet"
 
--- 题库出题概率(百分比)：命中时向题库服务取题，其余情况直接走本地随机生成
--- 说明：题库取题失败（服务未登记/异常/字段非法）同样回退本地随机，保证每局都能发牌
-local BANK_QUESTION_RATE = 10
-
 local logic = {gameid = 0, roomid = 0}
 local function getRoomLogTag()
     return string.format("[%d][%d]", logic.gameid, logic.roomid)
@@ -258,15 +254,15 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
 end
 
 --[[
-    发牌：默认走本地随机生成，小概率（BANK_QUESTION_RATE）向题库服务取题
+    发牌：先问 Room 要题库题目（是否走题库、用哪个难度由 Room 按房间类型与难度等级决定），
+    取不到则保留原有本地随机生成逻辑
     说明：题库只决定题目内容，不影响“本局一定能发到牌”——未命中概率、题库异常或字段非法
     都回退到 solver.deal（保证有解）
 ]]
 function logic._deal()
     local bankNumbers = nil
 
-    -- 出题来源：按概率决定是否走题库，其余情况直接用本地随机
-    if math.random(1, 100) <= BANK_QUESTION_RATE and logic.roomHandler and logic.roomHandler.getDealNumbersFromBank then
+    if logic.roomHandler and logic.roomHandler.getDealNumbersFromBank then
         local ok, numbers = pcall(logic.roomHandler.getDealNumbersFromBank)
         if not ok then
             log.error("%s [Logic] 题库取题异常，回退本地随机: %s", getRoomLogTag(), tostring(numbers))
