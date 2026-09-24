@@ -6,7 +6,7 @@
 
     AI逻辑：
     1. 收到PLAYING阶段消息后，用solver求解本局4个数字
-    2. 有解则按概率(默认60%)在随机延迟(可配2~8秒)后提交
+    2. 有解则按概率(默认5%)在随机延迟(可配2~8秒)后提交
     3. 提交前再次检查阶段，避免第一人答对结束后机器人仍提交
     4. 随机延迟保证真人玩家有抢答空间
 ]]
@@ -32,9 +32,9 @@ aiLogic.roomHandlerAi = nil
 
 -- AI配置（从config读取，可调整）
 aiLogic.config = {
-    ACTION_PROBABILITY = config.AI and config.AI.ACTION_PROBABILITY or 60,  -- 行动概率（百分比）
+    ACTION_PROBABILITY = config.AI and config.AI.ACTION_PROBABILITY or 5,  -- 行动概率（百分比）
     SUBMIT_DELAY = config.AI and config.AI.SUBMIT_DELAY or {MIN = 2, MAX = 8},  -- 提交延迟区间（秒）
-    ACT_START_DELAY = config.AI and config.AI.ACT_START_DELAY or 50,  -- 开始解题延迟（秒）
+    ACT_START_DELAY = config.AI and config.AI.ACT_START_DELAY or 10,  -- 开始解题延迟（秒）
 }
 
 --[[
@@ -53,7 +53,7 @@ function aiLogic.dealPlay(seat)
     end
     data.attempted = true  -- 每局只尝试一次
 
-    -- 机器人延迟开始解题（对局开始 50 秒后才执行解决逻辑，给真人先手空间）
+    -- 机器人延迟开始解题（对局开始 10 秒后才执行解决逻辑）
     local actDelay = aiLogic.config.ACT_START_DELAY or 0
     skynet.fork(function()
         if actDelay > 0 then
