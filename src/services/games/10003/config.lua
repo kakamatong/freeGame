@@ -119,9 +119,9 @@ config.SCORING = {
 
 -- AI配置
 config.AI = {
-    ACTION_PROBABILITY = 5,                  -- AI提交概率（百分比）
-    SUBMIT_DELAY = { MIN = 2, MAX = 8 },     -- 提交延迟区间（秒），避免AI秒答碾压真人
-    ACT_START_DELAY = 10,                    -- 机器人开始解题的延迟（秒）：对局开始10秒后执行解决逻辑
+    ACTION_PROBABILITY = 5,                  -- 每次判定的答题概率（百分比）
+    ROLL_INTERVAL = 1,                       -- 判定间隔（秒）：起解后每秒判定一次
+    ACT_START_DELAY = 10,                    -- 前10秒不答题，给真人先手空间
 }
 
 -- 消息转发类型

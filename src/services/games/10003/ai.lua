@@ -1,14 +1,14 @@
 --[[
     ai.lua
     算24点(10003)AI模块 - 机器人逻辑
-    职责：管理机器人的答题行为（用求解器求解后延迟提交）
+    职责：管理机器人的答题行为（按秒判定概率，命中即答题推送）
     通过 roomHandlerAi 与 Room 通信
 
     AI逻辑：
-    1. 收到PLAYING阶段消息后，用solver求解本局4个数字
-    2. 有解则按概率(默认5%)在随机延迟(可配2~8秒)后提交
-    3. 提交前再次检查阶段，避免第一人答对结束后机器人仍提交
-    4. 随机延迟保证真人玩家有抢答空间
+    1. 收到PLAYING阶段消息后，前 ACT_START_DELAY 秒(默认10秒)不答题，给真人先手空间
+    2. 之后每 ROLL_INTERVAL 秒(默认1秒)掷一次 ACTION_PROBABILITY(默认5%) 的概率
+    3. 命中即用solver求解本局4个数字，有解立刻答题推送；本局无解则停止判定
+    4. 每次判定前检查阶段，避免第一人答对结束后机器人仍提交
 ]]
 
 local skynet = require "skynet"
@@ -32,16 +32,16 @@ aiLogic.roomHandlerAi = nil
 
 -- AI配置（从config读取，可调整）
 aiLogic.config = {
-    ACTION_PROBABILITY = config.AI and config.AI.ACTION_PROBABILITY or 5,  -- 行动概率（百分比）
-    SUBMIT_DELAY = config.AI and config.AI.SUBMIT_DELAY or {MIN = 2, MAX = 8},  -- 提交延迟区间（秒）
-    ACT_START_DELAY = config.AI and config.AI.ACT_START_DELAY or 10,  -- 开始解题延迟（秒）
+    ACTION_PROBABILITY = config.AI and config.AI.ACTION_PROBABILITY or 5,  -- 每次判定的答题概率（百分比）
+    ROLL_INTERVAL = config.AI and config.AI.ROLL_INTERVAL or 1,  -- 判定间隔（秒）：起解后每秒判定一次
+    ACT_START_DELAY = config.AI and config.AI.ACT_START_DELAY or 10,  -- 起解前静默时长（秒）：前10秒不答题
 }
 
 --[[
     ==================== AI核心逻辑 ====================
 ]]
 
--- 处理答题：延迟 ACT_START_DELAY 秒后才求解本局数字并在随机延迟后提交
+-- 处理答题：前 ACT_START_DELAY 秒不答题，之后每 ROLL_INTERVAL 秒掷一次概率，命中即答题推送
 function aiLogic.dealPlay(seat)
     local data = aiLogic.data[seat]
     if not data then
@@ -51,50 +51,51 @@ function aiLogic.dealPlay(seat)
     if data.attempted then
         return
     end
-    data.attempted = true  -- 每局只尝试一次
+    data.attempted = true  -- 每局只尝试一次（一次fork内按秒判定）
 
-    -- 机器人延迟开始解题（对局开始 10 秒后才执行解决逻辑）
     local actDelay = aiLogic.config.ACT_START_DELAY or 0
+    local rollInterval = aiLogic.config.ROLL_INTERVAL or 1
+    local probability = aiLogic.config.ACTION_PROBABILITY or 5
+
     skynet.fork(function()
+        -- 前 actDelay 秒不答题（给真人先手空间）
         if actDelay > 0 then
             skynet.sleep(actDelay * 100)
         end
 
-        -- 延迟后仍处于 PLAYING 阶段才继续（对局可能已被真人答对/超时结束）
-        local curData = aiLogic.data[seat]
-        if not (curData and curData.stepid == configLogic.GAME_STEP.PLAYING) then
-            log.info("%s [AI] 座位%d延迟后已离开PLAYING，跳过解题", getRoomLogTag(), seat)
-            return
-        end
+        local rollNum = 0
+        while true do
+            -- 每次判定前检查阶段（对局可能已被真人答对/超时结束）
+            local curData = aiLogic.data[seat]
+            if not (curData and curData.stepid == configLogic.GAME_STEP.PLAYING) then
+                log.info("%s [AI] 座位%d已离开PLAYING，停止判定(共判定%d次)", getRoomLogTag(), seat, rollNum)
+                return
+            end
 
-        -- 获取本局4个数字并求解
-        local numbers = aiLogic.roomHandlerAi.getDealNumbers()
-        if not numbers or #numbers ~= 4 then
-            log.warn("%s [AI] 座位%d获取本局数字失败", getRoomLogTag(), seat)
-            return
-        end
+            -- 每 ROLL_INTERVAL 秒掷一次概率，命中即答题推送
+            rollNum = rollNum + 1
+            local rand = math.random(1, 100)
+            if rand <= probability then
+                local numbers = aiLogic.roomHandlerAi.getDealNumbers()
+                if not numbers or #numbers ~= 4 then
+                    log.warn("%s [AI] 座位%d获取本局数字失败", getRoomLogTag(), seat)
+                    return
+                end
 
-        local solution = solver.solve(numbers)
-        if not solution then
-            log.warn("%s [AI] 座位%d求解失败", getRoomLogTag(), seat)
-            return
-        end
+                local solution = solver.solve(numbers)
+                if not solution then
+                    log.warn("%s [AI] 座位%d本局无解，停止判定", getRoomLogTag(), seat)
+                    return
+                end
 
-        -- 按概率决定是否提交
-        local rand = math.random(1, 100)
-        if rand > aiLogic.config.ACTION_PROBABILITY then
-            log.info("%s [AI] 座位%d本次不提交 (随机数:%d > 概率:%d)", getRoomLogTag(), seat, rand, aiLogic.config.ACTION_PROBABILITY)
-            return
-        end
+                log.info("%s [AI] 座位%d第%d次判定命中(随机数:%d <= 概率:%d)，答题推送: %s",
+                    getRoomLogTag(), seat, rollNum, rand, probability, solution)
+                aiLogic.roomHandlerAi.onAiMsg(seat, "submitAnswer", {expression = solution})
+                return
+            end
 
-        -- 随机延迟后提交（避免AI秒答碾压真人）
-        local delay = math.random(aiLogic.config.SUBMIT_DELAY.MIN, aiLogic.config.SUBMIT_DELAY.MAX)
-        log.info("%s [AI] 座位%d求解成功: %s，%d秒后提交", getRoomLogTag(), seat, solution, delay)
-        skynet.sleep(delay * 100)
-        -- 提交前再次检查：仍处于PLAYING阶段且本局未结束
-        local finalData = aiLogic.data[seat]
-        if finalData and finalData.stepid == configLogic.GAME_STEP.PLAYING then
-            aiLogic.roomHandlerAi.onAiMsg(seat, "submitAnswer", {expression = solution})
+            log.debug("%s [AI] 座位%d第%d次判定未命中(随机数:%d > 概率:%d)", getRoomLogTag(), seat, rollNum, rand, probability)
+            skynet.sleep(rollInterval * 100)
         end
     end)
 end
