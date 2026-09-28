@@ -22,29 +22,28 @@
 local config = require("games.10003.configLogic")
 local log = require "log"
 local expression = require "games.10003.expression"
-local solver = require "games.10003.solver"
 local skynet = require "skynet"
 
-local logic = {gameid = 0, roomid = 0}
+local logic = { gameid = 0, roomid = 0 }
 local function getRoomLogTag()
     return string.format("[%d][%d]", logic.gameid, logic.roomid)
 end
 
 -- 单局状态
-logic.dealNumbers = {}          -- 本局4个数字
-logic.dealStartTimeMs = 0       -- 发牌时间(毫秒)，用于计算答对用时
-logic.playerProgress = {}       -- 玩家进度 { [seat] = { finished, submitTime, expression, rank, usedTime } }
-logic.roomHandler = nil         -- Room 提供的回调接口
-logic.rule = {}                 -- 游戏规则
-logic.seatMap = {}              -- 逻辑座位 -> 房间座位（由Room建立绑定后传入）
-logic.binit = false             -- 是否初始化
-logic.stepId = config.GAME_STEP.NONE  -- 当前阶段ID
-logic.stepBeginTime = 0         -- 阶段开始时间
-logic.roundNum = 0              -- 当前局数
-logic.endType = config.END_TYPE.NONE  -- 本局结束类型
-logic.gameStatus = config.GAME_STATUS.NONE  -- 游戏状态
-logic.startTime = 0             -- 本局开始时间
-logic.finishOrder = 0           -- 本局答对顺序计数器（排名依据，第一个答对者为1）
+logic.dealNumbers = {}                     -- 本局4个数字
+logic.dealStartTimeMs = 0                  -- 发牌时间(毫秒)，用于计算答对用时
+logic.playerProgress = {}                  -- 玩家进度 { [seat] = { finished, submitTime, expression, rank, usedTime } }
+logic.roomHandler = nil                    -- Room 提供的回调接口
+logic.rule = {}                            -- 游戏规则
+logic.seatMap = {}                         -- 逻辑座位 -> 房间座位（由Room建立绑定后传入）
+logic.binit = false                        -- 是否初始化
+logic.stepId = config.GAME_STEP.NONE       -- 当前阶段ID
+logic.stepBeginTime = 0                    -- 阶段开始时间
+logic.roundNum = 0                         -- 当前局数
+logic.endType = config.END_TYPE.NONE       -- 本局结束类型
+logic.gameStatus = config.GAME_STATUS.NONE -- 游戏状态
+logic.startTime = 0                        -- 本局开始时间
+logic.finishOrder = 0                      -- 本局答对顺序计数器（排名依据，第一个答对者为1）
 
 -- 逻辑座位 -> 房间座位（无映射时回退为自身，保证逻辑可独立使用）
 local function toRoomSeat(seat)
@@ -244,7 +243,7 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
     logic.rule.maxTime = logic.rule.maxTime or 30
     logic.rule.numberMin = logic.rule.numberMin or 1
     logic.rule.numberMax = logic.rule.numberMax or 9
-    logic.rule.endTime = logic.rule.endTime or 10   -- 第一个答对者触发的剩余时间封顶值(秒)
+    logic.rule.endTime = logic.rule.endTime or 10 -- 第一个答对者触发的剩余时间封顶值(秒)
 
     -- 更新PLAYING阶段时间（本局答题时限）
     config.STEP_TIME_LEN[config.GAME_STEP.PLAYING] = logic.rule.maxTime
@@ -256,7 +255,7 @@ end
 --[[
     发牌：出题策略+获取题目统一走 questionSource（经 roomHandler.getQuestion，返回值必有）。
     三返回值：numbers 4个数字 / difficultyId 题库难度id（走题库时有值）/ fromBank 是否来自题库。
-    questionSource 已保证失败回退 solver.deal（保证有解）；此处 solver.deal 兜底为二道保险，
+    questionSource 已保证失败回退 solver.deal（保证有解）；
     仅防接口缺失/异常，正常路径不触发。
 ]]
 function logic._deal()
@@ -272,8 +271,9 @@ function logic._deal()
     end
 
     if not numbers then
-        -- 二道保险：questionSource.getDealNumbers 已保证必出题，此处仅防接口缺失/异常
-        numbers = solver.deal(logic.rule.numberMin, logic.rule.numberMax)
+        log.error("%s [Logic] 取题失败，回退本地随机", getRoomLogTag())
+        logic.startStep(config.GAME_STEP.END)
+        return
     end
 
     logic.dealNumbers = numbers
@@ -285,11 +285,11 @@ end
 function logic._initPlayerProgress()
     for seat = 1, logic.rule.playerCnt do
         logic.playerProgress[seat] = {
-            finished = false,   -- 是否已答对
-            submitTime = 0,     -- 答对提交时间(ms)
-            expression = "",    -- 答对算式
-            rank = 0,           -- 排名
-            usedTime = 0,       -- 用时(ms)
+            finished = false, -- 是否已答对
+            submitTime = 0,   -- 答对提交时间(ms)
+            expression = "",  -- 答对算式
+            rank = 0,         -- 排名
+            usedTime = 0,     -- 用时(ms)
         }
     end
 end
@@ -380,7 +380,7 @@ function logicHandler.submitAnswer(seat, args)
     -- 检查当前阶段
     if logic.stepId ~= config.GAME_STEP.PLAYING then
         log.warn("%s [Logic] 座位%d提交时不在答题阶段", getRoomLogTag(), seat)
-        return {code = 0, msg = "当前不在答题阶段"}
+        return { code = 0, msg = "当前不在答题阶段" }
     end
 
     local exprStr = args and args.expression or ""
@@ -389,11 +389,11 @@ function logicHandler.submitAnswer(seat, args)
     local progress = logic.playerProgress[seat]
     if not progress then
         log.warn("%s [Logic] 座位%d不在本局游戏中", getRoomLogTag(), seat)
-        return {code = 0, msg = "玩家不在本局游戏中"}
+        return { code = 0, msg = "玩家不在本局游戏中" }
     end
     if progress.finished then
         log.warn("%s [Logic] 座位%d本局已答对，不能重复提交", getRoomLogTag(), seat)
-        return {code = 0, msg = "本局已答对，不能重复提交"}
+        return { code = 0, msg = "本局已答对，不能重复提交" }
     end
 
     -- 校验：结果等于24且恰好使用发牌的4个数字各一次
@@ -407,7 +407,7 @@ function logicHandler.submitAnswer(seat, args)
             correct = 0,
             rank = 0,
         })
-        return {code = 0, msg = err or "算式错误"}
+        return { code = 0, msg = err or "算式错误" }
     end
 
     -- 答对：锁定玩家，按答对先后顺序排名（不再立即结束本局）
@@ -462,7 +462,7 @@ function logicHandler.submitAnswer(seat, args)
         logic.stopStep(config.GAME_STEP.PLAYING)
     end
 
-    return {code = 1, msg = "回答正确", rank = progress.rank}
+    return { code = 1, msg = "回答正确", rank = progress.rank }
 end
 
 --[[
