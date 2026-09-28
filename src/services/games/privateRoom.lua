@@ -684,9 +684,9 @@ function PrivateRoom:endVoteDisband(result, reason)
     
     -- 6. 如果投票通过，解散房间
     if result == 1 then
-        -- 延迟3秒解散房间，让客户端有时间处理结果
+        -- 延迟1秒解散房间，让客户端有时间处理结果
         skynet.fork(function()
-            skynet.sleep(300) -- 3秒
+            skynet.sleep(100) -- 1秒
             self:roomEnd(self.config.ROOM_END_FLAG.VOTE_DISBAND)
         end)
     end
