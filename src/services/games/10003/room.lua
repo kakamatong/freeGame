@@ -11,11 +11,13 @@ local cjson = require "cjson"
 local config = require "games.10003.config"
 local PrivateRoom = require "games.privateRoom"
 local logicHandler = require "games.10003.logic"
+local raceLogicHandler = require "games.10003.raceLogic"
 local aiHandler = require "games.10003.ai"
 local ScoringSystem = require "games.10003.scoring"
 local difficulty = require "games.10003.difficulty"
 local questionSource = require "games.10003.questionSource"
 local configLogic = require "games.10003.configLogic"
+local solver = require "games.10003.solver"
 
 -- 题库服务类型名（集群配置中登记的服务类型）
 local QUESTION_BANK_SVR = "questionBank"
@@ -118,6 +120,42 @@ end
 function roomHandler.getDealNumbersFromBank()
     if not roomInstance then return nil end
     return roomInstance:getDealNumbersFromBank()
+end
+
+--[[
+    Logic -> Room：竞速取题预留接口（一次生成共享题序）
+    出题计划由 questionSource.racePlan(difficulty) 决定（当前所有难度最简本地随机）；
+    取题入口以 pcall 包住 + 字段校验，任何失败（服务未登记/返回异常/字段不合法）回退 solver.deal，
+    保证竞速一定能开局。
+    @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
+    @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
+    @return table questions[i] = { numbers = {n1,n2,n3,n4} }
+]]
+function roomHandler.getRaceQuestionSet(count, difficulty)
+    if not roomInstance then return nil end
+    return roomInstance:getRaceQuestionSet(count, difficulty)
+end
+
+--[[
+    竞速结束回调（由 raceLogic 调用）
+    竞速一房一场：直接走 roomEnd 关闭房间（不走 HALFTIME/再来一局）；
+    roomEnd 内部下发 totalResult 大结算（totalResult 流程复用）。
+    @param endType number 结束类型（1:有人完赛 2:保护时限到）
+    @param rankings table 排名列表（房间座位）
+]]
+function roomHandler.onRaceEnd(endType, rankings)
+    if not roomInstance then return end
+    log.info("%s [Room] 竞速结束，类型: %d", roomInstance:getRoomLogTag(), endType)
+
+    local currentRound = roomInstance.roomInfo.playedCnt
+    if roomInstance.roomInfo.record then
+        roomInstance.roomInfo.record[currentRound] = roomInstance.roomInfo.record[currentRound] or {}
+        roomInstance.roomInfo.record[currentRound].endTime = os.time()
+        roomInstance.roomInfo.record[currentRound].rankings = rankings
+    end
+
+    -- 竞速一房一场：直接关闭房间（roomEnd 内部先发 totalResult 大结算）
+    roomInstance:roomEnd(config.ROOM_END_FLAG.GAME_END)
 end
 
 --[[
@@ -361,10 +399,19 @@ function Room:init(data)
         -- 初始化匹配房间玩家
         self:_initMatchRoomPlayers(data)
     elseif self:isPrivateRoom() then
-        -- 局数：创建时通过 privateRule.playNum 传入（3/5/7），默认3局
+        -- 玩法模式（0普通/1竞速）：创建时通过 privateRule.playMode 传入，白名单外回退普通；
+        -- 竞速只在好友房（私人房）生效，匹配房完全不动
+        self.roomInfo.playMode = raceLogicHandler.normalizePlayMode(self.roomInfo.privateRule.playMode)
+        -- 竞速题数：创建时通过 privateRule.raceQuestionCount 传入（白名单5/10），
+        -- 非法值回退 config.RACE.DEFAULT_QUESTION_COUNT
+        self.roomInfo.raceQuestionCount = raceLogicHandler.normalizeQuestionCount(self.roomInfo.privateRule.raceQuestionCount)
+        -- 局数：创建时通过 privateRule.playNum 传入（3/5/7），默认3局；竞速模式忽略局数（一房一竞速）
         local playNum = self.roomInfo.privateRule.playNum or 3
         if not config.PRIVATE_ROOM_MODE[playNum] then
             playNum = 3
+        end
+        if self.roomInfo.playMode == config.PLAY_MODE.RACE then
+            playNum = 1
         end
         -- 难度等级：创建时通过 privateRule.difficulty 传入（0随机/1简单/2中等/3困难），非法值按随机
         self._privateDifficulty = questionSource.normalizePrivateDifficulty(self.roomInfo.privateRule.difficulty)
@@ -453,6 +500,18 @@ function Room:initLogic()
         seatMap = logic2room,
     }
 
+    -- 玩法分流：好友房竞速（playMode=1）走 raceLogic 竞速单场逻辑，跳过 logic.lua 单局状态机；
+    -- 普通模式（含匹配房）保持原路径零改动
+    if self:isPrivateRoom() and self.roomInfo.playMode == config.PLAY_MODE.RACE then
+        self.logicHandler = raceLogicHandler
+        ruleData.totalQuestions = self.roomInfo.raceQuestionCount or config.RACE.DEFAULT_QUESTION_COUNT
+        ruleData.maxDuration = config.RACE.MAX_DURATION
+        ruleData.questionTime = config.RACE.QUESTION_TIME
+        ruleData.difficulty = self._privateDifficulty
+    else
+        self.logicHandler = logicHandler
+    end
+
     self.logicHandler.init(ruleData, roomHandler, self.roomInfo.gameid, self.roomInfo.roomid)
     self.aiHandler.init(roomHandlerAi, self.roomInfo.robotCnt, self.roomInfo.gameid, self.roomInfo.roomid)
     -- 传递房间信息给子模块
@@ -524,6 +583,68 @@ function Room:getDealNumbersFromBank()
     log.info("%s [Room] 题库取题成功 难度%d 题号%s 数字%s", self:getRoomLogTag(), difficultyId,
         tostring(data.id), table.concat(numbers, ","))
     return numbers, difficultyId
+end
+
+--[[
+    竞速取题（预留接口实现）：生成 count 道共享题
+    出题计划来自 questionSource.racePlan(difficulty)（预留：将来接题库/难度权重改这里与 config.RACE.DIFFICULTY）；
+    当前所有难度统一最简本地随机计划 = count × solver.deal(numberMin, numberMax)。
+    取题走 pcall + 字段校验，任何失败（服务未登记/返回异常/字段不合法）回退本地随机，保证竞速一定能开。
+    @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
+    @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
+    @return table questions[i] = { numbers = {n1,n2,n3,n4} }
+]]
+function Room:getRaceQuestionSet(count, difficulty)
+    local plan = questionSource.racePlan(difficulty)
+    local min = config.NUMBER_RANGE.MIN
+    local max = config.NUMBER_RANGE.MAX
+    if type(plan) == "table" then
+        min = tonumber(plan.numberMin) or min
+        max = tonumber(plan.numberMax) or max
+    end
+
+    local questions = {}
+    for i = 1, count do
+        -- 预留外部题源入口：pcall 兜住跨服务异常；当前计划为本地随机，字段不合法同样回退
+        local numbers = nil
+        local ok, result = pcall(function()
+            if type(plan) == "table" and plan.source ~= nil and plan.source ~= "local" then
+                -- 将来接题库：plan.source 标记外部来源，此处调用取数接口
+                return nil
+            end
+            return solver.deal(min, max)
+        end)
+        if ok and type(result) == "table" and #result == configLogic.DEAL_COUNT then
+            local valid = true
+            for _, n in ipairs(result) do
+                if type(n) ~= "number" or n % 1 ~= 0 then
+                    valid = false
+                    break
+                end
+            end
+            if valid then
+                numbers = result
+            end
+        end
+        if not numbers then
+            -- 失败回退：本地随机出题（保证有解）
+            numbers = solver.deal(min, max)
+        end
+        questions[i] = { numbers = numbers }
+    end
+    return questions
+end
+
+-- 重写私人房信息下发：竞速玩法追加 playMode/totalQuestions（新 tag 追加，旧客户端安全忽略）
+function Room:sendPrivateInfo(userid)
+    local data = {
+        nowCnt = self.roomInfo.playedCnt,
+        maxCnt = self.roomInfo.mode.maxCnt,
+        ext = cjson.encode(self.roomInfo.logicData),
+        playMode = self.roomInfo.playMode or config.PLAY_MODE.NORMAL,
+        totalQuestions = self.roomInfo.raceQuestionCount or 0,
+    }
+    self:sendToOneClient(userid, "privateInfo", data)
 end
 
 -- 启动定时任务

@@ -12,6 +12,7 @@
 ]]
 
 local difficulty = require "games.10003.difficulty"
+local gameConfig = require "games.10003.config"
 
 local source = {}
 
@@ -76,6 +77,30 @@ function source.roll(plan)
         return true, difficulty.roll()
     end
     return true, math.random(plan.min or 1, plan.max or 5)
+end
+
+--[[
+    竞速玩法出题计划（预留接口）：返回该难度的出题计划
+    当前：所有难度（0随机/1简单/2中等/3困难）统一返回最简本地随机计划；
+    将来接入题库/难度权重时改 config.RACE.DIFFICULTY 与此处即可生效，不动调用链
+    （raceLogic/roomHandler.getRaceQuestionSet 消费）。
+    @param difficulty any 难度等级（非法值按随机0处理，与 normalizePrivateDifficulty 一致）
+    @return table 计划 { source=来源标记, numberMin, numberMax }
+]]
+function source.racePlan(difficulty)
+    local id = source.normalizePrivateDifficulty(difficulty)
+    -- 每难度出题配置预留：config.RACE.DIFFICULTY[id]（暂空表，将来填 source/numberMin/numberMax 即生效）
+    local raceConf = (type(gameConfig.RACE) == "table" and type(gameConfig.RACE.DIFFICULTY) == "table")
+        and gameConfig.RACE.DIFFICULTY[id] or nil
+    if type(raceConf) == "table" then
+        return {
+            source = raceConf.source or "local",
+            numberMin = raceConf.numberMin,
+            numberMax = raceConf.numberMax,
+        }
+    end
+    -- 最简本地随机计划：数字范围交由调用方（room/raceLogic 的 rule.numberMin/numberMax）决定
+    return { source = "local" }
 end
 
 return source

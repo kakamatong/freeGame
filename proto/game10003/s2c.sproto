@@ -134,6 +134,8 @@ privateInfo 12 {
         nowCnt 0 : integer
         maxCnt 1 : integer
         ext 2 : string
+        playMode 3 : integer       # 玩法模式：0普通/1竞速（新tag追加，旧客户端安全）
+        totalQuestions 4 : integer  # 竞速题数（playMode=1 时有效）
     }
 }
 
@@ -258,5 +260,54 @@ gameEnd 35 {
 gameRelink 36 {
     request {
         startTime 0 : integer
+    }
+}
+
+# ============================================
+# 竞速玩法协议 (37-39，好友房 playMode=1 时使用)
+# ============================================
+
+# 竞速玩家进度
+.RaceProgressInfo {
+    seat 0 : integer             # 房间座位
+    questionIndex 1 : integer    # 当前题号（1开始）
+    finishedCount 2 : integer    # 已答对题数
+    usedTimeMs 3 : integer       # 达到当前进度用时(毫秒)
+    status 4 : integer           # 0:答题中, 1:已完赛
+}
+
+# 竞速题目下发（只单发本人当前题）
+raceQuestion 37 {
+    request {
+        questionIndex 0 : integer   # 当前题号（1开始）
+        totalQuestions 1 : integer  # 总题数
+        numbers 2 : *integer        # 本题4个数字
+        startTime 3 : integer       # 竞速开始时间
+        timeLimit 4 : integer       # 单题时限(秒)，0=不限时（预留）
+    }
+}
+
+# 竞速进度快照（每次推进全量广播，重连补发同一份）
+raceProgress 38 {
+    request {
+        players 0 : *RaceProgressInfo
+    }
+}
+
+# 竞速排名
+.RaceRankingInfo {
+    seat 0 : integer             # 房间座位
+    finishedCount 1 : integer    # 已答对题数
+    usedTimeMs 2 : integer       # 用时(毫秒)
+    rank 3 : integer             # 排名（1开始）
+}
+
+# 竞速结束（跳过小结算，客户端直接进大结算）
+raceFinish 39 {
+    request {
+        endType 0 : integer         # 1:有人完赛, 2:保护时限到
+        winnerSeat 1 : integer      # 完赛者房间座位（endType=2 时为0）
+        questionCount 2 : integer   # 总题数
+        rankings 3 : *RaceRankingInfo
     }
 }

@@ -77,6 +77,21 @@ config.PRIVATE_ROOM = {
     MAX_PLAYERS = 6,  -- 私人房最大玩家数
 }
 
+-- 玩法模式（privateRule.playMode，仅私人房生效；匹配房完全不动）
+config.PLAY_MODE = {
+    NORMAL = 0,  -- 普通模式（现状不变）
+    RACE = 1,    -- 竞速模式（好友房竞速玩法）
+}
+
+-- 竞速玩法配置（playMode=1 时生效）
+config.RACE = {
+    QUESTION_COUNTS = { 5, 10 },      -- 题数白名单（创房界面可选），非法值回退默认
+    DEFAULT_QUESTION_COUNT = 10,      -- 默认题数
+    MAX_DURATION = 600,               -- 整场保护时限(秒)：纯速度不限单题时限，到点强制结算
+    QUESTION_TIME = 0,                -- 单题时限(秒)预留，0=不限时
+    DIFFICULTY = {},                  -- 每难度出题配置预留(暂空)，改此处即可生效、不动调用链
+}
+
 -- 发牌数字范围（可配置）
 config.NUMBER_RANGE = {
     MIN = 1,  -- 最小数字
