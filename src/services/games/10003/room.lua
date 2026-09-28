@@ -14,10 +14,7 @@ local logicHandler = require "games.10003.logic"
 local raceLogicHandler = require "games.10003.raceLogic"
 local aiHandler = require "games.10003.ai"
 local ScoringSystem = require "games.10003.scoring"
-local difficulty = require "games.10003.difficulty"
 local questionSource = require "games.10003.questionSource"
-local configLogic = require "games.10003.configLogic"
-local solver = require "games.10003.solver"
 
 -- 题库服务类型名（集群配置中登记的服务类型）
 local QUESTION_BANK_SVR = "questionBank"
@@ -113,20 +110,22 @@ function roomHandler.sendToAll(name, data)
 end
 
 --[[
-    Logic -> Room：取本局题目数字（题库优先）
-    取不到时返回 nil，由 logic 回退到本地随机生成
-    @return table|nil 4个数字
+    Logic -> Room：取一道题（出题策略+获取题目已收敛至 questionSource.getQuestion）
+    命名注意：区别于 roomHandlerAi.getDealNumbers（AI 拿本局已发数字），本接口是“取新题”。
+    契约：永远返回可用题（questionSource 内部保证失败回退 solver.deal）
+    @return table 4个数字
+    @return number|nil 题库难度id（走题库时有值）
+    @return boolean 是否来自题库
 ]]
-function roomHandler.getDealNumbersFromBank()
+function roomHandler.getQuestion()
     if not roomInstance then return nil end
-    return roomInstance:getDealNumbersFromBank()
+    return roomInstance:getQuestion()
 end
 
 --[[
     Logic -> Room：竞速取题预留接口（一次生成共享题序）
     出题计划由 questionSource.racePlan(difficulty) 决定（当前所有难度最简本地随机）；
-    取题入口以 pcall 包住 + 字段校验，任何失败（服务未登记/返回异常/字段不合法）回退 solver.deal，
-    保证竞速一定能开局。
+    取题、字段校验与失败回退已收敛至 questionSource.getRaceQuestionSet，保证竞速一定能开局。
     @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
     @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
     @return table questions[i] = { numbers = {n1,n2,n3,n4} }
@@ -525,114 +524,52 @@ function Room:initLogic()
 end
 
 --[[
-    向题库服务取本局题目数字
-    说明：题库只是优先来源，任何失败（服务未部署/未登记、返回异常、字段不合法）
-    都返回 nil，由 logic 回退到本地随机生成，保证对局一定能开局。
-    @return table|nil 4个数字
-    @return number|nil 难度id（取到题目时有值）
+    取一道题（出题策略+获取题目已收敛至 questionSource.getQuestion）
+    本方法只组装取题上下文 ctx（房间类型/难度/数字范围/去重状态/题库调用闭包），
+    策略掷骰、题库调用、字段校验、题号去重、失败回退全部在 questionSource 内完成。
+    @return table 4个数字（必有）
+    @return number|nil 题库难度id（走题库时有值）
+    @return boolean 是否来自题库
 ]]
---[[
-    向题库服务取本局题目数字
-    出题来源由 questionSource 按房间类型与私人房难度等级决定：
-    - 匹配房：10% 走题库（难度按权重 30/30/20/15/5）
-    - 私人房：随机 50%、简单 0%、中等/困难 100%（难度区间见 questionSource）
-    未命中概率时返回 nil（由 logic 走本地随机）。命中后任何失败（服务未部署/未登记、
-    返回异常、字段不合法）也返回 nil，保证对局一定能开局。
-    @return table|nil 4个数字
-    @return number|nil 难度id（取到题目时有值）
-]]
-function Room:getDealNumbersFromBank()
+function Room:getQuestion()
     self._recentQuestionIds = self._recentQuestionIds or {}
-
-    -- 先按出题来源策略掷一次：未命中则本局走本地随机
-    local plan = questionSource.plan(self:isMatchRoom(), self._privateDifficulty)
-    local useBank, difficultyId = questionSource.roll(plan)
-    if not useBank then
-        return nil
-    end
-
-    local gameid = self.roomInfo.gameid or GAME_ID
-    local opts = { excludeIds = self._recentQuestionIds }
-
-    -- 题库服务未登记时 clusterManager 直接返回 nil；服务异常用 pcall 兜住，统一走回退
-    local ok, resp = pcall(_G.call, QUESTION_BANK_SVR, "getQuestion", gameid, difficultyId, opts)
-    if not ok then
-        log.error("%s [Room] 题库服务调用异常(难度%d): %s", self:getRoomLogTag(), difficultyId, tostring(resp))
-        return nil
-    end
-    if type(resp) ~= "table" or resp.code ~= 1 or type(resp.data) ~= "table" then
-        log.error("%s [Room] 题库返回异常(难度%d): %s", self:getRoomLogTag(), difficultyId, UTILS.tableToString(resp))
-        return nil
-    end
-
-    local data = resp.data
-    local numbers = data.numbers
-    if type(numbers) ~= "table" or #numbers ~= configLogic.DEAL_COUNT then
-        log.error("%s [Room] 题库题目字段异常(难度%d): %s", self:getRoomLogTag(), difficultyId, UTILS.tableToString(data))
-        return nil
-    end
-
-    -- 记录题号，避免同一房间短期内重复出题
-    if type(data.id) == "string" and data.id ~= "" then
-        table.insert(self._recentQuestionIds, data.id)
-        if #self._recentQuestionIds > RECENT_QUESTION_LIMIT then
-            table.remove(self._recentQuestionIds, 1)
-        end
-    end
-
-    log.info("%s [Room] 题库取题成功 难度%d 题号%s 数字%s", self:getRoomLogTag(), difficultyId,
-        tostring(data.id), table.concat(numbers, ","))
-    return numbers, difficultyId
+    return questionSource.getQuestion({
+        isMatchRoom = self:isMatchRoom(),
+        difficulty = self._privateDifficulty,
+        gameid = self.roomInfo.gameid or GAME_ID,
+        numberMin = config.NUMBER_RANGE.MIN,
+        numberMax = config.NUMBER_RANGE.MAX,
+        recentIds = self._recentQuestionIds,
+        recentLimit = RECENT_QUESTION_LIMIT,
+        logTag = self:getRoomLogTag(),
+        callBank = function(gameid, difficultyId, opts)
+            return _G.call(QUESTION_BANK_SVR, "getQuestion", gameid, difficultyId, opts)
+        end,
+    })
 end
 
 --[[
-    竞速取题（预留接口实现）：生成 count 道共享题
-    出题计划来自 questionSource.racePlan(difficulty)（预留：将来接题库/难度权重改这里与 config.RACE.DIFFICULTY）；
-    当前所有难度统一最简本地随机计划 = count × solver.deal(numberMin, numberMax)。
-    取题走 pcall + 字段校验，任何失败（服务未登记/返回异常/字段不合法）回退本地随机，保证竞速一定能开。
+    竞速取题：生成 count 道共享题（出题计划与取题已收敛至 questionSource.getRaceQuestionSet）
+    出题计划来自 questionSource.racePlan(difficulty)（预留：将来接题库/难度权重改 config.RACE.DIFFICULTY 即生效）；
+    任何失败（服务未登记/返回异常/字段不合法）回退本地随机，保证竞速一定能开。
     @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
     @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
     @return table questions[i] = { numbers = {n1,n2,n3,n4} }
 ]]
 function Room:getRaceQuestionSet(count, difficulty)
-    local plan = questionSource.racePlan(difficulty)
-    local min = config.NUMBER_RANGE.MIN
-    local max = config.NUMBER_RANGE.MAX
-    if type(plan) == "table" then
-        min = tonumber(plan.numberMin) or min
-        max = tonumber(plan.numberMax) or max
-    end
-
-    local questions = {}
-    for i = 1, count do
-        -- 预留外部题源入口：pcall 兜住跨服务异常；当前计划为本地随机，字段不合法同样回退
-        local numbers = nil
-        local ok, result = pcall(function()
-            if type(plan) == "table" and plan.source ~= nil and plan.source ~= "local" then
-                -- 将来接题库：plan.source 标记外部来源，此处调用取数接口
-                return nil
-            end
-            return solver.deal(min, max)
-        end)
-        if ok and type(result) == "table" and #result == configLogic.DEAL_COUNT then
-            local valid = true
-            for _, n in ipairs(result) do
-                if type(n) ~= "number" or n % 1 ~= 0 then
-                    valid = false
-                    break
-                end
-            end
-            if valid then
-                numbers = result
-            end
-        end
-        if not numbers then
-            -- 失败回退：本地随机出题（保证有解）
-            numbers = solver.deal(min, max)
-        end
-        questions[i] = { numbers = numbers }
-    end
-    return questions
+    self._recentQuestionIds = self._recentQuestionIds or {}
+    return questionSource.getRaceQuestionSet({
+        difficulty = difficulty,
+        gameid = self.roomInfo.gameid or GAME_ID,
+        numberMin = config.NUMBER_RANGE.MIN,
+        numberMax = config.NUMBER_RANGE.MAX,
+        recentIds = self._recentQuestionIds,
+        recentLimit = RECENT_QUESTION_LIMIT,
+        logTag = self:getRoomLogTag(),
+        callBank = function(gameid, difficultyId, opts)
+            return _G.call(QUESTION_BANK_SVR, "getQuestion", gameid, difficultyId, opts)
+        end,
+    }, count)
 end
 
 -- 重写私人房信息下发：竞速玩法追加 playMode/totalQuestions（新 tag 追加，旧客户端安全忽略）

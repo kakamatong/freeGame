@@ -254,31 +254,31 @@ function logicHandler.init(rule, roomHandler, gameid, roomid)
 end
 
 --[[
-    发牌：先问 Room 要题库题目（是否走题库、用哪个难度由 Room 按房间类型与难度等级决定），
-    取不到则保留原有本地随机生成逻辑
-    说明：题库只决定题目内容，不影响“本局一定能发到牌”——未命中概率、题库异常或字段非法
-    都回退到 solver.deal（保证有解）
+    发牌：出题策略+获取题目统一走 questionSource（经 roomHandler.getQuestion，返回值必有）。
+    三返回值：numbers 4个数字 / difficultyId 题库难度id（走题库时有值）/ fromBank 是否来自题库。
+    questionSource 已保证失败回退 solver.deal（保证有解）；此处 solver.deal 兜底为二道保险，
+    仅防接口缺失/异常，正常路径不触发。
 ]]
 function logic._deal()
-    local bankNumbers = nil
+    local numbers, difficultyId, fromBank = nil, nil, false
 
-    if logic.roomHandler and logic.roomHandler.getDealNumbersFromBank then
-        local ok, numbers = pcall(logic.roomHandler.getDealNumbersFromBank)
-        if not ok then
-            log.error("%s [Logic] 题库取题异常，回退本地随机: %s", getRoomLogTag(), tostring(numbers))
-        elseif type(numbers) == "table" and #numbers == config.DEAL_COUNT then
-            bankNumbers = numbers
+    if logic.roomHandler and logic.roomHandler.getQuestion then
+        local ok, result, dId, bBank = pcall(logic.roomHandler.getQuestion)
+        if ok and type(result) == "table" and #result == config.DEAL_COUNT then
+            numbers, difficultyId, fromBank = result, dId, bBank
+        else
+            log.error("%s [Logic] 取题接口异常，回退本地随机: %s", getRoomLogTag(), tostring(result))
         end
     end
 
-    if bankNumbers then
-        logic.dealNumbers = bankNumbers
-        log.info("%s [Logic] 第%d局发牌(题库): %s", getRoomLogTag(), logic.roundNum, table.concat(bankNumbers, ","))
-        return
+    if not numbers then
+        -- 二道保险：questionSource.getDealNumbers 已保证必出题，此处仅防接口缺失/异常
+        numbers = solver.deal(logic.rule.numberMin, logic.rule.numberMax)
     end
 
-    logic.dealNumbers = solver.deal(logic.rule.numberMin, logic.rule.numberMax)
-    log.info("%s [Logic] 第%d局发牌(本地随机): %s", getRoomLogTag(), logic.roundNum, table.concat(logic.dealNumbers, ","))
+    logic.dealNumbers = numbers
+    log.info("%s [Logic] 第%d局发牌(%s): %s", getRoomLogTag(), logic.roundNum,
+        fromBank and ("题库难度" .. tostring(difficultyId)) or "本地随机", table.concat(numbers, ","))
 end
 
 -- 初始化玩家进度
