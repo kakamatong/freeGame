@@ -6,7 +6,7 @@
     玩法（2026-09-28 产品拍板）：
     1. 全员同一题序：开局一次生成 N 道题（shared），所有人题目一模一样、顺序相同
     2. 答错只重试不推进：错误只回 submitAnswer response，不广播、不推进题号（防共享题序泄题）
-    3. 纯速度不限单题时限；整场保护时限 config.RACE.MAX_DURATION（默认600秒，可配），
+    3. 纯速度不限单题时限；整场保护时限 config.RACE.MAX_DURATION（默认1800秒，可配），
        到点强制 raceFinish(endType=2) 按当前进度排名
     4. 谁先答完全部 N 题 -> 竞速立即结束 -> raceFinish -> totalResult 大结算 -> roomEnd（一房一竞速）
     5. 排名：完成者按完成时间升序（先答完全部者 rank=1）；
@@ -32,16 +32,16 @@ local skynet = require "skynet"
 
 -- 竞速状态
 local RACE_STATUS = {
-    NONE = 0,      -- 未开始
-    PLAYING = 1,   -- 进行中
-    ENDED = 2,     -- 已结束
+    NONE = 0,    -- 未开始
+    PLAYING = 1, -- 进行中
+    ENDED = 2,   -- 已结束
 }
 
 -- 竞速结束类型（对应 raceFinish.endType）
 local RACE_END_TYPE = {
     NONE = 0,
-    FINISH = 1,    -- 有人完赛
-    TIMEOUT = 2,   -- 整场保护时限到
+    FINISH = 1,  -- 有人完赛
+    TIMEOUT = 2, -- 整场保护时限到
 }
 
 local race = { gameid = 0, roomid = 0 }
@@ -62,15 +62,15 @@ end
 
 -- ==================== 竞速状态 ====================
 race.status = RACE_STATUS.NONE
-race.totalQuestions = 0          -- 总题数 N
-race.questions = {}              -- 共享题序 questions[i] = { numbers = {n1,n2,n3,n4} }
-race.players = {}                -- players[logicSeat] = 玩家进度
-race.startTimeMs = 0             -- 开赛毫秒时间
-race.startWallTime = 0           -- 开赛秒级时间（下发协议用）
-race.roundNum = 0                -- 局数（竞速一局，恒为1，兼容 gameStart 字段）
+race.totalQuestions = 0 -- 总题数 N
+race.questions = {}     -- 共享题序 questions[i] = { numbers = {n1,n2,n3,n4} }
+race.players = {}       -- players[logicSeat] = 玩家进度
+race.startTimeMs = 0    -- 开赛毫秒时间
+race.startWallTime = 0  -- 开赛秒级时间（下发协议用）
+race.roundNum = 0       -- 局数（竞速一局，恒为1，兼容 gameStart 字段）
 race.endType = RACE_END_TYPE.NONE
-race.winnerSeat = 0              -- 完赛者逻辑座位（超时结束为0）
-race.finishData = nil            -- 终态快照（重连终态恢复用）
+race.winnerSeat = 0     -- 完赛者逻辑座位（超时结束为0）
+race.finishData = nil   -- 终态快照（重连终态恢复用）
 race.roomHandler = nil
 race.rule = {}
 race.seatMap = {}
@@ -191,7 +191,7 @@ function race._questionMsg(seat)
         totalQuestions = race.totalQuestions,
         numbers = q and q.numbers or {},
         startTime = race.startWallTime,
-        timeLimit = config.RACE.QUESTION_TIME,   -- 0=不限时（单题时限预留）
+        timeLimit = config.RACE.QUESTION_TIME, -- 0=不限时（单题时限预留）
     }
 end
 
@@ -365,10 +365,10 @@ function raceHandler.startGame(roundNum)
     race.players = {}
     for seat = 1, race.rule.playerCnt do
         race.players[seat] = {
-            questionIndex = 1,        -- 当前题号（1开始）
-            finishedCount = 0,        -- 已答对题数
-            lastAnswerTimeMs = race.startTimeMs,  -- 达成当前进度的时刻（同进度排名 tiebreak）
-            wrongCount = 0,           -- 答错次数（不推进、仅统计）
+            questionIndex = 1,                   -- 当前题号（1开始）
+            finishedCount = 0,                   -- 已答对题数
+            lastAnswerTimeMs = race.startTimeMs, -- 达成当前进度的时刻（同进度排名 tiebreak）
+            wrongCount = 0,                      -- 答错次数（不推进、仅统计）
             finished = false,
             finishTimeMs = 0,
         }

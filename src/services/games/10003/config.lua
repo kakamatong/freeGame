@@ -15,8 +15,8 @@ local config = {
 }
 
 -- 匹配房间配置
-config.MATCH_ROOM_WAITTING_CONNECT_TIME = 8   -- 等待连接时间(秒)
-config.MATCH_ROOM_GAME_TIME = 300             -- 房间总游戏时间(秒)
+config.MATCH_ROOM_WAITTING_CONNECT_TIME = 8 -- 等待连接时间(秒)
+config.MATCH_ROOM_GAME_TIME = 300           -- 房间总游戏时间(秒)
 
 -- 房间状态
 config.ROOM_STATUS = {
@@ -74,21 +74,21 @@ config.ROOM_END_FLAG = {
 
 -- 私人房配置
 config.PRIVATE_ROOM = {
-    MAX_PLAYERS = 6,  -- 私人房最大玩家数
+    MAX_PLAYERS = 6, -- 私人房最大玩家数
 }
 
 -- 玩法模式（privateRule.playMode，仅私人房生效；匹配房完全不动）
 config.PLAY_MODE = {
-    NORMAL = 0,  -- 普通模式（现状不变）
-    RACE = 1,    -- 竞速模式（好友房竞速玩法）
+    NORMAL = 0, -- 普通模式（现状不变）
+    RACE = 1,   -- 竞速模式（好友房竞速玩法）
 }
 
 -- 竞速玩法配置（playMode=1 时生效）
 config.RACE = {
-    QUESTION_COUNTS = { 5, 10 },      -- 题数白名单（创房界面可选），非法值回退默认
-    DEFAULT_QUESTION_COUNT = 10,      -- 默认题数
-    MAX_DURATION = 600,               -- 整场保护时限(秒)：纯速度不限单题时限，到点强制结算
-    QUESTION_TIME = 0,                -- 单题时限(秒)预留，0=不限时
+    QUESTION_COUNTS = { 5, 10 }, -- 题数白名单（创房界面可选），非法值回退默认
+    DEFAULT_QUESTION_COUNT = 10, -- 默认题数
+    MAX_DURATION = 1800,         -- 整场保护时限(秒)：纯速度不限单题时限，到点强制结算
+    QUESTION_TIME = 0,           -- 单题时限(秒)预留，0=不限时
     -- 每难度出题分段（按题号顺序落段，占比合计必须=100）：
     -- 段格式 { pct = 占比%, source = "local"(本地随机)/"bank"(题库), dMin, dMax = 题库难度区间(仅bank，1~5) }
     -- 0随机：前50%本地随机，后50%题库d1-d5；1简单：全部本地随机；
@@ -115,8 +115,8 @@ config.RACE = {
 
 -- 发牌数字范围（可配置）
 config.NUMBER_RANGE = {
-    MIN = 1,  -- 最小数字
-    MAX = 9,  -- 最大数字
+    MIN = 1, -- 最小数字
+    MAX = 9, -- 最大数字
 }
 
 -- 每局答题时间(秒)，超时无人答对则本局无胜者
@@ -132,21 +132,21 @@ config.PRIVATE_ROOM_MODE = {
     [3] = { name = "3局", maxCnt = 3 },
     [5] = { name = "5局", maxCnt = 5 },
     [10] = { name = "10局", maxCnt = 10 },
-    [999] = { name = "无限对局", maxCnt = 999 },   -- 封顶999局，正常游玩等同无限
+    [999] = { name = "无限对局", maxCnt = 999 }, -- 封顶999局，正常游玩等同无限
 }
 
 -- 计分配置（参考10002）
 config.SCORING = {
     -- 匹配模式计分
     MATCH = {
-        initial_score = 1000,       -- 初始分数
-        min_score = 0,              -- 最低分数
+        initial_score = 1000, -- 初始分数
+        min_score = 0,        -- 最低分数
         -- 未答对扣分档位（threshold: 当前分数低于此值时适用）
         unfinished_penalty = {
-            { threshold = 200,  penalty = 0 },   -- 0-199分: 0分
-            { threshold = 500,  penalty = 1 },   -- 200-499分: -1分
-            { threshold = 1000, penalty = 2 },   -- 500-999分: -2分
-            { threshold = nil,  penalty = 3 },   -- 1000分以上: -3分
+            { threshold = 200,  penalty = 0 }, -- 0-199分: 0分
+            { threshold = 500,  penalty = 1 }, -- 200-499分: -1分
+            { threshold = 1000, penalty = 2 }, -- 500-999分: -2分
+            { threshold = nil,  penalty = 3 }, -- 1000分以上: -3分
         },
     },
     -- 私人房计分（答对者按排名计分，未答对0分）
@@ -155,9 +155,9 @@ config.SCORING = {
 
 -- AI配置
 config.AI = {
-    ACTION_PROBABILITY = 5,                  -- 每次判定的答题概率（百分比）
-    ROLL_INTERVAL = 1,                       -- 判定间隔（秒）：起解后每秒判定一次
-    ACT_START_DELAY = 10,                    -- 前10秒不答题，给真人先手空间
+    ACTION_PROBABILITY = 5, -- 每次判定的答题概率（百分比）
+    ROLL_INTERVAL = 1,      -- 判定间隔（秒）：起解后每秒判定一次
+    ACT_START_DELAY = 10,   -- 前10秒不答题，给真人先手空间
 }
 
 -- 消息转发类型
