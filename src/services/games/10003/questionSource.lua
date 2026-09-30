@@ -13,7 +13,12 @@
         1 简单：纯本地随机，不走题库
         2 中等：走题库，难度 1-3 均匀随机
         3 困难：走题库，难度 3-5 均匀随机
-      竞速：racePlan(difficulty)，当前所有难度统一最简本地随机（config.RACE.DIFFICULTY 预留）
+      竞速（好友房 playMode=1）：按题号顺序分段出题，分段表 config.RACE.DIFFICULTY：
+        0 随机：前50%本地随机，后50%题库d1-d5随机
+        1 简单：全部本地随机
+        2 中等：前50%本地随机，后50%题库d1-d3随机
+        3 困难：前20%本地随机，中间60%题库d1-d3随机，后20%题库d4-d5随机
+        分段边界按累计占比四舍五入落题号；题库失败逐题回退本地随机
     依赖注入：题库跨服务调用经 ctx.callBank 传入（room 组装闭包），日志走 log 模块（离线单测可桩）；
     本模块不直接依赖 skynet，可用 Lua 解释器离线单测。回退保证：未命中概率、题库异常、返回/字段非法一律回退
     solver.deal（保证有解），取题接口永远返回可用题目。
@@ -136,28 +141,66 @@ function source.roll(plan)
 end
 
 --[[
-    竞速玩法出题计划（预留接口）：返回该难度的出题计划
-    当前：所有难度（0随机/1简单/2中等/3困难）统一返回最简本地随机计划；
-    将来接入题库/难度权重时改 config.RACE.DIFFICULTY 与此处即可生效，不动调用链
-    （raceLogic/roomHandler.getRaceQuestionSet 消费）。
+    竞速玩法出题分段计划：返回该难度的分段数组（config.RACE.DIFFICULTY[id]）
+    分段校验：每段 pct>0、source∈{local,bank}、bank 段 dMin/dMax 为 1~5 整数且 dMin<=dMax、
+    各段 pct 合计 100（容差0.01）；任一不满足打 error 并整场回退全本地随机（保证竞速一定能开）。
     @param difficulty any 难度等级（非法值按随机0处理，与 normalizePrivateDifficulty 一致）
-    @return table 计划 { source=来源标记, difficultyId, numberMin, numberMax }
+    @return table segments 分段数组 { pct, source="local"/"bank", dMin, dMax }
 ]]
 function source.racePlan(difficulty)
+    local FALLBACK = { { pct = 100, source = "local" } }
     local id = source.normalizePrivateDifficulty(difficulty)
-    -- 每难度出题配置预留：config.RACE.DIFFICULTY[id]（暂空表，将来填 source/difficultyId/numberMin/numberMax 即生效）
-    local raceConf = (type(gameConfig.RACE) == "table" and type(gameConfig.RACE.DIFFICULTY) == "table")
+    local segments = (type(gameConfig.RACE) == "table" and type(gameConfig.RACE.DIFFICULTY) == "table")
         and gameConfig.RACE.DIFFICULTY[id] or nil
-    if type(raceConf) == "table" then
-        return {
-            source = raceConf.source or "local",
-            difficultyId = raceConf.difficultyId,
-            numberMin = raceConf.numberMin,
-            numberMax = raceConf.numberMax,
-        }
+    if type(segments) ~= "table" or #segments == 0 then
+        return FALLBACK
     end
-    -- 最简本地随机计划：数字范围交由调用方（ctx.numberMin/numberMax，来自 room 的 rule）决定
-    return { source = "local" }
+    local sum = 0
+    for _, seg in ipairs(segments) do
+        local pct = (type(seg) == "table") and tonumber(seg.pct) or nil
+        if not pct or pct <= 0 then
+            log.error("[Source] 竞速分段非法(pct)，难度%s，回退全本地随机", tostring(id))
+            return FALLBACK
+        end
+        if seg.source ~= "local" and seg.source ~= "bank" then
+            log.error("[Source] 竞速分段非法(source=%s)，难度%s，回退全本地随机", tostring(seg.source), tostring(id))
+            return FALLBACK
+        end
+        if seg.source == "bank" then
+            local dMin, dMax = tonumber(seg.dMin), tonumber(seg.dMax)
+            if not dMin or not dMax or dMin % 1 ~= 0 or dMax % 1 ~= 0 or dMin < 1 or dMax > 5 or dMin > dMax then
+                log.error("[Source] 竞速分段非法(bank难度区间 %s~%s)，难度%s，回退全本地随机",
+                    tostring(seg.dMin), tostring(seg.dMax), tostring(id))
+                return FALLBACK
+            end
+        end
+        sum = sum + pct
+    end
+    if math.abs(sum - 100) > 0.01 then
+        log.error("[Source] 竞速分段占比合计%s(不等于100)，难度%s，回退全本地随机", tostring(sum), tostring(id))
+        return FALLBACK
+    end
+    return segments
+end
+
+--[[
+    按题号取所在分段：边界 bound_k = floor(count × 累计占比% + 0.5)（四舍五入落题号），
+    第 k 段覆盖题号 bound_{k-1}+1 ~ bound_k，末段强制覆盖到 count（余数全落末段）。
+    @param segments racePlan 返回的分段数组
+    @param index number 题号 1..count
+    @param count number 总题数
+    @return table 所在分段 { pct, source, dMin, dMax }
+]]
+local function segmentAt(segments, index, count)
+    local cum = 0
+    for k, seg in ipairs(segments) do
+        cum = cum + seg.pct
+        local bound = (k == #segments) and count or math.floor(count * cum / 100 + 0.5)
+        if index <= bound then
+            return seg
+        end
+    end
+    return segments[#segments]
 end
 
 -- ==================== 校验层 ====================
@@ -254,27 +297,27 @@ function source.getQuestion(ctx)
 end
 
 --[[
-    竞速取题（唯一入口）：按 racePlan 计划生成 count 道题，任何失败回退本地随机
+    竞速取题（唯一入口）：按 racePlan 分段计划生成 count 道题，任何失败回退本地随机
+    分段按题号顺序落段（竞速共享题序一次性生成，题号即做题顺序）：
+    段 source="bank" 时在 [dMin,dMax] 均匀掷难度id走题库，题库任何失败（服务未登记/
+    返回异常/字段非法）仅该题回退本地随机，不影响整场；本地随机数字范围沿用 ctx（room rule）。
     @param ctx table 同 getQuestion
     @param count number 题数（白名单已由 room/raceLogic 双重规整）
     @return table questions[i] = { numbers = {n1,n2,n3,n4} }（必有 count 道）
 ]]
 function source.getRaceQuestionSet(ctx, count)
     ctx = ctx or {}
-    local plan = source.racePlan(ctx.difficulty)
+    local segments = source.racePlan(ctx.difficulty)
     local min = ctx.numberMin
     local max = ctx.numberMax
-    if type(plan) == "table" then
-        min = tonumber(plan.numberMin) or min
-        max = tonumber(plan.numberMax) or max
-    end
 
     local questions = {}
     for i = 1, count do
+        local seg = segmentAt(segments, i, count)
         local numbers = nil
-        -- 预留外部题源入口：plan.source ~= "local" 时走题库（当前 racePlan 恒为 local，此路预留）
-        if type(plan) == "table" and plan.source ~= nil and plan.source ~= "local" then
-            numbers = fetchFromBank(ctx, plan.difficultyId)
+        if seg.source == "bank" then
+            local difficultyId = math.random(seg.dMin, seg.dMax)
+            numbers = fetchFromBank(ctx, difficultyId)
         end
         if not numbers or not source.validateNumbers(numbers) then
             -- 回退：本地随机出题（solver.deal 保证有解）

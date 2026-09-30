@@ -89,7 +89,28 @@ config.RACE = {
     DEFAULT_QUESTION_COUNT = 10,      -- 默认题数
     MAX_DURATION = 600,               -- 整场保护时限(秒)：纯速度不限单题时限，到点强制结算
     QUESTION_TIME = 0,                -- 单题时限(秒)预留，0=不限时
-    DIFFICULTY = {},                  -- 每难度出题配置预留(暂空)，改此处即可生效、不动调用链
+    -- 每难度出题分段（按题号顺序落段，占比合计必须=100）：
+    -- 段格式 { pct = 占比%, source = "local"(本地随机)/"bank"(题库), dMin, dMax = 题库难度区间(仅bank，1~5) }
+    -- 0随机：前50%本地随机，后50%题库d1-d5；1简单：全部本地随机；
+    -- 2中等：前50%本地随机，后50%题库d1-d3；3困难：前20%本地随机，中60%题库d1-d3，后20%题库d4-d5
+    DIFFICULTY = {
+        [0] = {
+            { pct = 50, source = "local" },
+            { pct = 50, source = "bank", dMin = 1, dMax = 5 },
+        },
+        [1] = {
+            { pct = 100, source = "local" },
+        },
+        [2] = {
+            { pct = 50, source = "local" },
+            { pct = 50, source = "bank", dMin = 1, dMax = 3 },
+        },
+        [3] = {
+            { pct = 20, source = "local" },
+            { pct = 60, source = "bank", dMin = 1, dMax = 3 },
+            { pct = 20, source = "bank", dMin = 4, dMax = 5 },
+        },
+    },
 }
 
 -- 发牌数字范围（可配置）

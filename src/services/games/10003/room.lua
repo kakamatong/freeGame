@@ -124,7 +124,7 @@ end
 
 --[[
     Logic -> Room：竞速取题预留接口（一次生成共享题序）
-    出题计划由 questionSource.racePlan(difficulty) 决定（当前所有难度最简本地随机）；
+    出题计划由 questionSource.racePlan(difficulty) 决定（按题号分段出题，config.RACE.DIFFICULTY 分段表）；
     取题、字段校验与失败回退已收敛至 questionSource.getRaceQuestionSet，保证竞速一定能开局。
     @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
     @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
@@ -550,7 +550,7 @@ end
 
 --[[
     竞速取题：生成 count 道共享题（出题计划与取题已收敛至 questionSource.getRaceQuestionSet）
-    出题计划来自 questionSource.racePlan(difficulty)（预留：将来接题库/难度权重改 config.RACE.DIFFICULTY 即生效）；
+    出题计划来自 questionSource.racePlan(difficulty)（config.RACE.DIFFICULTY 分段表生效中）；
     任何失败（服务未登记/返回异常/字段不合法）回退本地随机，保证竞速一定能开。
     @param count number 题数（白名单已由 room.init/raceLogic 双重规整）
     @param difficulty number 难度等级（0随机/1简单/2中等/3困难）
